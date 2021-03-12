@@ -20,10 +20,10 @@ def main():
     st.sidebar.title("NEISS TEI Entity Enricher")
 
     #Define sidebar as radiobuttons
-    page = st.sidebar.radio("Main Menu", tuple(pages.keys()),0)
+    state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),tuple(pages.keys()).index(state.page) if state.page else 0)
 
     # Display the selected page with the session state
-    pages[page](state)
+    pages[state.page](state)
 
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
@@ -59,6 +59,9 @@ def teinerwriter(state):
 
 def nertrainer(state):
     st.title("NER Trainer")
+    if st.button("Jump to Pred"):
+        state.page="NER Prediction"
+        st.experimental_rerun()
 
 def nerprediction(state):
     st.title("NER Prediction")
