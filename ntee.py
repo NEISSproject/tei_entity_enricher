@@ -30,11 +30,6 @@ def main():
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
 
-@st.cache(allow_output_mutation=True)
-def get_static_store() -> Dict:
-    """This dictionary is initialized once and can be used to store the files uploaded"""
-    return {}
-
 def teireader(state):
     st.title("TEI Reader Config")
     state.input = st.text_input("Set input value.", state.input or "")
@@ -50,14 +45,15 @@ def teinerreader(state):
     st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welche NER-Tags auf welche Tags (mit ggf. definierten Attributen) in den TEI Files eines festen Formates gehören.")
     st.markdown("Diese Konfiguration muss abgespeichert und geladen werden können.")
     st.markdown("Eine TEI Reader config wird dann benötigt für die Menüpunkte: TEI NER Groundtruth Builder, TEI NER Writer Config,NER Prediction")
-    state.page
+    #st.bet
 
 def gtbuilder(state):
     st.title("TEI NER Groundtruth Builder")
     st.write("Input state:", state.input)
 
     if st.button("Clear state"):
-        state.clear()
+        state.input=None
+        st.experimental_rerun()
 
 def teinerwriter(state):
     st.title("TEI NER Writer Config")
@@ -72,13 +68,15 @@ def nertrainer(state):
 
 def nerprediction(state):
     st.title("NER Prediction")
-    folderPath = st.text_input('Enter folder path:')
-    if folderPath:
-        fileslist = os.listdir(folderPath)
+    state.folderPath = st.text_input('Enter folder path:')
+    if state.folderPath:
+        fileslist = os.listdir(state.folderPath)
     else:
         fileslist=[]  # Hack to clear list if the user clears the cache and reloads the page
         st.info("Select a folder.")
-    if st.checkbox("Show file list?", True):
+    # And within an expander
+    my_expander = st.beta_expander("Selected Files", expanded=True)
+    with my_expander:
         st.write(fileslist)
 
 
