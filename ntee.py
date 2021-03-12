@@ -1,6 +1,8 @@
 import streamlit as st
 from SessionState import _get_state
 from PIL import Image
+import os
+from typing import Dict
 
 def main():
     state = _get_state()
@@ -27,6 +29,11 @@ def main():
 
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
+
+@st.cache(allow_output_mutation=True)
+def get_static_store() -> Dict:
+    """This dictionary is initialized once and can be used to store the files uploaded"""
+    return {}
 
 def teireader(state):
     st.title("TEI Reader Config")
@@ -65,8 +72,15 @@ def nertrainer(state):
 
 def nerprediction(state):
     st.title("NER Prediction")
-    file=st.file_uploader('Uploader')
-    st.write(file.getvalue())
+    folderPath = st.text_input('Enter folder path:')
+    if folderPath:
+        fileslist = os.listdir(folderPath)
+    else:
+        fileslist=[]  # Hack to clear list if the user clears the cache and reloads the page
+        st.info("Select a folder.")
+    if st.checkbox("Show file list?", True):
+        st.write(fileslist)
+
 
 
 #def page_dashboard(state):
