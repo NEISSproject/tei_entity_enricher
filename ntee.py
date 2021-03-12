@@ -20,12 +20,10 @@ def main():
     st.sidebar.title("NEISS TEI Entity Enricher")
 
     #Define sidebar as radiobuttons
-    state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),tuple(pages.keys()).index(state.page) if state.radio else 0)
+    page = st.sidebar.radio("Main Menu", tuple(pages.keys()),0)
 
     # Display the selected page with the session state
-    pages[state.page](state)
-
-
+    pages[page](state)
 
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
@@ -33,11 +31,18 @@ def main():
 def teireader(state):
     st.title("TEI Reader Config")
     state.input = st.text_input("Set input value.", state.input or "")
-
+    st.subheader("Anforderungen für diesen Menüpunkt")
+    st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welcher Text aus den TEI-Files eines festen Formates ausgelesen werden soll (Gibt es Tags die ignoriert werden sollen oder kompletter inhalt des Body? etc...).")
+    st.markdown("Diese Konfiguration muss abgespeichert und geladen werden können.")
+    st.markdown("Eine TEI Reader config wird dann benötigt für die Menüpunkte: TEI NER Groundtruth Builder, TEI NER Writer Config,NER Prediction")
 
 def teinerreader(state):
     st.title("TEI NER Reader Config")
     st.write("Page state:", state.page)
+    st.subheader("Anforderungen für diesen Menüpunkt")
+    st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welche NER-Tags auf welche Tags (mit ggf. definierten Attributen) in den TEI Files eines festen Formates gehören.")
+    st.markdown("Diese Konfiguration muss abgespeichert und geladen werden können.")
+    st.markdown("Eine TEI Reader config wird dann benötigt für die Menüpunkte: TEI NER Groundtruth Builder, TEI NER Writer Config,NER Prediction")
     state.page
 
 def gtbuilder(state):
@@ -57,6 +62,9 @@ def nertrainer(state):
 
 def nerprediction(state):
     st.title("NER Prediction")
+    file=st.file_uploader('Uploader')
+    st.write(file.getvalue())
+
 
 #def page_dashboard(state):
 #    st.title(":chart_with_upwards_trend: Dashboard page")
