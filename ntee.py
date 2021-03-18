@@ -32,7 +32,7 @@ def main():
     state.sync()
 
 def teireader(state):
-    tr.show(state)
+    tr.Menu_tei_reader(state)
 
 
 def teinerreader(state):

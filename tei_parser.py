@@ -4,16 +4,19 @@ import re
 
 class tei_file():
 
-    def __init__(self, filename,nlp=None):
+    def __init__(self, filename,tr_config,nlp=None):
         #self._allowed_tags={'rs':['person','city','ground','water','org'],'persName':[],'persname':[],'placeName':['city','ground','water'],'placename':['city','ground','water'],'orgName':[],'orgname':[],'date':[]}
         self._pagelist=[]
         self._soup=None
         self._note_list=[]
         self._tagged_note_list=[]
         self._note_statistics={}
+        self._tag_notes=tr_config['use_notes']
+
         self._text,self._tagged_text,self._statistics,self._notes, self._tagged_notes=self._get_text_and_statistics(filename)
         self._tagged_text_line_list=[]
         self._tagged_note_line_list=[]
+
 
 
         #if nlp is not None:
@@ -62,7 +65,7 @@ class tei_file():
                             text_list=text_list+text_list_to_add
                             tagged_text_list=tagged_text_list+tagged_text_list_to_add
                             statistics=self._merge_statistics(statistics,statistics_to_add)
-                        elif child.name=='note':
+                        elif child.name=='note' and self._tag_notes:
                             note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(child.contents,True)
                             #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                             self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
@@ -87,7 +90,7 @@ class tei_file():
                     tagged_text_list=tagged_text_list+[' <'+tagname+'> ']+tagged_text_list_to_add+[' </'+tagname+'> ']
                     statistics=self._merge_statistics(statistics,statistics_to_add)
                         #text_list.append(pagecontent.text+' ')
-            elif pagecontent.name=='note':
+            elif pagecontent.name=='note' and self._tag_notes:
                 note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(pagecontent.contents,True)
                 #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                 self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
@@ -123,7 +126,7 @@ class tei_file():
                     tagged_text_list=tagged_text_list+[' <linebreak>\n']
                 if page.name=='app' and page.lem is not None:
                     new_text_list,new_tagged_text_list,new_statistics=self._get_text_from_contentlist(page.lem.contents,False)
-                    if page.note is not None:
+                    if page.note is not None and self._tag_notes:
                         note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(page.note.contents,True)
                         #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                         self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
