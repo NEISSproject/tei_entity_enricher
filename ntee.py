@@ -2,6 +2,7 @@ import streamlit as st
 from SessionState import _get_state
 from PIL import Image
 import os
+import menu_tei_reader as tr
 from typing import Dict
 
 def main():
@@ -31,15 +32,12 @@ def main():
     state.sync()
 
 def teireader(state):
-    st.title("TEI Reader Config")
-    state.input = st.text_input("Set input value.", state.input or "")
-    st.subheader("Anforderungen für diesen Menüpunkt")
-    st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welcher Text aus den TEI-Files eines festen Formates ausgelesen werden soll (Gibt es Tags die ignoriert werden sollen oder kompletter inhalt des Body? etc...).")
-    st.markdown("Diese Konfiguration muss abgespeichert und geladen werden können.")
-    st.markdown("Eine TEI Reader config wird dann benötigt für die Menüpunkte: TEI NER Groundtruth Builder, TEI NER Writer Config,NER Prediction")
+    tr.show(state)
+
 
 def teinerreader(state):
     st.title("TEI NER Reader Config")
+    state.input = st.text_input("Set input value.", state.input or "")
     st.write("Page state:", state.page)
     st.subheader("Anforderungen für diesen Menüpunkt")
     st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welche NER-Tags auf welche Tags (mit ggf. definierten Attributen) in den TEI Files eines festen Formates gehören.")
@@ -77,7 +75,7 @@ def nerprediction(state):
     # And within an expander
     my_expander = st.beta_expander("Selected Files", expanded=True)
     with my_expander:
-        st.write(fileslist)
+        st.table(fileslist)
 
 
 
