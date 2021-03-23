@@ -61,7 +61,7 @@ class Menu_tei_reader():
                 tr_config_dict[self.tr_config_attr_name]=name
         use_notes=st.checkbox('Tag Notes',init_use_notes)
         tr_config_dict[self.tr_config_attr_use_notes]=use_notes
-        if st.button('Save'):
+        if st.button('Save',key=mode):
             self.validate_and_saving_config(tr_config_dict,mode)
 
     def teireaderadd(self):
