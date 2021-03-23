@@ -123,7 +123,7 @@ class Menu_tei_reader():
 
 
     def show(self):
-        st.title("TEI Reader Config")
+        st.latex('\\text{\Huge{TEI Reader Config}}')
         self.show_configs()
         self.show_edit_environment()
         self.show_test_environment()

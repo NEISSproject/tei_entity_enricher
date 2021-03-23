@@ -37,7 +37,7 @@ def teireader(state):
 
 
 def teinerreader(state):
-    st.title("TEI NER Reader Config")
+    st.latex('\\text{\Huge{TEI NER Reader Config}}')
     state.input = st.text_input("Set input value.", state.input or "")
     st.write("Page state:", state.page)
     st.subheader("Anforderungen für diesen Menüpunkt")
@@ -47,7 +47,7 @@ def teinerreader(state):
     #st.bet
 
 def gtbuilder(state):
-    st.title("TEI NER Groundtruth Builder")
+    st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
     st.write("Input state:", state.input)
 
     if st.button("Clear state"):
@@ -55,18 +55,18 @@ def gtbuilder(state):
         st.experimental_rerun()
 
 def teinerwriter(state):
-    st.title("TEI NER Writer Config")
+    st.latex('\\text{\Huge{TEI NER Writer Config}}')
     if st.button("Set Input to Konrad"):
         state.input="Konrad"
 
 def nertrainer(state):
-    st.title("NER Trainer")
+    st.latex('\\text{\Huge{NER Trainer}}')
     if st.button("Jump to Pred"):
         state.page="NER Prediction"
         st.experimental_rerun()
 
 def nerprediction(state):
-    st.title("NER Prediction")
+    st.latex('\\text{\Huge{NER Prediction}}')
     state.folderPath = st.text_input('Enter folder path:')
     if state.folderPath:
         fileslist = os.listdir(state.folderPath)
