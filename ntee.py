@@ -15,12 +15,13 @@ def main():
         "NER Trainer": nertrainer,
         "NER Prediction": nerprediction,
     }
+    st.sidebar.latex('\Huge{NTEE}')
+    st.sidebar.title("NEISS TEI Entity Enricher")
 
     #Include NEISS Logo
     neiss_logo=Image.open('neiss_logo_nn_pentagon01b2.png')
     st.sidebar.image(neiss_logo)
 
-    st.sidebar.title("NEISS TEI Entity Enricher")
 
     #Define sidebar as radiobuttons
     state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),tuple(pages.keys()).index(state.page) if state.page else 0)
