@@ -15,8 +15,8 @@ def main():
         "NER Trainer": nertrainer,
         "NER Prediction": nerprediction,
     }
-    st.sidebar.latex('\Huge{NTEE}')
-    st.sidebar.title("NEISS TEI Entity Enricher")
+    st.sidebar.latex('\\text{\Huge{N-TEE}}')
+    st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
 
     #Include NEISS Logo
     neiss_logo=Image.open('neiss_logo_nn_pentagon01b2.png')
