@@ -6,6 +6,7 @@ import menu_tei_reader as tr
 from typing import Dict
 
 def main():
+    #st.set_page_config(layout='wide') #Hiermit könnte man die ganze Breite des Bildschirms ausschößfen
     state = _get_state()
     pages = {
         "TEI Reader Config": teireader,

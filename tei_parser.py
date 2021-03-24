@@ -12,6 +12,7 @@ class tei_file():
         self._tagged_note_list=[]
         self._note_statistics={}
         self._tag_notes=tr_config['use_notes']
+        self._exclude_tags=tr_config['exclude_tags']
 
         self._text,self._tagged_text,self._statistics,self._notes, self._tagged_notes=self._get_text_and_statistics(filename)
         self._tagged_text_line_list=[]
@@ -57,21 +58,8 @@ class tei_file():
         statistics={}
 
         for pagecontent in contentlist:
-            if (pagecontent.name not in ['lb','pb','note','rdg'] or (pagecontent.name=='note' and is_already_note)) and pagecontent!='\n' and str(pagecontent.__class__.__name__)!='Comment':
-                if pagecontent.name=='app' and pagecontent.lem is not None and not is_already_note:
-                    for child in pagecontent.children:
-                        if child.name=='lem':
-                            text_list_to_add,tagged_text_list_to_add,statistics_to_add=self._get_text_from_contentlist(child.contents,is_already_note)
-                            text_list=text_list+text_list_to_add
-                            tagged_text_list=tagged_text_list+tagged_text_list_to_add
-                            statistics=self._merge_statistics(statistics,statistics_to_add)
-                        elif child.name=='note' and self._tag_notes:
-                            note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(child.contents,True)
-                            #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                            self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
-                            self._tagged_note_list=self._tagged_note_list+tagged_note_list_to_add+[' <linebreak>\n']
-                            self._note_statistics=self._merge_statistics(self._note_statistics,note_statistics_to_add)
-                #elif pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
+            if (pagecontent.name not in ['lb','pb','note'] or (pagecontent.name=='note' and is_already_note)) and pagecontent.name not in self._exclude_tags and pagecontent!='\n' and str(pagecontent.__class__.__name__)!='Comment':
+                #if pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
                 #                                                                                              or ('subtype' in pagecontent.attrs.keys() and pagecontent.attrs['subtype'] in self._allowed_tags[pagecontent.name]))):
                 #    text_list_to_add,tagged_text_list_to_add,statistics_to_add=self._get_text_from_contentlist(pagecontent.contents,is_already_note)
                 #    text_list=text_list+text_list_to_add
@@ -80,7 +68,7 @@ class tei_file():
                 #    if pagecontent.name == 'address':
                 #        text_list=text_list+[' <linebreak>\n']
                 #        tagged_text_list=tagged_text_list+[' <linebreak>\n']
-                elif pagecontent.name is None:
+                if pagecontent.name is None:
                     text_list.append(pagecontent)
                     tagged_text_list.append(pagecontent)
                 else:
@@ -116,22 +104,17 @@ class tei_file():
         self._note_statistics={}
         #pages = textcontent.find_all(['opener','p','closer','postscript'])
         for page in textcontent.find('body').contents:
-            if page.name is not None:
-                if page.name=='app' and page.lem is not None:
-                    self._pagelist.append({'name':page.lem.name,'page':page.lem})
-                else:
-                    self._pagelist.append({'name':page.name,'page':page})
+            if page.name is not None and page.name not in self._exclude_tags:
+                self._pagelist.append({'name':page.name,'page':page})
                 if page.name=='closer' or page.name=='postscript':
                     text_list=text_list+[' <linebreak>\n']
                     tagged_text_list=tagged_text_list+[' <linebreak>\n']
-                if page.name=='app' and page.lem is not None:
-                    new_text_list,new_tagged_text_list,new_statistics=self._get_text_from_contentlist(page.lem.contents,False)
-                    if page.note is not None and self._tag_notes:
-                        note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(page.note.contents,True)
-                        #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                        self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
-                        self._tagged_note_list=self._tagged_note_list+tagged_note_list_to_add+[' <linebreak>\n']
-                        self._note_statistics=self._merge_statistics(self._note_statistics,note_statistics_to_add)
+                if page.name=='note' and self._tag_notes:
+                    note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(page.contents,True)
+                    #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
+                    self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
+                    self._tagged_note_list=self._tagged_note_list+tagged_note_list_to_add+[' <linebreak>\n']
+                    self._note_statistics=self._merge_statistics(self._note_statistics,note_statistics_to_add)
                 else:
                     new_text_list,new_tagged_text_list,new_statistics=self._get_text_from_contentlist(page.contents,False)
                 text_list=text_list+new_text_list+[' <linebreak>\n']
