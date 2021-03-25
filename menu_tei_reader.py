@@ -1,5 +1,5 @@
 import streamlit as st
-import tei_parser as tp
+import TEIEntityEnricher.tei_parser as tp
 import json
 import os
 import pandas as pd

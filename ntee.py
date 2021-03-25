@@ -1,8 +1,8 @@
 import streamlit as st
-from SessionState import _get_state
+from TEIEntityEnricher.SessionState import _get_state
 from PIL import Image
 import os
-import menu_tei_reader as tr
+import TEIEntityEnricher.menu_tei_reader as tr
 from typing import Dict
 
 def main():
@@ -20,7 +20,7 @@ def main():
     st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
 
     #Include NEISS Logo
-    neiss_logo=Image.open('neiss_logo_nn_pentagon01b2.png')
+    neiss_logo=Image.open('TEIEntityEnricher/neiss_logo_nn_pentagon01b2.png')
     st.sidebar.image(neiss_logo)
 
 
