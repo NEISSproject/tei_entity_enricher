@@ -21,6 +21,11 @@ class Menu_tei_reader():
         self.tr_config_mode_edit='edit'
 
         self.configslist=[]
+        if not os.path.isdir(self.config_Folder):
+            os.mkdir(self.config_Folder)
+        if not os.path.isdir(self.template_config_Folder):
+            os.mkdir(self.template_config_Folder)
+
         for configFile in sorted(os.listdir(self.template_config_Folder)):
             if configFile.endswith('json'):
                 with open(os.path.join(self.template_config_Folder,configFile)) as f:
