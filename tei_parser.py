@@ -11,7 +11,10 @@ class tei_file():
         self._note_list=[]
         self._tagged_note_list=[]
         self._note_statistics={}
-        self._tag_notes=tr_config['use_notes']
+        if tr_config['use_notes']:
+            self._note_tags=tr_config['note_tags']
+        else:
+            self._note_tags=[]
         self._exclude_tags=tr_config['exclude_tags']
 
         self._text,self._tagged_text,self._statistics,self._notes, self._tagged_notes=self._get_text_and_statistics(filename)
@@ -58,7 +61,8 @@ class tei_file():
         statistics={}
 
         for pagecontent in contentlist:
-            if (pagecontent.name not in ['lb','pb','note'] or (pagecontent.name=='note' and is_already_note)) and pagecontent.name not in self._exclude_tags and pagecontent!='\n' and str(pagecontent.__class__.__name__)!='Comment':
+            if ((pagecontent.name not in ['lb','pb'] and pagecontent.name not in self._note_tags) or (pagecontent.name in self._note_tags and is_already_note)) \
+                    and pagecontent.name not in self._exclude_tags and pagecontent!='\n' and str(pagecontent.__class__.__name__)!='Comment':
                 #if pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
                 #                                                                                              or ('subtype' in pagecontent.attrs.keys() and pagecontent.attrs['subtype'] in self._allowed_tags[pagecontent.name]))):
                 #    text_list_to_add,tagged_text_list_to_add,statistics_to_add=self._get_text_from_contentlist(pagecontent.contents,is_already_note)
@@ -78,7 +82,7 @@ class tei_file():
                     tagged_text_list=tagged_text_list+[' <'+tagname+'> ']+tagged_text_list_to_add+[' </'+tagname+'> ']
                     statistics=self._merge_statistics(statistics,statistics_to_add)
                         #text_list.append(pagecontent.text+' ')
-            elif pagecontent.name=='note' and self._tag_notes:
+            elif pagecontent.name in self._note_tags:
                 note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(pagecontent.contents,True)
                 #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                 self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']
@@ -109,7 +113,7 @@ class tei_file():
                 if page.name=='closer' or page.name=='postscript':
                     text_list=text_list+[' <linebreak>\n']
                     tagged_text_list=tagged_text_list+[' <linebreak>\n']
-                if page.name=='note' and self._tag_notes:
+                if page.name in self._note_tags:
                     note_list_to_add,tagged_note_list_to_add,note_statistics_to_add=self._get_text_from_contentlist(page.contents,True)
                     #print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                     self._note_list=self._note_list+note_list_to_add+[' <linebreak>\n']

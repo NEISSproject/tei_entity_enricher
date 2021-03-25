@@ -3,10 +3,9 @@ from TEIEntityEnricher.SessionState import _get_state
 from PIL import Image
 import os
 import TEIEntityEnricher.menu_tei_reader as tr
-from typing import Dict
 
 def main():
-    #st.set_page_config(layout='wide') #Hiermit könnte man die ganze Breite des Bildschirms ausschößfen
+    st.set_page_config(layout='wide') #Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
     state = _get_state()
     pages = {
         "TEI Reader Config": teireader,
