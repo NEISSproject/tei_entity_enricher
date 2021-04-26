@@ -3,6 +3,7 @@ from TEIEntityEnricher.SessionState import _get_state
 from PIL import Image
 import os
 import TEIEntityEnricher.menu_tei_reader as tr
+import TEIEntityEnricher.menu_tei_ner_reader as ntr
 
 def main():
     st.set_page_config(layout='wide') #Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
@@ -37,14 +38,7 @@ def teireader(state):
 
 
 def teinerreader(state):
-    st.latex('\\text{\Huge{TEI NER Reader Config}}')
-    state.input = st.text_input("Set input value.", state.input or "")
-    st.write("Page state:", state.page)
-    st.subheader("Anforderungen für diesen Menüpunkt")
-    st.markdown("Hier soll eine Konfiguration erstellt werden können, die definiert welche NER-Tags auf welche Tags (mit ggf. definierten Attributen) in den TEI Files eines festen Formates gehören.")
-    st.markdown("Diese Konfiguration muss abgespeichert und geladen werden können.")
-    st.markdown("Eine TEI Reader config wird dann benötigt für die Menüpunkte: TEI NER Groundtruth Builder, TEI NER Writer Config,NER Prediction")
-    #st.bet
+    ntr.Menu_ner_tei_reader(state)
 
 def gtbuilder(state):
     st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
@@ -61,6 +55,8 @@ def teinerwriter(state):
 
 def nertrainer(state):
     st.latex('\\text{\Huge{NER Trainer}}')
+    state.input = st.text_input("Set input value.", state.input or "")
+    st.write("Page state:", state.page)
     if st.button("Jump to Pred"):
         state.page="NER Prediction"
         st.experimental_rerun()
