@@ -48,20 +48,20 @@ class Menu_tei_reader():
         val=True
         if 'name' not in config.keys() or config[self.tr_config_attr_name] is None or config[self.tr_config_attr_name]=='':
             val=False
-            st.warning('Please define a name for the config before saving!')
+            st.error('Please define a name for the config before saving!')
         elif os.path.isfile(os.path.join(self.config_Folder,config['name'].replace(' ','_')+'.json')) and mode!=self.tr_config_mode_edit:
             val=False
-            st.warning('Choose another name. There is already a config with name ' + config[self.tr_config_attr_name] + '!')
+            st.error('Choose another name. There is already a config with name ' + config[self.tr_config_attr_name] + '!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags])<1:
             val=False
-            st.warning('You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes.')
+            st.error('You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes.')
         if config[self.tr_config_attr_use_notes] and len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags]))>0:
             val=False
             if len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags]))>1:
                 warntext='Tags can either be excluded or marked as note tags. Please define for the tags ' + self.get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags]))) + ' whether they should be excluded or considered as notes.'
             else:
                 warntext='Tags can either be excluded or marked as note tags. Please define for the tag ' + self.get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags]))) + ' whether it should be excluded or considered as a note.'
-            st.warning(warntext)
+            st.error(warntext)
         if val:
             config[self.tr_config_attr_template]=False
             with open(os.path.join(self.config_Folder,config[self.tr_config_attr_name].replace(' ','_')+'.json'),'w+') as f:
@@ -147,6 +147,12 @@ class Menu_tei_reader():
         self.state.tr_exclude_list=None
         self.state.tr_note_tags=None
         self.state.tr_name=None
+
+    def are_configs_equal(self,config1,config2):
+        for key in config1.keys():
+            if config1[key]!=config2[key]:
+                return False
+        return True
 
 
     def show_editable_config_content(self,mode):
