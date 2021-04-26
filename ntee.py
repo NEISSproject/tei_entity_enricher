@@ -3,14 +3,14 @@ from TEIEntityEnricher.SessionState import _get_state
 from PIL import Image
 import os
 import TEIEntityEnricher.menu_tei_reader as tr
-import TEIEntityEnricher.menu_tei_ner_reader as ntr
+import TEIEntityEnricher.menu_tei_ner_map as tnm
 
 def main():
     st.set_page_config(layout='wide') #Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
     state = _get_state()
     pages = {
         "TEI Reader Config": teireader,
-        "TEI NER Reader Config": teinerreader,
+        "TEI NER Entity Mapping": teinermap,
         "TEI NER Groundtruth Builder": gtbuilder,
         "TEI NER Writer Config": teinerwriter,
         "NER Trainer": nertrainer,
@@ -37,8 +37,8 @@ def teireader(state):
     tr.Menu_tei_reader(state)
 
 
-def teinerreader(state):
-    ntr.Menu_ner_tei_reader(state)
+def teinermap(state):
+    tnm.Menu_ner_tei_map(state)
 
 def gtbuilder(state):
     st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')

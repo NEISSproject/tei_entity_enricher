@@ -209,7 +209,6 @@ class Menu_tei_reader():
 
     def teireaderdel(self):
         selected_config_name=st.selectbox('Select a config to delete!',self.editable_config_names)
-        #st.json(configdict[selected_config_name])
         if st.button('Delete Selected Config'):
             self.validate_and_delete_config(self.configdict[selected_config_name])
 
