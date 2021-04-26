@@ -3,6 +3,7 @@ from TEIEntityEnricher.SessionState import _get_state
 from PIL import Image
 import os
 import TEIEntityEnricher.menu_tei_reader as tr
+import TEIEntityEnricher.menu_ner_task_def as ntd
 import TEIEntityEnricher.menu_tei_ner_map as tnm
 
 def main():
@@ -10,6 +11,7 @@ def main():
     state = _get_state()
     pages = {
         "TEI Reader Config": teireader,
+        "NER Task Entity Definition": nertaskdef,
         "TEI NER Entity Mapping": teinermap,
         "TEI NER Groundtruth Builder": gtbuilder,
         "TEI NER Writer Config": teinerwriter,
@@ -36,6 +38,8 @@ def main():
 def teireader(state):
     tr.Menu_tei_reader(state)
 
+def nertaskdef(state):
+    ntd.Menu_ner_task_def(state)
 
 def teinermap(state):
     tnm.Menu_ner_tei_map(state)

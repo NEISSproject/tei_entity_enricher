@@ -46,10 +46,10 @@ class Menu_tei_reader():
 
     def validate_and_saving_config(self,config,mode):
         val=True
-        if 'name' not in config.keys() or config[self.tr_config_attr_name] is None or config[self.tr_config_attr_name]=='':
+        if self.tr_config_attr_name not in config.keys() or config[self.tr_config_attr_name] is None or config[self.tr_config_attr_name]=='':
             val=False
             st.error('Please define a name for the config before saving!')
-        elif os.path.isfile(os.path.join(self.config_Folder,config['name'].replace(' ','_')+'.json')) and mode!=self.tr_config_mode_edit:
+        elif os.path.isfile(os.path.join(self.config_Folder,config[self.tr_config_attr_name].replace(' ','_')+'.json')) and mode!=self.tr_config_mode_edit:
             val=False
             st.error('Choose another name. There is already a config with name ' + config[self.tr_config_attr_name] + '!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags])<1:
