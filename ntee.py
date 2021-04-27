@@ -23,7 +23,7 @@ def main():
     st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
 
     # Include NEISS Logo
-    neiss_logo = Image.open('TEIEntityEnricher/Images/neiss_logo_nn_pentagon01b2.png')
+    neiss_logo = Image.open(os.path.join('TEIEntityEnricher', 'Images', 'neiss_logo_nn_pentagon01b2.png'))
     st.sidebar.image(neiss_logo)
 
     # Define sidebar as radiobuttons
