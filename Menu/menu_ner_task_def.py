@@ -141,7 +141,7 @@ class Menu_ner_task_def():
             options[self.state.ntd_edit_options]()
 
     def build_ntd_tablestring(self):
-        tablestring = 'Name | Exclude Tags | Template \n -----|-------|-------'
+        tablestring = 'Name | Entities | Template \n -----|-------|-------'
         for definition in self.defslist:
             if definition[self.ntd_attr_template]:
                 template = 'yes'
