@@ -4,6 +4,7 @@ import json
 import os
 from TEIEntityEnricher.Utils.helper import get_listoutput
 from TEIEntityEnricher.Utils.components import editable_table
+from TEIEntityEnricher.Utils.helper import module_path
 
 
 class Menu_tei_reader():
@@ -11,7 +12,7 @@ class Menu_tei_reader():
         self.state = state
 
         self.config_Folder = 'TR_Configs'
-        self.template_config_Folder = os.path.join('TEIEntityEnricher', 'Templates', self.config_Folder)
+        self.template_config_Folder = os.path.join(module_path, 'Templates', self.config_Folder)
         self.tr_config_attr_name = 'name'
         self.tr_config_attr_excl_tags = 'exclude_tags'
         self.tr_config_attr_use_notes = 'use_notes'

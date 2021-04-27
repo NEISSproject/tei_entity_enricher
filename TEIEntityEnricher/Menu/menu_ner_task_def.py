@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 import os
-from TEIEntityEnricher.Utils.helper import get_listoutput
+from TEIEntityEnricher.Utils.helper import get_listoutput, module_path
 from TEIEntityEnricher.Utils.components import editable_table
 
 
@@ -10,7 +10,7 @@ class Menu_ner_task_def():
         self.state = state
 
         self.ntd_Folder = 'NTD'
-        self.template_ntd_Folder = os.path.join('TEIEntityEnricher', 'Templates', self.ntd_Folder)
+        self.template_ntd_Folder = os.path.join(module_path, 'Templates', self.ntd_Folder)
         self.ntd_attr_name = 'name'
         self.ntd_attr_entitylist = 'entitylist'
         self.ntd_attr_template = 'template'

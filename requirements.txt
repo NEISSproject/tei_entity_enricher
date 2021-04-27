@@ -1,0 +1,6 @@
+streamlit
+streamlit-aggrid
+Pillow
+bs4
+requests
+pandas

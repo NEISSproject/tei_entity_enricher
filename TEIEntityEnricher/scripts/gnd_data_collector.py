@@ -25,7 +25,7 @@ class Connector:
         print("initializing connector..") if self.showPrintMessages else print("")
         self.gnd = gnd #str or list
         self.apiindex = apiindex #int
-        self.apilist = Filereader("apilist.json", "local", True).loadfile_json()
+        self.apilist = Filereader("../Utils/apilist.json", "local", True).loadfile_json()
         if self.apilist is None:
             print("connector error: could not find apilist.json. using standard settings...") if self.showPrintMessages else print("")
             self.apilist = [
