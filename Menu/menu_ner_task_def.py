@@ -1,8 +1,8 @@
 import streamlit as st
 import json
 import os
-import pandas as pd
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+from TEIEntityEnricher.Utils.helper import get_listoutput
+from TEIEntityEnricher.Utils.components import editable_table
 
 class Menu_ner_task_def():
     def __init__(self,state):
@@ -65,47 +65,8 @@ class Menu_ner_task_def():
             st.experimental_rerun()
 
     def show_editable_entitylist(self, entitylist, mode, name):
-        #excl_options=['Add','Delete']
-        #col1, col2 = st.beta_columns(2)
-        #self.state.excl_radio=col1.radio('Exclude Tags',['Add','Delete'],excl_options.index(self.state.excl_radio) if self.state.excl_radio else 0)
-        #if self.state.excl_radio == 'Add':
-        #    tr_excl_tag=col2.text_input('Exclude Tag to add:')
-        #    if col2.button('Add to Exclude List'):
-        #        excl_list.append(tr_excl_tag)
-        #elif self.state.excl_radio == 'Delete':
-        #    tr_excl_selbox=col2.selectbox('Remove Exclude Tag from excluding list:',excl_list, 0)
-        #    if col2.button('Remove from Exclude List'):
-        #        excl_list.remove(tr_excl_selbox)
         st.markdown('Define a list of entities for the ner task.')
-        response = AgGrid(
-            pd.DataFrame({'Entities': entitylist + [''] * 100}),#input_dataframe,
-            height=150,
-            editable=True,
-            sortable=False,
-            filter=False,
-            resizable=True,
-            defaultWidth=1,
-            fit_columns_on_grid_load=True,
-            key='ntd_entitylist'+mode+name)
-        st.info('Edit the table by double-click in it and press Enter after changing a cell.')
-        returnlist=[]
-        if 'data' in response:
-            all_list=list(response['data'].to_dict()['Entities'].values())
-            returnlist=[]
-            for element in all_list:
-                if element!='' and element is not None:
-                    returnlist.append(element)
-        return returnlist
-
-    def get_listoutput(self,list):
-        output=""
-        for element in list:
-            output+=element+', '
-        if len(list)>0:
-            output=output[:-2]
-        else:
-            output=""
-        return output
+        return editable_table(entry_list=entitylist, key='ntd_entitylist' + mode + name, head='Entities')
 
     def reset_ntd_edit_states(self):
         self.state.ntd_name=None
@@ -180,7 +141,7 @@ class Menu_ner_task_def():
                 template='yes'
             else:
                 template='no'
-            tablestring+='\n ' + definition[self.ntd_attr_name] + ' | ' + self.get_listoutput(definition[self.ntd_attr_entitylist]) + ' | ' + template
+            tablestring+='\n ' + definition[self.ntd_attr_name] + ' | ' + get_listoutput(definition[self.ntd_attr_entitylist]) + ' | ' + template
         return tablestring
 
     def show_ntds(self):
