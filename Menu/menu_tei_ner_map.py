@@ -1,5 +1,6 @@
 import streamlit as st
 import TEIEntityEnricher.Utils.tei_parser as tp
+import TEIEntityEnricher.Menu.menu_ner_task_def as ner_task
 import json
 import os
 
@@ -11,9 +12,7 @@ class Menu_ner_tei_map():
         self.tnm_Folder = 'TNM'
         self.template_tnm_Folder = os.path.join('TEIEntityEnricher', 'Templates', self.tnm_Folder)
         self.tnm_attr_name = 'name'
-        # self.tr_config_attr_excl_tags='exclude_tags'
-        # self.tr_config_attr_use_notes='use_notes'
-        # self.tr_config_attr_note_tags='note_tags'
+        self.tnm_attr_ntd = 'ntd'
         self.tnm_attr_template = 'template'
         self.tnm_mode_add = 'add'
         self.tnm_mode_dupl = 'duplicate'
@@ -41,6 +40,8 @@ class Menu_ner_tei_map():
             if not mapping[self.tnm_attr_template]:
                 self.editable_mapping_names.append(mapping[self.tnm_attr_name])
 
+        self.ntd = ner_task.Menu_ner_task_def(state, show_menu=False)
+
         self.show()
 
     def validate_and_saving_mapping(self, mapping, mode):
@@ -61,8 +62,17 @@ class Menu_ner_tei_map():
             self.reset_tnm_edit_states()
             st.experimental_rerun()
 
+    def validate_and_delete_mapping(self, mapping):
+        val = True
+        if val:
+            os.remove(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ', '_') + '.json'))
+            self.reset_tnm_edit_states()
+            self.state.tnm_sel_mapping_name = None
+            st.experimental_rerun()
+
     def reset_tnm_edit_states(self):
         self.state.tnm_name = None
+        self.state.tnm_ntd_name = None
 
     def show_editable_mapping_content(self, mode):
         if mode == self.tnm_mode_edit and len(self.editable_mapping_names) < 1:
@@ -73,24 +83,33 @@ class Menu_ner_tei_map():
                 self.reset_tnm_edit_states()
             self.state.tnm_mode = mode
             tnm_mapping_dict = {}
+            init_tnm_ntd_name = self.state.tnm_ntd_name
             # init_use_notes=True
             if mode in [self.tnm_mode_dupl, self.tnm_mode_edit]:
                 if self.tnm_mode_dupl == mode:
                     options = list(self.mappingdict.keys())
                 else:
                     options = self.editable_mapping_names
-                selected_tnm_name = st.selectbox('Select a mapping to ' + mode + '!', options, key=mode)
+                selected_tnm_name = st.selectbox('Select a mapping to ' + mode + '!', options, key='tnm' + mode)
                 if self.state.tnm_sel_mapping_name != selected_tnm_name:
                     self.reset_tnm_edit_states()
                 self.state.tnm_sel_mapping_name = selected_tnm_name
                 tnm_mapping_dict = self.mappingdict[selected_tnm_name].copy()
+                init_tnm_ntd_name = tnm_mapping_dict[self.tnm_attr_ntd][self.ntd.ntd_attr_name]
                 if mode == self.tnm_mode_dupl:
                     tnm_mapping_dict[self.tnm_attr_name] = ''
+            if mode == self.tnm_mode_add:
+                tnm_mapping_dict[self.tnm_attr_ntd] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
                 self.state.tnm_name = st.text_input('New TEI NER Entity Mapping Name:', self.state.tnm_name or "")
                 if self.state.tnm_name:
                     tnm_mapping_dict[self.tnm_attr_name] = self.state.tnm_name
+
+            self.state.tnm_ntd_name = st.selectbox('Corresponding NER task definition', list(self.ntd.defdict.keys()),
+                                                   list(self.ntd.defdict.keys()).index(
+                                                       init_tnm_ntd_name) if init_tnm_ntd_name else 0, key='tnm' + mode)
             if st.button('Save TEI NER Entity Mapping', key=mode):
+                tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
 
     def teinermapadd(self):
@@ -103,10 +122,9 @@ class Menu_ner_tei_map():
         self.show_editable_mapping_content(self.tnm_mode_edit)
 
     def teinermapdel(self):
-        pass
-        # selected_config_name=st.selectbox('Select a TEI NER Map to delete!',self.editable_config_names)
-        # if st.button('Delete Selected Config'):
-        #    self.validate_and_delete_config(self.configdict[selected_config_name])
+        selected_mapping_name = st.selectbox('Select a mapping to delete!', self.editable_mapping_names)
+        if st.button('Delete Selected Mapping'):
+            self.validate_and_delete_mapping(self.mappingdict[selected_mapping_name])
 
     def show_edit_environment(self):
         tnm_definer = st.beta_expander("Add or edit existing TEI NER Entity Mapping", expanded=False)
@@ -125,13 +143,14 @@ class Menu_ner_tei_map():
         tnm_test_expander = st.beta_expander("Test TEI NER Entity Mapping", expanded=False)
 
     def build_tnm_tablestring(self):
-        tablestring = 'Name | Template \n -----|-------'
+        tablestring = 'Name | NER Task | Template \n -----|-------|-------'
         for mapping in self.mappingslist:
             if mapping[self.tnm_attr_template]:
                 template = 'yes'
             else:
                 template = 'no'
-            tablestring += '\n ' + mapping[self.tnm_attr_name] + ' | ' + template
+            tablestring += '\n ' + mapping[self.tnm_attr_name] + ' | ' + mapping[self.tnm_attr_ntd][
+                self.ntd.ntd_attr_name] + ' | ' + template
         return tablestring
 
     def show_tnms(self):

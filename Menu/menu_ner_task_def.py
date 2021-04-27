@@ -6,7 +6,7 @@ from TEIEntityEnricher.Utils.components import editable_table
 
 
 class Menu_ner_task_def():
-    def __init__(self, state):
+    def __init__(self, state, show_menu=True):
         self.state = state
 
         self.ntd_Folder = 'NTD'
@@ -40,7 +40,8 @@ class Menu_ner_task_def():
             if not definition[self.ntd_attr_template]:
                 self.editable_def_names.append(definition[self.ntd_attr_name])
 
-        self.show()
+        if show_menu:
+            self.show()
 
     def validate_and_saving_definition(self, definition, mode):
         val = True
@@ -53,6 +54,15 @@ class Menu_ner_task_def():
             val = False
             st.error(
                 'Choose another name. There is already a definition with name ' + definition[self.ntd_attr_name] + '!')
+
+        if self.ntd_attr_entitylist not in definition.keys() or len(definition[self.ntd_attr_entitylist]) == 0:
+            val = False
+            st.error('Please define at least one entity for the task definition!')
+        else:
+            if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
+                val = False
+                st.error('There are at least two entities with the same name. This is not allowed!')
+
         if val:
             definition[self.ntd_attr_template] = False
             with open(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json'),
