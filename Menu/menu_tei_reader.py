@@ -141,7 +141,7 @@ class Menu_tei_reader():
 
             self.state.tr_exclude_list = self.show_editable_exclude_tags(
                 self.state.tr_exclude_list if self.state.tr_exclude_list else init_exclude_list, mode,
-                selected_config_name if mode != self.tr_config_mode_add else '')
+                tr_config_dict[self.tr_config_attr_name] if self.tr_config_attr_name in tr_config_dict.keys() else '')
             # st.write('Tags to exclude: '+ self.get_listoutput(self.state.tr_exclude_list))
             init_note_tags = tr_config_dict[self.tr_config_attr_note_tags]
             use_notes = st.checkbox('Tag Notes', init_use_notes)
