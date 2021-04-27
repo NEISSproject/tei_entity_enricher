@@ -6,7 +6,7 @@ import os
 
 
 class Menu_ner_tei_map():
-    def __init__(self, state):
+    def __init__(self, state, show_menu=True):
         self.state = state
 
         self.tnm_Folder = 'TNM'
@@ -40,9 +40,9 @@ class Menu_ner_tei_map():
             if not mapping[self.tnm_attr_template]:
                 self.editable_mapping_names.append(mapping[self.tnm_attr_name])
 
-        self.ntd = ner_task.Menu_ner_task_def(state, show_menu=False)
-
-        self.show()
+        if show_menu:
+            self.ntd = ner_task.Menu_ner_task_def(state, show_menu=False)
+            self.show()
 
     def validate_and_saving_mapping(self, mapping, mode):
         val = True
@@ -53,7 +53,7 @@ class Menu_ner_tei_map():
         elif os.path.isfile(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ',
                                                                                               '_') + '.json')) and mode != self.tnm_mode_edit:
             val = False
-            st.error('Choose another name. There is already a mapping with name ' + mapping[self.tnm_attr_name] + '!')
+            st.error(f'Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!')
         if val:
             mapping[self.tnm_attr_template] = False
             with open(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ', '_') + '.json'),
@@ -90,7 +90,7 @@ class Menu_ner_tei_map():
                     options = list(self.mappingdict.keys())
                 else:
                     options = self.editable_mapping_names
-                selected_tnm_name = st.selectbox('Select a mapping to ' + mode + '!', options, key='tnm' + mode)
+                selected_tnm_name = st.selectbox(f'Select a mapping to {mode}!', options, key='tnm' + mode)
                 if self.state.tnm_sel_mapping_name != selected_tnm_name:
                     self.reset_tnm_edit_states()
                 self.state.tnm_sel_mapping_name = selected_tnm_name

@@ -54,7 +54,7 @@ class Menu_tei_reader():
                                                                                                       '_') + '.json')) and mode != self.tr_config_mode_edit:
             val = False
             st.error(
-                'Choose another name. There is already a config with name ' + config[self.tr_config_attr_name] + '!')
+                f'Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
             st.error(
@@ -63,13 +63,9 @@ class Menu_tei_reader():
                 set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0:
             val = False
             if len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 1:
-                warntext = 'Tags can either be excluded or marked as note tags. Please define for the tags ' + get_listoutput(
-                    list(set(config[self.tr_config_attr_note_tags]).intersection(config[
-                                                                                     self.tr_config_attr_excl_tags]))) + ' whether they should be excluded or considered as notes.'
+                warntext = f'Tags can either be excluded or marked as note tags. Please define for the tags {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether they should be excluded or considered as notes.'
             else:
-                warntext = 'Tags can either be excluded or marked as note tags. Please define for the tag ' + get_listoutput(
-                    list(set(config[self.tr_config_attr_note_tags]).intersection(config[
-                                                                                     self.tr_config_attr_excl_tags]))) + ' whether it should be excluded or considered as a note.'
+                warntext = f'Tags can either be excluded or marked as note tags. Please define for the tag {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether it should be excluded or considered as a note.'
             st.error(warntext)
         if val:
             config[self.tr_config_attr_template] = False
@@ -122,7 +118,7 @@ class Menu_tei_reader():
                     options = list(self.configdict.keys())
                 else:
                     options = self.editable_config_names
-                selected_config_name = st.selectbox('Select a config to ' + mode + '!', options, key=mode)
+                selected_config_name = st.selectbox(f'Select a config to {mode}!', options, key=mode)
                 if self.state.tr_sel_config_name != selected_config_name:
                     self.reset_tr_edit_states()
                 self.state.tr_sel_config_name = selected_config_name
