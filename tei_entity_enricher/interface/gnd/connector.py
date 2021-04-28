@@ -10,7 +10,7 @@ import os
 import requests
 
 # classes
-from tei_entity_enricher.interface.gnd.io import FileReader
+from tei_entity_enricher.interface.gnd.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import module_path
 
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     #test 2: write json-file (test cases are: "cancel", "replace", "merge", file with the same name doesn't exist, empty file with the same name exists)
     print("\n\n##############################\ntest 2\n##############################\n\n")
     dataobj = {"123456X": {"name": "Max Mustermann"}, "145757753": {"name": "Maria Musterfrau"}}
-    a = Filewriter(dataobj, "test2export.json")
+    a = FileWriter(dataobj, "test2export.json")
     print("data: {}\npath: {}".format(a.data, a.filepath))
     a.writefile("merge")
 
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     result_data_cache = Cache(result_data)
     result_data_cache.print_cache()
     persons = result_data_cache.get_items_with_specific_value_in_a_category("type", "person")
-    writer = Filewriter(persons, "test3export.json")
+    writer = FileWriter(persons, "test3export.json")
     print("data: {}\npath: {}".format(writer.data, writer.filepath))
     writer.writefile("replace")
 
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     #test 4: get personnames for gnd-ids extracted from a BEACON-file out of the web (finished)
     print("\n\n##############################\ntest 4\n##############################\n\n")
 
-    fr = Filereader("http://beacon.findbuch.de/downloads/zadik-beacon.txt", "web")
+    fr = FileReader("http://beacon.findbuch.de/downloads/zadik-beacon.txt", "web")
     beacon_cache = Cache(fr.loadfile_beacon())
     in_beacon_found_gndids = beacon_cache.get_gndids_of_beacon_file()
     print("\nconnecting to GND-API to receive all information about the found gndids\n(just used 10 out of the found 333 for testing purposes)")
@@ -286,6 +286,6 @@ if __name__ == "__main__":
     persons = gnd_data_cache.get_items_with_specific_value_in_a_category("type", "person")
     print("\nfiltered persons out of the found data:\n", persons)
     print("\nsaving result to file...")
-    wri = Filewriter(persons, "test4export.json")
+    wri = FileWriter(persons, "test4export.json")
     print("data: {}\npath: {}".format(wri.data, wri.filepath))
     wri.writefile("replace")

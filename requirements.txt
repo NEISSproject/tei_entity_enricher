@@ -4,3 +4,4 @@ Pillow
 bs4
 requests
 pandas
+pytest
