@@ -1,17 +1,18 @@
 import streamlit as st
 import json
 import os
-from TEIEntityEnricher.Utils.helper import get_listoutput
-from TEIEntityEnricher.Utils.components import editable_table
-import TEIEntityEnricher.Menu.menu_tei_ner_map as tei_map
+from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path
+from tei_entity_enricher.util.components import editable_table
+import tei_entity_enricher.menu.tei_ner_map as tei_map
 
 
-class Menu_ner_task_def():
+class NERTaskDef:
     def __init__(self, state, show_menu=True):
         self.state = state
 
         self.ntd_Folder = 'NTD'
-        self.template_ntd_Folder = os.path.join('TEIEntityEnricher', 'Templates', self.ntd_Folder)
+        self.template_ntd_Folder = os.path.join(module_path, 'templates', self.ntd_Folder)
+        self.ntd_Folder = os.path.join(local_save_path, self.ntd_Folder)
         self.ntd_attr_name = 'name'
         self.ntd_attr_entitylist = 'entitylist'
         self.ntd_attr_template = 'template'
@@ -42,7 +43,7 @@ class Menu_ner_task_def():
                 self.editable_def_names.append(definition[self.ntd_attr_name])
 
         if show_menu:
-            self.tnm = tei_map.Menu_ner_tei_map(state, show_menu=False)
+            self.tnm = tei_map.TEINERMap(state, show_menu=False)
             self.show()
 
     def validate_and_saving_definition(self, definition, mode):
@@ -65,9 +66,10 @@ class Menu_ner_task_def():
                 val = False
                 st.error('There are at least two entities with the same name. This is not allowed!')
         for mapping in self.tnm.mappingslist:
-            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name]==definition[self.ntd_attr_name]:
-                val=False
-                st.error(f'To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f'To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
 
         if val:
             definition[self.ntd_attr_template] = False
@@ -80,9 +82,10 @@ class Menu_ner_task_def():
     def validate_and_delete_definition(self, definition):
         val = True
         for mapping in self.tnm.mappingslist:
-            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name]==definition[self.ntd_attr_name]:
-                val=False
-                st.error(f'Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f'Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
         if val:
             os.remove(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json'))
             self.reset_ntd_edit_states()
@@ -133,16 +136,16 @@ class Menu_ner_task_def():
                 ntd_definition_dict[self.ntd_attr_entitylist] = self.state.ntd_entitylist
                 self.validate_and_saving_definition(ntd_definition_dict, mode)
 
-    def teinermapadd(self):
+    def tei_ner_map_add(self):
         self.show_editable_definition_content(self.ntd_mode_add)
 
-    def teinermapdupl(self):
+    def tei_ner_map_dupl(self):
         self.show_editable_definition_content(self.ntd_mode_dupl)
 
-    def teinermapedit(self):
+    def tei_ner_map_edit(self):
         self.show_editable_definition_content(self.ntd_mode_edit)
 
-    def teinermapdel(self):
+    def tei_ner_map_del(self):
         selected_definition_name = st.selectbox('Select a definition to delete!', self.editable_def_names)
         if st.button('Delete Selected Definition'):
             self.validate_and_delete_definition(self.defdict[selected_definition_name])
@@ -151,10 +154,10 @@ class Menu_ner_task_def():
         ntd_definer = st.beta_expander("Add or edit existing NER Task Entity Definition", expanded=False)
         with ntd_definer:
             options = {
-                "Add NER Task Entity Definition": self.teinermapadd,
-                "Duplicate NER Task Entity Definition": self.teinermapdupl,
-                "Edit NER Task Entity Definition": self.teinermapedit,
-                "Delete NER Task Entity Definition": self.teinermapdel
+                "Add NER Task Entity Definition": self.tei_ner_map_add,
+                "Duplicate NER Task Entity Definition": self.tei_ner_map_dupl,
+                "Edit NER Task Entity Definition": self.tei_ner_map_edit,
+                "Delete NER Task Entity Definition": self.tei_ner_map_del
             }
             self.state.ntd_edit_options = st.radio("Edit Options", tuple(options.keys()), tuple(options.keys()).index(
                 self.state.ntd_edit_options) if self.state.ntd_edit_options else 0)

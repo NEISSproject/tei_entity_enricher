@@ -1,17 +1,19 @@
 import streamlit as st
-import TEIEntityEnricher.Utils.tei_parser as tp
+import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
-from TEIEntityEnricher.Utils.helper import get_listoutput
-from TEIEntityEnricher.Utils.components import editable_table
+from tei_entity_enricher.util.helper import get_listoutput
+from tei_entity_enricher.util.components import editable_table
+from tei_entity_enricher.util.helper import module_path, local_save_path
 
 
-class Menu_tei_reader():
+class TEIReader():
     def __init__(self, state):
         self.state = state
 
         self.config_Folder = 'TR_Configs'
-        self.template_config_Folder = os.path.join('TEIEntityEnricher', 'Templates', self.config_Folder)
+        self.template_config_Folder = os.path.join(module_path, 'templates', self.config_Folder)
+        self.config_Folder = os.path.join(local_save_path, self.config_Folder)
         self.tr_config_attr_name = 'name'
         self.tr_config_attr_excl_tags = 'exclude_tags'
         self.tr_config_attr_use_notes = 'use_notes'
@@ -153,13 +155,13 @@ class Menu_tei_reader():
                                                                                                self.tr_config_attr_use_notes] else []
                 self.validate_and_saving_config(tr_config_dict, mode)
 
-    def teireaderadd(self):
+    def tei_reader_add(self):
         self.show_editable_config_content(self.tr_config_mode_add)
 
-    def teireaderdupl(self):
+    def tei_reader_dupl(self):
         self.show_editable_config_content(self.tr_config_mode_dupl)
 
-    def teireaderedit(self):
+    def tei_reader_edit(self):
         self.show_editable_config_content(self.tr_config_mode_edit)
 
     def teireaderdel(self):
@@ -171,9 +173,9 @@ class Menu_tei_reader():
         tr_config_definer = st.beta_expander("Add or edit existing Config", expanded=False)
         with tr_config_definer:
             options = {
-                "Add TEI Reader Config": self.teireaderadd,
-                "Duplicate TEI Reader Config": self.teireaderdupl,
-                "Edit TEI Reader Config": self.teireaderedit,
+                "Add TEI Reader Config": self.tei_reader_add,
+                "Duplicate TEI Reader Config": self.tei_reader_dupl,
+                "Edit TEI Reader Config": self.tei_reader_edit,
                 "Delete TEI Reader Config": self.teireaderdel
             }
             self.state.tr_edit_options = st.radio("Edit Options", tuple(options.keys()), tuple(options.keys()).index(
@@ -227,7 +229,3 @@ class Menu_tei_reader():
         with col2:
             self.show_edit_environment()
         self.show_test_environment()
-
-
-if __name__ == '__main__':
-    print(os.path.join('TR_Configs', 'test.json'))
