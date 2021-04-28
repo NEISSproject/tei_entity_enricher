@@ -136,16 +136,16 @@ class NERTaskDef:
                 ntd_definition_dict[self.ntd_attr_entitylist] = self.state.ntd_entitylist
                 self.validate_and_saving_definition(ntd_definition_dict, mode)
 
-    def teinermapadd(self):
+    def tei_ner_map_add(self):
         self.show_editable_definition_content(self.ntd_mode_add)
 
-    def teinermapdupl(self):
+    def tei_ner_map_dupl(self):
         self.show_editable_definition_content(self.ntd_mode_dupl)
 
-    def teinermapedit(self):
+    def tei_ner_map_edit(self):
         self.show_editable_definition_content(self.ntd_mode_edit)
 
-    def teinermapdel(self):
+    def tei_ner_map_del(self):
         selected_definition_name = st.selectbox('Select a definition to delete!', self.editable_def_names)
         if st.button('Delete Selected Definition'):
             self.validate_and_delete_definition(self.defdict[selected_definition_name])
@@ -154,10 +154,10 @@ class NERTaskDef:
         ntd_definer = st.beta_expander("Add or edit existing NER Task Entity Definition", expanded=False)
         with ntd_definer:
             options = {
-                "Add NER Task Entity Definition": self.teinermapadd,
-                "Duplicate NER Task Entity Definition": self.teinermapdupl,
-                "Edit NER Task Entity Definition": self.teinermapedit,
-                "Delete NER Task Entity Definition": self.teinermapdel
+                "Add NER Task Entity Definition": self.tei_ner_map_add,
+                "Duplicate NER Task Entity Definition": self.tei_ner_map_dupl,
+                "Edit NER Task Entity Definition": self.tei_ner_map_edit,
+                "Delete NER Task Entity Definition": self.tei_ner_map_del
             }
             self.state.ntd_edit_options = st.radio("Edit Options", tuple(options.keys()), tuple(options.keys()).index(
                 self.state.ntd_edit_options) if self.state.ntd_edit_options else 0)

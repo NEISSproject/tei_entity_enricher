@@ -114,16 +114,16 @@ class TEINERMap():
                 tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
 
-    def teinermapadd(self):
+    def tei_ner_map_add(self):
         self.show_editable_mapping_content(self.tnm_mode_add)
 
-    def teinermapdupl(self):
+    def tei_ner_map_dupl(self):
         self.show_editable_mapping_content(self.tnm_mode_dupl)
 
-    def teinermapedit(self):
+    def tei_ner_map_edit(self):
         self.show_editable_mapping_content(self.tnm_mode_edit)
 
-    def teinermapdel(self):
+    def tei_ner_map_del(self):
         selected_mapping_name = st.selectbox('Select a mapping to delete!', self.editable_mapping_names)
         if st.button('Delete Selected Mapping'):
             self.validate_and_delete_mapping(self.mappingdict[selected_mapping_name])
@@ -132,10 +132,10 @@ class TEINERMap():
         tnm_definer = st.beta_expander("Add or edit existing TEI NER Entity Mapping", expanded=False)
         with tnm_definer:
             options = {
-                "Add TEI NER Entity Mapping": self.teinermapadd,
-                "Duplicate TEI NER Entity Mapping": self.teinermapdupl,
-                "Edit TEI NER Entity Mapping": self.teinermapedit,
-                "Delete TEI NER Entity Mapping": self.teinermapdel
+                "Add TEI NER Entity Mapping": self.tei_ner_map_add,
+                "Duplicate TEI NER Entity Mapping": self.tei_ner_map_dupl,
+                "Edit TEI NER Entity Mapping": self.tei_ner_map_edit,
+                "Delete TEI NER Entity Mapping": self.tei_ner_map_del
             }
             self.state.tnm_edit_options = st.radio("Edit Options", tuple(options.keys()), tuple(options.keys()).index(
                 self.state.tnm_edit_options) if self.state.tnm_edit_options else 0)

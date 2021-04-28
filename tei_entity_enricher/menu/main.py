@@ -16,13 +16,13 @@ class Main:
         st.set_page_config(layout='wide')  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         state = _get_state()
         pages = {
-            "TEI Reader Config": self.teireader,
-            "NER Task Entity Definition": self.nertaskdef,
-            "TEI NER Entity Mapping": self.teinermap,
-            "TEI NER Groundtruth Builder": self.gtbuilder,
-            "TEI NER Writer Config": self.teinerwriter,
-            "NER Trainer": self.nertrainer,
-            "NER Prediction": self.nerprediction,
+            "TEI Reader Config": self.tei_reader,
+            "NER Task Entity Definition": self.ner_task_def,
+            "TEI NER Entity Mapping": self.tei_ner_map,
+            "TEI NER Groundtruth Builder": self.gt_builder,
+            "TEI NER Writer Config": self.tei_ner_writer,
+            "NER Trainer": self.ner_trainer,
+            "NER Prediction": self.ner_prediction,
         }
         st.sidebar.latex('\\text{\Huge{N-TEE}}')
         st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
@@ -41,16 +41,16 @@ class Main:
         # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
         state.sync()
 
-    def teireader(self, state):
+    def tei_reader(self, state):
         tr.TEIReader(state)
 
-    def nertaskdef(self, state):
+    def ner_task_def(self, state):
         ntd.NERTaskDef(state)
 
-    def teinermap(self, state):
+    def tei_ner_map(self, state):
         tnm.TEINERMap(state)
 
-    def gtbuilder(self, state):
+    def gt_builder(self, state):
         st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
         st.write("Input state:", state.input)
 
@@ -58,12 +58,12 @@ class Main:
             state.input = None
             st.experimental_rerun()
 
-    def teinerwriter(self, state):
+    def tei_ner_writer(self, state):
         st.latex('\\text{\Huge{TEI NER Writer Config}}')
         if st.button("Set Input to Konrad"):
             state.input = "Konrad"
 
-    def nertrainer(self, state):
+    def ner_trainer(self, state):
         st.latex('\\text{\Huge{NER Trainer}}')
         state.input = st.text_input("Set input value.", state.input or "")
         st.write("Page state:", state.page)
@@ -71,7 +71,7 @@ class Main:
             state.page = "NER Prediction"
             st.experimental_rerun()
 
-    def nerprediction(self, state):
+    def ner_prediction(self, state):
         st.latex('\\text{\Huge{NER Prediction}}')
         state.folderPath = st.text_input('Enter folder path:')
         if state.folderPath:

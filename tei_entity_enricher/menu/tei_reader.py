@@ -155,13 +155,13 @@ class TEIReader():
                                                                                                self.tr_config_attr_use_notes] else []
                 self.validate_and_saving_config(tr_config_dict, mode)
 
-    def teireaderadd(self):
+    def tei_reader_add(self):
         self.show_editable_config_content(self.tr_config_mode_add)
 
-    def teireaderdupl(self):
+    def tei_reader_dupl(self):
         self.show_editable_config_content(self.tr_config_mode_dupl)
 
-    def teireaderedit(self):
+    def tei_reader_edit(self):
         self.show_editable_config_content(self.tr_config_mode_edit)
 
     def teireaderdel(self):
@@ -173,9 +173,9 @@ class TEIReader():
         tr_config_definer = st.beta_expander("Add or edit existing Config", expanded=False)
         with tr_config_definer:
             options = {
-                "Add TEI Reader Config": self.teireaderadd,
-                "Duplicate TEI Reader Config": self.teireaderdupl,
-                "Edit TEI Reader Config": self.teireaderedit,
+                "Add TEI Reader Config": self.tei_reader_add,
+                "Duplicate TEI Reader Config": self.tei_reader_dupl,
+                "Edit TEI Reader Config": self.tei_reader_edit,
                 "Delete TEI Reader Config": self.teireaderdel
             }
             self.state.tr_edit_options = st.radio("Edit Options", tuple(options.keys()), tuple(options.keys()).index(
