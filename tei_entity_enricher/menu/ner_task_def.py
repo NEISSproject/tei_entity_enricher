@@ -1,16 +1,18 @@
 import streamlit as st
 import json
 import os
-from tei_entity_enricher.util.helper import get_listoutput, module_path
+from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path
 from tei_entity_enricher.util.components import editable_table
+import tei_entity_enricher.menu.tei_ner_map as tei_map
 
 
 class NERTaskDef:
-    def __init__(self, state):
+    def __init__(self, state, show_menu=True):
         self.state = state
 
         self.ntd_Folder = 'NTD'
         self.template_ntd_Folder = os.path.join(module_path, 'templates', self.ntd_Folder)
+        self.ntd_Folder = os.path.join(local_save_path, self.ntd_Folder)
         self.ntd_attr_name = 'name'
         self.ntd_attr_entitylist = 'entitylist'
         self.ntd_attr_template = 'template'
@@ -40,7 +42,9 @@ class NERTaskDef:
             if not definition[self.ntd_attr_template]:
                 self.editable_def_names.append(definition[self.ntd_attr_name])
 
-        self.show()
+        if show_menu:
+            self.tnm = tei_map.TEINERMap(state, show_menu=False)
+            self.show()
 
     def validate_and_saving_definition(self, definition, mode):
         val = True
@@ -48,10 +52,25 @@ class NERTaskDef:
             self.ntd_attr_name] == '':
             val = False
             st.error('Please define a name for the definition before saving!')
-        elif os.path.isfile(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json')) and mode != self.ntd_mode_edit:
+        elif os.path.isfile(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ',
+                                                                                                 '_') + '.json')) and mode != self.ntd_mode_edit:
             val = False
             st.error(
-                'Choose another name. There is already a definition with name ' + definition[self.ntd_attr_name] + '!')
+                f'Choose another name. There is already a definition with name {definition[self.ntd_attr_name]}!')
+
+        if self.ntd_attr_entitylist not in definition.keys() or len(definition[self.ntd_attr_entitylist]) == 0:
+            val = False
+            st.error('Please define at least one entity for the task definition!')
+        else:
+            if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
+                val = False
+                st.error('There are at least two entities with the same name. This is not allowed!')
+        for mapping in self.tnm.mappingslist:
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f'To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
+
         if val:
             definition[self.ntd_attr_template] = False
             with open(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json'),
@@ -62,6 +81,11 @@ class NERTaskDef:
 
     def validate_and_delete_definition(self, definition):
         val = True
+        for mapping in self.tnm.mappingslist:
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f'Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping.')
         if val:
             os.remove(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json'))
             self.reset_ntd_edit_states()
@@ -91,7 +115,7 @@ class NERTaskDef:
                     options = list(self.defdict.keys())
                 else:
                     options = self.editable_def_names
-                selected_ntd_name = st.selectbox('Select a definition to ' + mode + '!', options, key=mode)
+                selected_ntd_name = st.selectbox(f'Select a definition to {mode}!', options, key=mode)
                 if self.state.ntd_sel_definition_name != selected_ntd_name:
                     self.reset_ntd_edit_states()
                 self.state.ntd_sel_definition_name = selected_ntd_name

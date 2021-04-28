@@ -4,7 +4,7 @@ import json
 import os
 from tei_entity_enricher.util.helper import get_listoutput
 from tei_entity_enricher.util.components import editable_table
-from tei_entity_enricher.util.helper import module_path
+from tei_entity_enricher.util.helper import module_path, local_save_path
 
 
 class TEIReader():
@@ -13,6 +13,7 @@ class TEIReader():
 
         self.config_Folder = 'TR_Configs'
         self.template_config_Folder = os.path.join(module_path, 'templates', self.config_Folder)
+        self.config_Folder = os.path.join(local_save_path, self.config_Folder)
         self.tr_config_attr_name = 'name'
         self.tr_config_attr_excl_tags = 'exclude_tags'
         self.tr_config_attr_use_notes = 'use_notes'
@@ -55,7 +56,7 @@ class TEIReader():
                                                                                                       '_') + '.json')) and mode != self.tr_config_mode_edit:
             val = False
             st.error(
-                'Choose another name. There is already a config with name ' + config[self.tr_config_attr_name] + '!')
+                f'Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
             st.error(
@@ -64,13 +65,9 @@ class TEIReader():
                 set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0:
             val = False
             if len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 1:
-                warntext = 'Tags can either be excluded or marked as note tags. Please define for the tags ' + get_listoutput(
-                    list(set(config[self.tr_config_attr_note_tags]).intersection(config[
-                                                                                     self.tr_config_attr_excl_tags]))) + ' whether they should be excluded or considered as notes.'
+                warntext = f'Tags can either be excluded or marked as note tags. Please define for the tags {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether they should be excluded or considered as notes.'
             else:
-                warntext = 'Tags can either be excluded or marked as note tags. Please define for the tag ' + get_listoutput(
-                    list(set(config[self.tr_config_attr_note_tags]).intersection(config[
-                                                                                     self.tr_config_attr_excl_tags]))) + ' whether it should be excluded or considered as a note.'
+                warntext = f'Tags can either be excluded or marked as note tags. Please define for the tag {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether it should be excluded or considered as a note.'
             st.error(warntext)
         if val:
             config[self.tr_config_attr_template] = False
@@ -123,7 +120,7 @@ class TEIReader():
                     options = list(self.configdict.keys())
                 else:
                     options = self.editable_config_names
-                selected_config_name = st.selectbox('Select a config to ' + mode + '!', options, key=mode)
+                selected_config_name = st.selectbox(f'Select a config to {mode}!', options, key=mode)
                 if self.state.tr_sel_config_name != selected_config_name:
                     self.reset_tr_edit_states()
                 self.state.tr_sel_config_name = selected_config_name
@@ -196,7 +193,7 @@ class TEIReader():
             config = self.configdict[self.state.tr_test_selected_config_name]
             self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "")
             if self.state.teifile:
-                tei = tp.TEIFile(self.state.teifile, config)
+                tei = tp.tei_file(self.state.teifile, config)
                 st.subheader('Text Content:')
                 st.text(tei.get_text())
                 if config[self.tr_config_attr_use_notes]:
@@ -232,7 +229,3 @@ class TEIReader():
         with col2:
             self.show_edit_environment()
         self.show_test_environment()
-
-
-if __name__ == '__main__':
-    print(os.path.join('TR_Configs', 'test.json'))
