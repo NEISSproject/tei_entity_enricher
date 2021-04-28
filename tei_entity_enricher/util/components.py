@@ -1,6 +1,6 @@
-import streamlit as st
 import pandas as pd
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+import streamlit as st
+from st_aggrid import AgGrid
 
 
 def editable_table(entry_list, key, head, openentrys=100, height=150, width=1):

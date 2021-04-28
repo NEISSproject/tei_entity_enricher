@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import re
 
 
-class tei_file():
+class TEIFile:
 
     def __init__(self, filename, tr_config, nlp=None):
         # self._allowed_tags={'rs':['person','city','ground','water','org'],'persName':[],'persname':[],'placeName':['city','ground','water'],'placename':['city','ground','water'],'orgName':[],'orgname':[],'date':[]}
@@ -306,6 +306,6 @@ if __name__ == '__main__':
     # brief=tei_file('../data_040520/briefe/0003_060000.xml')
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml'
-    brief = tei_file('../uwe_johnson_data/data_040520/briefe/0119_060109.xml')
+    brief = TEIFile('../uwe_johnson_data/data_040520/briefe/0119_060109.xml')
     print(brief.get_text())
     print(brief.get_notes())

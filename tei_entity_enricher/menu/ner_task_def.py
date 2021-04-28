@@ -1,16 +1,16 @@
 import streamlit as st
 import json
 import os
-from TEIEntityEnricher.Utils.helper import get_listoutput, module_path
-from TEIEntityEnricher.Utils.components import editable_table
+from tei_entity_enricher.util.helper import get_listoutput, module_path
+from tei_entity_enricher.util.components import editable_table
 
 
-class Menu_ner_task_def():
+class NERTaskDef:
     def __init__(self, state):
         self.state = state
 
         self.ntd_Folder = 'NTD'
-        self.template_ntd_Folder = os.path.join(module_path, 'Templates', self.ntd_Folder)
+        self.template_ntd_Folder = os.path.join(module_path, 'templates', self.ntd_Folder)
         self.ntd_attr_name = 'name'
         self.ntd_attr_entitylist = 'entitylist'
         self.ntd_attr_template = 'template'
@@ -48,8 +48,7 @@ class Menu_ner_task_def():
             self.ntd_attr_name] == '':
             val = False
             st.error('Please define a name for the definition before saving!')
-        elif os.path.isfile(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ',
-                                                                                                 '_') + '.json')) and mode != self.ntd_mode_edit:
+        elif os.path.isfile(os.path.join(self.ntd_Folder, definition[self.ntd_attr_name].replace(' ', '_') + '.json')) and mode != self.ntd_mode_edit:
             val = False
             st.error(
                 'Choose another name. There is already a definition with name ' + definition[self.ntd_attr_name] + '!')

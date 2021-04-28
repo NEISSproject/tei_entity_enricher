@@ -17,26 +17,24 @@
 # ==============================================================================
 from setuptools import setup, find_packages
 import os
-from TEIEntityEnricher import __version__
+from tei_entity_enricher import __version__
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 setup(
-    name='TEIEntityEnricher',
+    name='tei_entity_enricher',
     version=__version__,
     packages=find_packages(exclude=['test/*']),
     license='GPL-v3.0',
     long_description=open(os.path.join(this_dir, "README.md")).read(),
     long_description_content_type="text/markdown",
-    author="Planet AI GmbH",
-    author_email="admin@planet-ai.de",
-    url="https://github.com/Planet-AI-GmbH/tf2_aip_base",
-    download_url='https://github.com/Planet-AI-GmbH/tf2_aip_base/archive/{}.tar.gz'.format(__version__),
+    author="Neiss authors",
+    author_email="jochen.zoellner@uni-rostock.de",
+    url="https://github.com/NEISSproject/tei_entity_enricher",
+    download_url='https://github.com/NEISSproject/tei_entity_enricher/archive/{}.tar.gz'.format(__version__),
     entry_points={
-        'console_scripts': [
-            'ntee-start=TEIEntityEnricher.scripts.ntee:run',
-        ],
+        'console_scripts': ['ntee-start=tei_entity_enricher.scripts.ntee:run'],
     },
     python_requires='>=3.7',
     install_requires=open(os.path.join(this_dir, "requirements.txt")).read().split('\n'),

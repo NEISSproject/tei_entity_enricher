@@ -1,18 +1,18 @@
 import streamlit as st
-import TEIEntityEnricher.Utils.tei_parser as tp
+import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
-from TEIEntityEnricher.Utils.helper import get_listoutput
-from TEIEntityEnricher.Utils.components import editable_table
-from TEIEntityEnricher.Utils.helper import module_path
+from tei_entity_enricher.util.helper import get_listoutput
+from tei_entity_enricher.util.components import editable_table
+from tei_entity_enricher.util.helper import module_path
 
 
-class Menu_tei_reader():
+class TEIReader():
     def __init__(self, state):
         self.state = state
 
         self.config_Folder = 'TR_Configs'
-        self.template_config_Folder = os.path.join(module_path, 'Templates', self.config_Folder)
+        self.template_config_Folder = os.path.join(module_path, 'templates', self.config_Folder)
         self.tr_config_attr_name = 'name'
         self.tr_config_attr_excl_tags = 'exclude_tags'
         self.tr_config_attr_use_notes = 'use_notes'
@@ -196,7 +196,7 @@ class Menu_tei_reader():
             config = self.configdict[self.state.tr_test_selected_config_name]
             self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "")
             if self.state.teifile:
-                tei = tp.tei_file(self.state.teifile, config)
+                tei = tp.TEIFile(self.state.teifile, config)
                 st.subheader('Text Content:')
                 st.text(tei.get_text())
                 if config[self.tr_config_attr_use_notes]:

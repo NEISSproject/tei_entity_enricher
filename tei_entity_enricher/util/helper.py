@@ -12,5 +12,3 @@ def get_listoutput(list):
     else:
         output = ""
     return output
-
-

@@ -1,13 +1,13 @@
 import subprocess
 
 import streamlit as st
-from TEIEntityEnricher.Utils.SessionState import _get_state
+from tei_entity_enricher.util.SessionState import _get_state
 from PIL import Image
 import os
-import TEIEntityEnricher.Menu.menu_tei_reader as tr
-import TEIEntityEnricher.Menu.menu_ner_task_def as ntd
-import TEIEntityEnricher.Menu.menu_tei_ner_map as tnm
-from TEIEntityEnricher.Utils.helper import module_path
+import tei_entity_enricher.menu.tei_reader as tr
+import tei_entity_enricher.menu.ner_task_def as ntd
+import tei_entity_enricher.menu.tei_ner_map as tnm
+from tei_entity_enricher.util.helper import module_path
 
 this_file = os.path.abspath(__file__)
 
@@ -32,7 +32,7 @@ def main():
     st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
 
     # Include NEISS Logo
-    neiss_logo = Image.open(os.path.join(module_path, 'Images/neiss_logo_nn_pentagon01b2.png'))
+    neiss_logo = Image.open(os.path.join(module_path, 'images/neiss_logo_nn_pentagon01b2.png'))
     st.sidebar.image(neiss_logo)
 
     # Define sidebar as radiobuttons
@@ -47,15 +47,15 @@ def main():
 
 
 def teireader(state):
-    tr.Menu_tei_reader(state)
+    tr.TEIReader(state)
 
 
 def nertaskdef(state):
-    ntd.Menu_ner_task_def(state)
+    ntd.NERTaskDef(state)
 
 
 def teinermap(state):
-    tnm.Menu_ner_tei_map(state)
+    tnm.TEINERMap(state)
 
 
 def gtbuilder(state):

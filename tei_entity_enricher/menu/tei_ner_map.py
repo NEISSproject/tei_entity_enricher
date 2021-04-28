@@ -1,17 +1,17 @@
 import streamlit as st
-import TEIEntityEnricher.Utils.tei_parser as tp
+import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
 
-from TEIEntityEnricher.Utils.helper import module_path
+from tei_entity_enricher.util.helper import module_path
 
 
-class Menu_ner_tei_map():
+class TEINERMap():
     def __init__(self, state):
         self.state = state
 
         self.tnm_Folder = 'TNM'
-        self.template_tnm_Folder = os.path.join(module_path, 'Templates', self.tnm_Folder)
+        self.template_tnm_Folder = os.path.join(module_path, 'templates', self.tnm_Folder)
         self.tnm_attr_name = 'name'
         # self.tr_config_attr_excl_tags='exclude_tags'
         # self.tr_config_attr_use_notes='use_notes'
