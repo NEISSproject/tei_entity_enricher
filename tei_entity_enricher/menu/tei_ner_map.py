@@ -16,6 +16,7 @@ class TEINERMap():
         self.tnm_attr_name = 'name'
         self.tnm_attr_ntd = 'ntd'
         self.tnm_attr_template = 'template'
+        self.tnm_attr_entity_dict = 'entity_dict'
         self.tnm_mode_add = 'add'
         self.tnm_mode_dupl = 'duplicate'
         self.tnm_mode_edit = 'edit'
@@ -75,6 +76,7 @@ class TEINERMap():
     def reset_tnm_edit_states(self):
         self.state.tnm_name = None
         self.state.tnm_ntd_name = None
+        self.state.tnm_entity_dict = None
 
     def show_editable_mapping_content(self, mode):
         if mode == self.tnm_mode_edit and len(self.editable_mapping_names) < 1:
@@ -86,6 +88,7 @@ class TEINERMap():
             self.state.tnm_mode = mode
             tnm_mapping_dict = {}
             init_tnm_ntd_name = self.state.tnm_ntd_name
+            init_tnm_entity_dict = {}
             # init_use_notes=True
             if mode in [self.tnm_mode_dupl, self.tnm_mode_edit]:
                 if self.tnm_mode_dupl == mode:
@@ -98,10 +101,12 @@ class TEINERMap():
                 self.state.tnm_sel_mapping_name = selected_tnm_name
                 tnm_mapping_dict = self.mappingdict[selected_tnm_name].copy()
                 init_tnm_ntd_name = tnm_mapping_dict[self.tnm_attr_ntd][self.ntd.ntd_attr_name]
+                init_tnm_entity_dict = tnm_mapping_dict[self.tnm_attr_entity_dict]
                 if mode == self.tnm_mode_dupl:
                     tnm_mapping_dict[self.tnm_attr_name] = ''
             if mode == self.tnm_mode_add:
                 tnm_mapping_dict[self.tnm_attr_ntd] = {}
+                tnm_mapping_dict[self.tnm_attr_entity_dict] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
                 self.state.tnm_name = st.text_input('New TEI NER Entity Mapping Name:', self.state.tnm_name or "")
                 if self.state.tnm_name:
@@ -109,10 +114,36 @@ class TEINERMap():
 
             self.state.tnm_ntd_name = st.selectbox('Corresponding NER task definition', list(self.ntd.defdict.keys()),
                                                    list(self.ntd.defdict.keys()).index(
-                                                       init_tnm_ntd_name) if init_tnm_ntd_name else 0, key='tnm' + mode)
+                                                       init_tnm_ntd_name) if init_tnm_ntd_name else 0,
+                                                   key='tnm_ntd_sel' + mode)
+            if self.state.tnm_ntd_name:
+                tnm_edit_entity = st.selectbox('Define mapping for entity:',
+                                               self.ntd.defdict[self.state.tnm_ntd_name][self.ntd.ntd_attr_entitylist],
+                                               key='tnm_ent' + mode)
+                if tnm_edit_entity:
+                    self.state.tnm_entity_dict = self.edit_entity(mode, tnm_edit_entity, init_tnm_entity_dict)
+
             if st.button('Save TEI NER Entity Mapping', key=mode):
                 tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
+                tnm_mapping_dict[self.tnm_attr_entity_dict] = self.state.tnm_entity_dict
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
+
+    def edit_entity(self, mode, tnm_edit_entity, cur_entity_dict):
+        if getattr(self.state, 'tnm' + self.state.tnm_ntd_name + tnm_edit_entity + mode):
+            cur_entity_dict[tnm_edit_entity] = getattr(self.state,
+                                                       'tnm' + self.state.tnm_ntd_name + tnm_edit_entity + mode)
+        if tnm_edit_entity not in cur_entity_dict.keys():
+            cur_entity_dict[tnm_edit_entity] = [[None, {}]]
+        index = 0
+        for mapping_entry in cur_entity_dict[tnm_edit_entity]:
+            index += 1
+            mapping_entry[0] = st.text_input('Tag ' + str(index), mapping_entry[0] or "",
+                                             key='tnm' + self.state.tnm_ntd_name + tnm_edit_entity + mode + str(index))
+        if st.button('Add another mapping'):
+            cur_entity_dict[tnm_edit_entity].append([None, {}])
+        setattr(self.state, 'tnm' + self.state.tnm_ntd_name + tnm_edit_entity + mode,
+                cur_entity_dict[tnm_edit_entity])
+        return cur_entity_dict
 
     def tei_ner_map_add(self):
         self.show_editable_mapping_content(self.tnm_mode_add)
