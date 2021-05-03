@@ -63,14 +63,12 @@ class TEINERMap():
             with open(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ', '_') + '.json'),
                       'w+') as f:
                 json.dump(mapping, f)
-            self.reset_tnm_entity_dict_states(mapping)
             self.reset_tnm_edit_states()
             st.experimental_rerun()
 
     def validate_and_delete_mapping(self, mapping):
         val = True
         if val:
-            self.reset_tnm_entity_dict_states(mapping)
             os.remove(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ', '_') + '.json'))
             self.reset_tnm_edit_states()
             self.state.tnm_sel_mapping_name = None
