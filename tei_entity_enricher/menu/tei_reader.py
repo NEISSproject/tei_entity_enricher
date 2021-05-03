@@ -3,7 +3,7 @@ import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
 from tei_entity_enricher.util.helper import get_listoutput
-from tei_entity_enricher.util.components import editable_table
+from tei_entity_enricher.util.components import editable_single_column_table
 from tei_entity_enricher.util.helper import module_path, local_save_path
 
 
@@ -88,11 +88,11 @@ class TEIReader():
 
     def show_editable_exclude_tags(self, excl_list, mode, name):
         st.markdown('Define Tags to Exclude from the text which should be considered.')
-        return editable_table(entry_list=excl_list, key='tr_excl' + mode + name, head='Exclude')
+        return editable_single_column_table(entry_list=excl_list, key='tr_excl' + mode + name, head='Exclude')
 
     def show_editable_note_tags(self, note_list, mode, name):
         st.markdown('Define Tags that contain notes.')
-        return editable_table(entry_list=note_list, key='tr_note' + mode + name, head='Note tags')
+        return editable_single_column_table(entry_list=note_list, key='tr_note' + mode + name, head='Note tags')
 
     def reset_tr_edit_states(self):
         self.state.tr_exclude_list = None

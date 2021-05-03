@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import os
 from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path
-from tei_entity_enricher.util.components import editable_table
+from tei_entity_enricher.util.components import editable_single_column_table
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 
 
@@ -94,7 +94,7 @@ class NERTaskDef:
 
     def show_editable_entitylist(self, entitylist, mode, name):
         st.markdown('Define a list of entities for the ner task.')
-        return editable_table(entry_list=entitylist, key='ntd_entitylist' + mode + name, head='Entities')
+        return editable_single_column_table(entry_list=entitylist, key='ntd_entitylist' + mode + name, head='Entities')
 
     def reset_ntd_edit_states(self):
         self.state.ntd_name = None
