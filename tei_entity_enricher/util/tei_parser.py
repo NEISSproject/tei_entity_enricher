@@ -4,7 +4,7 @@ import re
 
 class TEIFile:
 
-    def __init__(self, filename, tr_config, nlp=None):
+    def __init__(self, filename, tr_config, entity_dict=None, nlp=None):
         # self._allowed_tags={'rs':['person','city','ground','water','org'],'persName':[],'persname':[],'placeName':['city','ground','water'],'placename':['city','ground','water'],'orgName':[],'orgname':[],'date':[]}
         self._pagelist = []
         self._soup = None
@@ -16,7 +16,7 @@ class TEIFile:
         else:
             self._note_tags = []
         self._exclude_tags = tr_config['exclude_tags']
-
+        self.init_tnm(entity_dict)
         self._text, self._tagged_text, self._statistics, self._notes, self._tagged_notes = self._get_text_and_statistics(
             filename)
         self._tagged_text_line_list = []
@@ -27,21 +27,55 @@ class TEIFile:
         # else:
         #    self._nlp=spacy.load('de_core_news_sm')
 
-    def _add_content_to_statistics(self, content, statistics, content_text_list):
-        tagkey = content.name
+    def init_tnm(self, entity_dict):
+        self._allowed_tags = {}
+        if entity_dict is not None:
+            for entity in entity_dict:
+                for mapping_entry in entity_dict[entity]:
+                    if mapping_entry[0] in self._allowed_tags.keys():
+                        self._allowed_tags[mapping_entry[0]].append([entity, mapping_entry[1]])
+                    else:
+                        self._allowed_tags[mapping_entry[0]] = [[entity, mapping_entry[1]]]
+
+    def get_entity_name_to_pagecontent(self, pagecontent):
+        if pagecontent.name in self._allowed_tags.keys():
+            for tag_entry in self._allowed_tags[pagecontent.name]:
+                attrs_match = True
+                for attr in tag_entry[1].keys():
+                    if not (attr in pagecontent.attrs.keys() and pagecontent.attrs[attr] == tag_entry[1][attr]):
+                        attrs_match = False
+                if attrs_match:
+                    return tag_entry[0]
+        return None
+
+    # def _add_content_to_statistics(self, content, statistics, content_text_list):
+    #    tagkey = content.name
+    #    tagtext = ""
+    #    for i in range(len(content_text_list)):
+    #        if i > 0:
+    #            tagtext = tagtext + ' '
+    #        tagtext = tagtext + content_text_list[i]
+    #    if content.attrs is not None and 'subtype' in content.attrs.keys():
+    #        tagkey = tagkey + content['subtype']
+    #    if tagkey not in statistics.keys():
+    #        statistics[tagkey] = [1, [tagtext]]
+    #    else:
+    #        statistics[tagkey][0] += 1
+    #        statistics[tagkey][1].append(tagtext)
+    #    return statistics, tagkey
+
+    def _add_content_to_statistics(self, entity, statistics, content_text_list):
         tagtext = ""
         for i in range(len(content_text_list)):
             if i > 0:
                 tagtext = tagtext + ' '
             tagtext = tagtext + content_text_list[i]
-        if content.attrs is not None and 'subtype' in content.attrs.keys():
-            tagkey = tagkey + content['subtype']
-        if tagkey not in statistics.keys():
-            statistics[tagkey] = [1, [tagtext]]
+        if entity not in statistics.keys():
+            statistics[entity] = [1, [tagtext]]
         else:
-            statistics[tagkey][0] += 1
-            statistics[tagkey][1].append(tagtext)
-        return statistics, tagkey
+            statistics[entity][0] += 1
+            statistics[entity][1].append(tagtext)
+        return statistics
 
     def _merge_statistics(self, firststatistics, secondstatistics):
         for key in secondstatistics.keys():
@@ -64,25 +98,27 @@ class TEIFile:
                 pagecontent.__class__.__name__) != 'Comment':
                 # if pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
                 #                                                                                              or ('subtype' in pagecontent.attrs.keys() and pagecontent.attrs['subtype'] in self._allowed_tags[pagecontent.name]))):
-                #    text_list_to_add,tagged_text_list_to_add,statistics_to_add=self._get_text_from_contentlist(pagecontent.contents,is_already_note)
-                #    text_list=text_list+text_list_to_add
-                #    tagged_text_list=tagged_text_list+tagged_text_list_to_add
-                #    statistics=self._merge_statistics(statistics,statistics_to_add)
-                #    if pagecontent.name == 'address':
-                #        text_list=text_list+[' <linebreak>\n']
-                #        tagged_text_list=tagged_text_list+[' <linebreak>\n']
-                if pagecontent.name is None:
+                entity = self.get_entity_name_to_pagecontent(pagecontent)
+                if pagecontent.name is not None and entity is None:
+                    text_list_to_add, tagged_text_list_to_add, statistics_to_add = self._get_text_from_contentlist(
+                        pagecontent.contents, is_already_note)
+                    text_list = text_list + text_list_to_add
+                    tagged_text_list = tagged_text_list + tagged_text_list_to_add
+                    statistics = self._merge_statistics(statistics, statistics_to_add)
+                    if pagecontent.name == 'address':
+                        text_list = text_list + [' <linebreak>\n']
+                        tagged_text_list = tagged_text_list + [' <linebreak>\n']
+                elif pagecontent.name is None:
                     text_list.append(pagecontent)
                     tagged_text_list.append(pagecontent)
                 else:
                     text_list_to_add, tagged_text_list_to_add, statistics_to_add = self._get_text_from_contentlist(
                         pagecontent.contents, is_already_note)
                     text_list = text_list + text_list_to_add
-                    statistics, tagname = self._add_content_to_statistics(pagecontent, statistics, text_list_to_add)
-                    tagged_text_list = tagged_text_list + [' <' + tagname + '> '] + tagged_text_list_to_add + [
-                        ' </' + tagname + '> ']
+                    statistics = self._add_content_to_statistics(entity, statistics, text_list_to_add)
+                    tagged_text_list = tagged_text_list + [' <' + entity + '> '] + tagged_text_list_to_add + [
+                        ' </' + entity + '> ']
                     statistics = self._merge_statistics(statistics, statistics_to_add)
-                    # text_list.append(pagecontent.text+' ')
             elif pagecontent.name in self._note_tags:
                 note_list_to_add, tagged_note_list_to_add, note_statistics_to_add = self._get_text_from_contentlist(
                     pagecontent.contents, True)

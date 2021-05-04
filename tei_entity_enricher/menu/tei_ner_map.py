@@ -198,14 +198,20 @@ class TEINERMap():
                                                                         self.state.tnm_test_selected_config_name) if self.state.tnm_test_selected_config_name else 0,
                                                                     key='tnm_tr_test')
             config = self.tr.configdict[self.state.tr_test_selected_config_name]
+            self.state.tnm_test_selected_mapping_name = st.selectbox('Select a TEI NER Entity Mapping to test!',
+                                                                    list(self.mappingdict.keys()),
+                                                                    index=list(self.mappingdict.keys()).index(
+                                                                        self.state.tnm_test_selected_mapping_name) if self.state.tnm_test_selected_mapping_name else 0,
+                                                                    key='tnm_tr_test')
+            mapping = self.mappingdict[self.state.tnm_test_selected_mapping_name]
             self.state.tnm_teifile = st.text_input('Choose a TEI File:', self.state.tnm_teifile or "",key='tnm_test_tei_file')
             if self.state.tnm_teifile:
-                tei = tp.TEIFile(self.state.teifile, config)
+                tei = tp.TEIFile(self.state.teifile, config,entity_dict=mapping[self.tnm_attr_entity_dict])
                 st.subheader('Text Content:')
-                st.text(tei.get_text())
+                st.text(tei.get_tagged_text())
                 if config[self.tr.tr_config_attr_use_notes]:
                     st.subheader('Note Content:')
-                    st.text(tei.get_notes())
+                    st.text(tei.get_tagged_notes())
 
     def build_tnm_tablestring(self):
         tablestring = 'Name | NER Task | Template \n -----|-------|-------'
