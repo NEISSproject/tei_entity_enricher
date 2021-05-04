@@ -8,7 +8,7 @@ from tei_entity_enricher.util.helper import module_path, local_save_path
 
 
 class TEIReader():
-    def __init__(self, state):
+    def __init__(self, state, show_menu=True):
         self.state = state
 
         self.config_Folder = 'TR_Configs'
@@ -44,7 +44,8 @@ class TEIReader():
             self.configdict[config[self.tr_config_attr_name]] = config
             if not config[self.tr_config_attr_template]:
                 self.editable_config_names.append(config[self.tr_config_attr_name])
-        self.show()
+        if show_menu:
+            self.show()
 
     def validate_and_saving_config(self, config, mode):
         val = True
@@ -191,9 +192,9 @@ class TEIReader():
                                                                        self.state.tr_test_selected_config_name) if self.state.tr_test_selected_config_name else 0,
                                                                    key='tr_test')
             config = self.configdict[self.state.tr_test_selected_config_name]
-            self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "")
+            self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "",key='tr_test_tei_file')
             if self.state.teifile:
-                tei = tp.tei_file(self.state.teifile, config)
+                tei = tp.TEIFile(self.state.teifile, config)
                 st.subheader('Text Content:')
                 st.text(tei.get_text())
                 if config[self.tr_config_attr_use_notes]:

@@ -5,6 +5,8 @@ import os
 from tei_entity_enricher.util.helper import module_path, local_save_path
 from tei_entity_enricher.util.components import editable_multi_column_table
 import tei_entity_enricher.menu.ner_task_def as ner_task
+import tei_entity_enricher.menu.tei_reader as tei_reader
+import tei_entity_enricher.util.tei_parser as tp
 
 
 class TEINERMap():
@@ -46,6 +48,7 @@ class TEINERMap():
 
         if show_menu:
             self.ntd = ner_task.NERTaskDef(state, show_menu=False)
+            self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.show()
 
     def validate_and_saving_mapping(self, mapping, mode):
@@ -129,14 +132,15 @@ class TEINERMap():
                                                 init_tnm_ntd_name) if init_tnm_ntd_name else 0,
                                             key='tnm_ntd_sel' + mode)
             if self.state.tnm_ntd_name and sel_tnm_ntd_name != self.state.tnm_ntd_name:
-                self.state.tnm_entity_dict=None
+                self.state.tnm_entity_dict = None
             self.state.tnm_ntd_name = sel_tnm_ntd_name
             if self.state.tnm_ntd_name:
                 tnm_edit_entity = st.selectbox('Define mapping for entity:',
                                                self.ntd.defdict[self.state.tnm_ntd_name][self.ntd.ntd_attr_entitylist],
                                                key='tnm_ent' + mode)
                 if tnm_edit_entity:
-                    self.state.tnm_entity_dict = self.edit_entity(mode, tnm_edit_entity, self.state.tnm_entity_dict if self.state.tnm_entity_dict else init_tnm_entity_dict)
+                    self.state.tnm_entity_dict = self.edit_entity(mode, tnm_edit_entity,
+                                                                  self.state.tnm_entity_dict if self.state.tnm_entity_dict else init_tnm_entity_dict)
 
             if st.button('Save TEI NER Entity Mapping', key=mode):
                 tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
@@ -187,6 +191,21 @@ class TEINERMap():
 
     def show_test_environment(self):
         tnm_test_expander = st.beta_expander("Test TEI NER Entity Mapping", expanded=False)
+        with tnm_test_expander:
+            self.state.tnm_test_selected_config_name = st.selectbox('Select a TEI Reader Config for the mapping test!',
+                                                                    list(self.tr.configdict.keys()),
+                                                                    index=list(self.tr.configdict.keys()).index(
+                                                                        self.state.tnm_test_selected_config_name) if self.state.tnm_test_selected_config_name else 0,
+                                                                    key='tnm_tr_test')
+            config = self.tr.configdict[self.state.tr_test_selected_config_name]
+            self.state.tnm_teifile = st.text_input('Choose a TEI File:', self.state.tnm_teifile or "",key='tnm_test_tei_file')
+            if self.state.tnm_teifile:
+                tei = tp.TEIFile(self.state.teifile, config)
+                st.subheader('Text Content:')
+                st.text(tei.get_text())
+                if config[self.tr.tr_config_attr_use_notes]:
+                    st.subheader('Note Content:')
+                    st.text(tei.get_notes())
 
     def build_tnm_tablestring(self):
         tablestring = 'Name | NER Task | Template \n -----|-------|-------'

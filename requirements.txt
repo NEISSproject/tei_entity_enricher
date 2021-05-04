@@ -2,6 +2,7 @@ streamlit
 streamlit-aggrid
 Pillow
 bs4
+lxml
 requests
 pandas
 pytest
