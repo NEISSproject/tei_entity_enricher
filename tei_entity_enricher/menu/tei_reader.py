@@ -2,7 +2,7 @@ import streamlit as st
 import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
-from tei_entity_enricher.util.helper import get_listoutput
+from tei_entity_enricher.util.helper import get_listoutput, transform_arbitrary_text_to_markdown
 from tei_entity_enricher.util.components import editable_single_column_table
 from tei_entity_enricher.util.helper import module_path, local_save_path
 
@@ -196,10 +196,10 @@ class TEIReader():
             if self.state.teifile:
                 tei = tp.TEIFile(self.state.teifile, config)
                 st.subheader('Text Content:')
-                st.text(tei.get_text())
+                st.markdown(transform_arbitrary_text_to_markdown(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
                     st.subheader('Note Content:')
-                    st.text(tei.get_notes())
+                    st.markdown(transform_arbitrary_text_to_markdown(tei.get_notes()))
 
     def build_config_tablestring(self):
         tablestring = 'Name | Exclude Tags | Tagging Notes | Note Tags | Template \n -----|-------|-------|-------|-------'

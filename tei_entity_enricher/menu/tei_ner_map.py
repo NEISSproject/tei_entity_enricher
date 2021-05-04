@@ -7,6 +7,7 @@ from tei_entity_enricher.util.components import editable_multi_column_table
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.util.tei_parser as tp
+from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown
 
 
 class TEINERMap():
@@ -189,6 +190,35 @@ class TEINERMap():
                 self.state.tnm_edit_options) if self.state.tnm_edit_options else 0)
             options[self.state.tnm_edit_options]()
 
+    def mark_entities_in_text(self, text, entitylist,all_entities):
+        newtext = transform_arbitrary_text_to_markdown(text)
+        for entity in all_entities:
+            if entity in entitylist:
+                newtext=newtext.replace('<' + entity + '>', '<**s>').replace('</' + entity + '>', ' _\(' + entity + ')_<**e>')
+            else:
+                newtext=newtext.replace('<' + entity + '>', '').replace('</' + entity + '>', '')
+        #workaround for nested entities
+        open=0
+        while newtext.find('<**s>')>=0 or newtext.find('<**e>')>=0:
+            start=newtext.find('<**s>')
+            end=newtext.find('<**e>')
+            if start>0:
+                if start<end:
+                    open+=1
+                    if open>1:
+                        newtext=newtext.replace('<**s>','',1)
+                    else:
+                        newtext=newtext.replace('<**s>','**',1)
+                else:
+                    open+=-1
+                    if open>0:
+                        newtext=newtext.replace('<**e>','',1)
+                    else:
+                        newtext=newtext.replace('<**e>','**',1)
+            elif end>0:
+                newtext=newtext.replace('<**e>','**',1)
+        return newtext
+
     def show_test_environment(self):
         tnm_test_expander = st.beta_expander("Test TEI NER Entity Mapping", expanded=False)
         with tnm_test_expander:
@@ -199,19 +229,39 @@ class TEINERMap():
                                                                     key='tnm_tr_test')
             config = self.tr.configdict[self.state.tr_test_selected_config_name]
             self.state.tnm_test_selected_mapping_name = st.selectbox('Select a TEI NER Entity Mapping to test!',
-                                                                    list(self.mappingdict.keys()),
-                                                                    index=list(self.mappingdict.keys()).index(
-                                                                        self.state.tnm_test_selected_mapping_name) if self.state.tnm_test_selected_mapping_name else 0,
-                                                                    key='tnm_tr_test')
+                                                                     list(self.mappingdict.keys()),
+                                                                     index=list(self.mappingdict.keys()).index(
+                                                                         self.state.tnm_test_selected_mapping_name) if self.state.tnm_test_selected_mapping_name else 0,
+                                                                     key='tnm_tr_test')
             mapping = self.mappingdict[self.state.tnm_test_selected_mapping_name]
-            self.state.tnm_teifile = st.text_input('Choose a TEI File:', self.state.tnm_teifile or "",key='tnm_test_tei_file')
+            self.state.tnm_teifile = st.text_input('Choose a TEI File:', self.state.tnm_teifile or "",
+                                                   key='tnm_test_tei_file')
             if self.state.tnm_teifile:
-                tei = tp.TEIFile(self.state.teifile, config,entity_dict=mapping[self.tnm_attr_entity_dict])
-                st.subheader('Text Content:')
-                st.text(tei.get_tagged_text())
+                tei = tp.TEIFile(self.state.tnm_teifile, config, entity_dict=mapping[self.tnm_attr_entity_dict])
+                col1, col2 = st.beta_columns([0.2,0.8])
+                statistics=tei.get_statistics()
+                self.state.tnm_test_entity_list=[]
+                with col1:
+                    st.subheader('Tagged Entites:')
+                    for entity in statistics.keys():
+                        if st.checkbox('Show Entity ' + entity + ' ('+str(statistics[entity][0])+')',True,key='tnm'+entity+'text'):
+                            self.state.tnm_test_entity_list.append(entity)
+                with col2:
+                    st.subheader('Tagged Text Content:')
+                    st.markdown(self.mark_entities_in_text(tei.get_tagged_text(),self.state.tnm_test_entity_list,mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]))
                 if config[self.tr.tr_config_attr_use_notes]:
-                    st.subheader('Note Content:')
-                    st.text(tei.get_tagged_notes())
+                    col1_note, col2_note = st.beta_columns([0.2,0.8])
+                    note_statistics=tei.get_note_statistics()
+                    self.state.tnm_test_note_entity_list=[]
+                    with col1_note:
+                        st.subheader('Tagged Entites:')
+                        for entity in note_statistics.keys():
+                            if st.checkbox('Show Entity ' + entity + ' ('+str(note_statistics[entity][0])+')',True,key='tnm'+entity+'note'):
+                                self.state.tnm_test_note_entity_list.append(entity)
+                    with col2_note:
+                        st.subheader('Tagged Note Content:')
+                        st.markdown(self.mark_entities_in_text(tei.get_tagged_notes(),self.state.tnm_test_note_entity_list,mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]))
+                #st.markdown('Das ist **Konrad _(pers)_**')
 
     def build_tnm_tablestring(self):
         tablestring = 'Name | NER Task | Template \n -----|-------|-------'

@@ -5,7 +5,6 @@ import re
 class TEIFile:
 
     def __init__(self, filename, tr_config, entity_dict=None, nlp=None):
-        # self._allowed_tags={'rs':['person','city','ground','water','org'],'persName':[],'persname':[],'placeName':['city','ground','water'],'placename':['city','ground','water'],'orgName':[],'orgname':[],'date':[]}
         self._pagelist = []
         self._soup = None
         self._note_list = []
@@ -48,22 +47,6 @@ class TEIFile:
                     return tag_entry[0]
         return None
 
-    # def _add_content_to_statistics(self, content, statistics, content_text_list):
-    #    tagkey = content.name
-    #    tagtext = ""
-    #    for i in range(len(content_text_list)):
-    #        if i > 0:
-    #            tagtext = tagtext + ' '
-    #        tagtext = tagtext + content_text_list[i]
-    #    if content.attrs is not None and 'subtype' in content.attrs.keys():
-    #        tagkey = tagkey + content['subtype']
-    #    if tagkey not in statistics.keys():
-    #        statistics[tagkey] = [1, [tagtext]]
-    #    else:
-    #        statistics[tagkey][0] += 1
-    #        statistics[tagkey][1].append(tagtext)
-    #    return statistics, tagkey
-
     def _add_content_to_statistics(self, entity, statistics, content_text_list):
         tagtext = ""
         for i in range(len(content_text_list)):
@@ -96,8 +79,6 @@ class TEIFile:
                     pagecontent.name in self._note_tags and is_already_note)) \
                     and pagecontent.name not in self._exclude_tags and pagecontent != '\n' and str(
                 pagecontent.__class__.__name__) != 'Comment':
-                # if pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
-                #                                                                                              or ('subtype' in pagecontent.attrs.keys() and pagecontent.attrs['subtype'] in self._allowed_tags[pagecontent.name]))):
                 entity = self.get_entity_name_to_pagecontent(pagecontent)
                 if pagecontent.name is not None and entity is None:
                     text_list_to_add, tagged_text_list_to_add, statistics_to_add = self._get_text_from_contentlist(
@@ -339,8 +320,8 @@ class TEIFile:
 
 
 if __name__ == '__main__':
-    # brief=tei_file('../data_040520/briefe/0003_060000.xml')
-    # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml'
+    # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
+    # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml'
     brief = TEIFile('../uwe_johnson_data/data_040520/briefe/0119_060109.xml')
     print(brief.get_text())

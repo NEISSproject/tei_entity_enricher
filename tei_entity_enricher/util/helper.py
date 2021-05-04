@@ -13,3 +13,6 @@ def get_listoutput(list):
     else:
         output = ""
     return output
+
+def transform_arbitrary_text_to_markdown(text):
+    return text.replace('\n','\n\n').replace('*','\*').replace('_','\_').replace('{','\{').replace('}','\}').replace('(','\(').replace(')','\)').replace('[','\[').replace(']','\]').replace('#','\#')
