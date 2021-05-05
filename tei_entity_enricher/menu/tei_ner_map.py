@@ -227,7 +227,7 @@ class TEINERMap():
                                                                     index=list(self.tr.configdict.keys()).index(
                                                                         self.state.tnm_test_selected_config_name) if self.state.tnm_test_selected_config_name else 0,
                                                                     key='tnm_tr_test')
-            config = self.tr.configdict[self.state.tr_test_selected_config_name]
+            config = self.tr.configdict[self.state.tnm_test_selected_config_name]
             self.state.tnm_test_selected_mapping_name = st.selectbox('Select a TEI NER Entity Mapping to test!',
                                                                      list(self.mappingdict.keys()),
                                                                      index=list(self.mappingdict.keys()).index(
@@ -236,8 +236,11 @@ class TEINERMap():
             mapping = self.mappingdict[self.state.tnm_test_selected_mapping_name]
             self.state.tnm_teifile = st.text_input('Choose a TEI File:', self.state.tnm_teifile or "",
                                                    key='tnm_test_tei_file')
-            if self.state.tnm_teifile:
-                tei = tp.TEIFile(self.state.tnm_teifile, config, entity_dict=mapping[self.tnm_attr_entity_dict])
+            #self.state.tnm_open_teifile = st.file_uploader('Choose a TEI-File',key='tnm_test_file_upload')
+            #if self.state.tnm_open_teifile:
+            #    st.write(self.state.tnm_open_teifile.getvalue().decode("utf-8"))
+            if self.state.tnm_teifile or self.state.tnm_open_teifile:
+                tei = tp.TEIFile(self.state.tnm_teifile, config, entity_dict=mapping[self.tnm_attr_entity_dict],openfile=self.state.tnm_open_teifile)
                 col1, col2 = st.beta_columns([0.2,0.8])
                 statistics=tei.get_statistics()
                 self.state.tnm_test_entity_list=[]

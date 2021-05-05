@@ -4,9 +4,16 @@ import re
 
 class TEIFile:
 
-    def __init__(self, filename, tr_config, entity_dict=None, nlp=None):
+    def __init__(self, filename, tr_config, entity_dict=None, nlp=None, openfile=None):
         self._pagelist = []
         self._soup = None
+        if self._soup is None:
+            if openfile is not None:
+                self._soup = BeautifulSoup(openfile.getvalue().decode('utf-8'), 'xml')
+            else:
+                with open(filename, 'r') as tei:
+                    self._soup = BeautifulSoup(tei, 'xml')  # 'html.parser' )#'lxml')
+
         self._note_list = []
         self._tagged_note_list = []
         self._note_statistics = {}
@@ -115,9 +122,6 @@ class TEIFile:
         return text_list, tagged_text_list, statistics
 
     def _get_text_and_statistics(self, filename):
-        if self._soup is None:
-            with open(filename, 'r') as tei:
-                self._soup = BeautifulSoup(tei, 'xml')  # 'html.parser' )#'lxml')
         textcontent = self._soup.find('text')
         text_list = []
         tagged_text_list = []
