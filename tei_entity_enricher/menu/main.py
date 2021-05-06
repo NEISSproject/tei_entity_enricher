@@ -5,6 +5,7 @@ import os
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
+import tei_entity_enricher.menu.tei_ner_gb as tng
 from tei_entity_enricher.util.helper import module_path
 
 
@@ -51,39 +52,18 @@ class Main:
         tnm.TEINERMap(state)
 
     def gt_builder(self, state):
-        st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
-        st.write("Input state:", state.input)
-
-        if st.button("Clear state"):
-            state.input = None
-            st.experimental_rerun()
+        tng.TEINERGroundtruthBuilder(state)
 
     def tei_ner_writer(self, state):
         st.latex('\\text{\Huge{TEI NER Writer Config}}')
-        if st.button("Set Input to Konrad"):
-            state.input = "Konrad"
+
 
     def ner_trainer(self, state):
         st.latex('\\text{\Huge{NER Trainer}}')
-        state.input = st.text_input("Set input value.", state.input or "")
-        st.write("Page state:", state.page)
-        if st.button("Jump to Pred"):
-            state.page = "NER Prediction"
-            st.experimental_rerun()
+
 
     def ner_prediction(self, state):
         st.latex('\\text{\Huge{NER Prediction}}')
-        state.folderPath = st.text_input('Enter folder path:')
-        if state.folderPath:
-            fileslist = os.listdir(state.folderPath)
-        else:
-            fileslist = []  # Hack to clear list if the user clears the cache and reloads the page
-            st.info("Select a folder.")
-
-        # And within an expander
-        my_expander = st.beta_expander("Selected Files", expanded=True)
-        with my_expander:
-            st.table(fileslist)
 
 # def page_dashboard(state):
 #    st.title(":chart_with_upwards_trend: Dashboard page")
