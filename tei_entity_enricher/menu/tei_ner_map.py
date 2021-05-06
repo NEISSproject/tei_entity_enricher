@@ -62,6 +62,39 @@ class TEINERMap():
                                                                                               '_') + '.json')) and mode != self.tnm_mode_edit:
             val = False
             st.error(f'Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!')
+        #clear empty mapping entries
+        entities_to_del=[]
+        for entity in mapping[self.tnm_attr_entity_dict].keys():
+            cleared_list=[]
+            assingned_tag_list = list(mapping[self.tnm_attr_entity_dict][entity])
+            for index in range(len(assingned_tag_list)):
+                if assingned_tag_list[index][0] is not None and assingned_tag_list[index][0]!="":
+                    if ' ' in assingned_tag_list[index][0]:
+                        val=False
+                        st.error(f'For the entity {entity} you defined a tag name ({assingned_tag_list[index][0]}) containing a space character. This is not allowed!')
+                    for attribute in assingned_tag_list[index][1].keys():
+                        if (attribute is None or attribute=='') and assingned_tag_list[index][1][attribute] is not None and assingned_tag_list[index][1][attribute]!='':
+                            val=False
+                            st.error(f'For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute value {assingned_tag_list[index][1][attribute]} without a corresponding attribute name. This is not allowed.')
+                        elif ' ' in attribute:
+                            val=False
+                            st.error(f'For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute name ({attribute}) containing a space character. This is not allowed!')
+                        elif ' ' in assingned_tag_list[index][1][attribute]:
+                            val=False
+                            st.error(f'For the entity {entity} and tag {assingned_tag_list[index][0]} you defined for the attribute {attribute} a value ({assingned_tag_list[index][1][attribute]}) containing a space character. This is not allowed!')
+                    cleared_list.append(assingned_tag_list[index])
+            if len(cleared_list)>0:
+                mapping[self.tnm_attr_entity_dict][entity]=cleared_list
+            else:
+                entities_to_del.append(entity)
+        for entity in entities_to_del:
+            del mapping[self.tnm_attr_entity_dict][entity]
+
+        if len(mapping[self.tnm_attr_entity_dict].keys())==0:
+            val=False
+            st.error(f'Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.')
+
+
         if val:
             mapping[self.tnm_attr_template] = False
             with open(os.path.join(self.tnm_Folder, mapping[self.tnm_attr_name].replace(' ', '_') + '.json'),
@@ -145,7 +178,7 @@ class TEINERMap():
 
             if st.button('Save TEI NER Entity Mapping', key=mode):
                 tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
-                tnm_mapping_dict[self.tnm_attr_entity_dict] = self.state.tnm_entity_dict
+                tnm_mapping_dict[self.tnm_attr_entity_dict] = self.state.tnm_entity_dict.copy()
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
 
     def edit_entity(self, mode, tnm_edit_entity, cur_entity_dict):
@@ -307,11 +340,12 @@ class TEINERMap():
             self.state.tnm_selected_display_tnm_name = st.selectbox(f'Choose a mapping for displaying its details:',
                                                                     list(self.mappingdict.keys()), key='tnm_details')
             if self.state.tnm_selected_display_tnm_name:
+                cur_sel_mapping = self.mappingdict[self.state.tnm_selected_display_tnm_name]
                 st.markdown(
-                    self.build_tnm_detail_tablestring(self.mappingdict[self.state.tnm_selected_display_tnm_name]),
+                    self.build_tnm_detail_tablestring(cur_sel_mapping),
                     unsafe_allow_html=True)
-            # st.markdown('| Format   | Tag example | \n | -------- | ----------- | \n | Headings <br> \'\' <br> \'\' | =heading1= <br> ==heading2==<br>===heading3=== | \n | New paragraph | A blank line starts a new paragraph | \n | Source code block |  // all on one line<br> {{{ if (foo) bar else   baz }}} |',unsafe_allow_html=True)
-            # st.markdown('| column 1 | column 2 | \n |------------|----------| \n | value | <ul><li>value 1</li><li>value 2</li></ul> | \n | value | <ul><li>value 1</li><li>value 2</li></ul> |',unsafe_allow_html=True)
+                if len(cur_sel_mapping[self.tnm_attr_entity_dict].keys())<len(cur_sel_mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                    st.warning(f'Warning: The Mapping {cur_sel_mapping[self.tnm_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_name]} is assigned to at least one tag.')
 
     def show(self):
         st.latex('\\text{\Huge{TEI NER Entity Mapping}}')

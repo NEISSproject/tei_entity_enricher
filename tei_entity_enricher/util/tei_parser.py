@@ -326,7 +326,7 @@ class TEIFile:
 if __name__ == '__main__':
     # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
-    # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml'
+    # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
     brief = TEIFile('../uwe_johnson_data/data_040520/briefe/0119_060109.xml')
     print(brief.get_text())
     print(brief.get_notes())

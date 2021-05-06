@@ -65,6 +65,10 @@ class NERTaskDef:
             if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
                 val = False
                 st.error('There are at least two entities with the same name. This is not allowed!')
+            for entity in definition[self.ntd_attr_entitylist]:
+                if ' ' in entity:
+                    val=False
+                    st.error(f'You defined an entity name ({entity}) containing a space character. This is not allowed!')
         for mapping in self.tnm.mappingslist:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False

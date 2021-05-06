@@ -58,10 +58,20 @@ class TEIReader():
             val = False
             st.error(
                 f'Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!')
+        if len(config[self.tr_config_attr_excl_tags])>0:
+            for excl_tag in config[self.tr_config_attr_excl_tags]:
+                if ' ' in excl_tag:
+                    val=False
+                    st.error(f'You defined an exclude tag ({excl_tag}) containing a space character. This is not allowed!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
             st.error(
                 'You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes.')
+        elif config[self.tr_config_attr_use_notes]:
+            for note_tag in config[self.tr_config_attr_note_tags]:
+                if ' ' in note_tag:
+                    val=False
+                    st.error(f'You defined an note tag ({note_tag}) containing a space character. This is not allowed!')
         if config[self.tr_config_attr_use_notes] and len(
                 set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0:
             val = False
