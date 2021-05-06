@@ -60,49 +60,56 @@ class TEINERGroundtruthBuilder():
 
     def show_build_gt_environment(self):
         tng_dict = {}
-        self.state.tng_name = st.text_input('Define a name for the groundtruth:', self.state.tng_name or "")
-        if self.state.tng_name:
-            tng_dict[self.tng_attr_name] = self.state.tnm_name
-        self.state.tng_tr_name = st.selectbox('Select a TEI Reader Config for Building the groundtruth:',
-                                              list(self.tr.configdict.keys()), list(self.tr.configdict.keys()).index(
-                self.state.tng_tr_name) if self.state.tng_tr_name else 0, key='tng_tr')
-        if self.state.tng_tr_name:
-            tng_dict[self.tng_attr_tr] = self.tr.configdict[self.state.tng_tr_name]
-        self.state.tng_tnm_name = st.selectbox('Select a TEI NER Entity Mapping for Building the groundtruth:',
-                                               list(self.tnm.mappingdict.keys()),
-                                               list(self.tnm.mappingdict.keys()).index(
-                                                   self.state.tng_tnm_name) if self.state.tng_tnm_name else 0,
-                                               key='tng_tnm')
-        if self.state.tng_tnm_name:
-            tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[self.state.tng_tnm_name]
-        self.state.tng_lang = st.selectbox(
-            'Select a language for the groundtruth (relevant for the split into sentences):',
-            list(self.lang_dict.keys()), list(self.lang_dict.keys()).index(
-                self.state.tng_lang) if self.state.tng_lang else 0, key='tng_lang')
-        if self.state.tng_lang:
-            tng_dict[self.tng_attr_lang] = self.state.tng_lang
-        self.state.tng_shuffle_options = st.radio("Shuffle Options", tuple(self.shuffle_options_dict.keys()),
-                                                  tuple(self.shuffle_options_dict.keys()).index(
-                                                      self.state.tng_shuffle_options) if self.state.tng_shuffle_options else 0)
-        tng_dict[self.tng_attr_shuffle_type] = self.state.tng_shuffle_options
-        st.write('Define a ratio for the partition into train- development- and testset.')
         col1, col2 = st.beta_columns(2)
+        with col1:
+            self.state.tng_name = st.text_input('Define a name for the groundtruth:', self.state.tng_name or "")
+            if self.state.tng_name:
+                tng_dict[self.tng_attr_name] = self.state.tnm_name
+            self.state.tng_tr_name = st.selectbox('Select a TEI Reader Config for Building the groundtruth:',
+                                                  list(self.tr.configdict.keys()),
+                                                  list(self.tr.configdict.keys()).index(
+                                                      self.state.tng_tr_name) if self.state.tng_tr_name else 0,
+                                                  key='tng_tr')
+            if self.state.tng_tr_name:
+                tng_dict[self.tng_attr_tr] = self.tr.configdict[self.state.tng_tr_name]
+            self.state.tng_tnm_name = st.selectbox('Select a TEI NER Entity Mapping for Building the groundtruth:',
+                                                   list(self.tnm.mappingdict.keys()),
+                                                   list(self.tnm.mappingdict.keys()).index(
+                                                       self.state.tng_tnm_name) if self.state.tng_tnm_name else 0,
+                                                   key='tng_tnm')
+            if self.state.tng_tnm_name:
+                tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[self.state.tng_tnm_name]
+            self.state.tng_lang = st.selectbox(
+                'Select a language for the groundtruth (relevant for the split into sentences):',
+                list(self.lang_dict.keys()), list(self.lang_dict.keys()).index(
+                    self.state.tng_lang) if self.state.tng_lang else 0, key='tng_lang')
+            if self.state.tng_lang:
+                tng_dict[self.tng_attr_lang] = self.state.tng_lang
         with col2:
-            self.state.tng_test_percentage = st.number_input('Percentage for the train set', min_value=0,
+            self.state.tng_shuffle_options = st.radio("Shuffle Options", tuple(self.shuffle_options_dict.keys()),
+                                                      tuple(self.shuffle_options_dict.keys()).index(
+                                                          self.state.tng_shuffle_options) if self.state.tng_shuffle_options else 0)
+            tng_dict[self.tng_attr_shuffle_type] = self.state.tng_shuffle_options
+            st.write('Define a ratio for the partition into train- development- and testset.')
+            self.state.tng_test_percentage = st.number_input('Percentage for the test set', min_value=0,
                                                              max_value=100 - (
                                                                  self.state.tng_dev_percentage if self.state.tng_dev_percentage else 10),
                                                              value=self.state.tng_test_percentage if self.state.tng_test_percentage else 10)
-        with col1:
             self.state.tng_dev_percentage = st.number_input('Percentage for the validation set', min_value=0,
-                                                            max_value=100 - self.state.tng_test_percentage,
+                                                            max_value=100 - (
+                                                                self.state.tng_test_percentage if self.state.tng_test_percentage else 10),
                                                             value=self.state.tng_dev_percentage if self.state.tng_dev_percentage else 10)
-        st.write('With this configuration you have ',
-                 100 - self.state.tng_dev_percentage - self.state.tng_test_percentage,
-                 '% of the data for the train set, ', self.state.tng_dev_percentage, '% for the development set and',
-                 self.state.tng_test_percentage, '% for the test set.')
-        self.state.tng_teifile_folder = st.text_input('Choose a Folder containing only TEI Files to build the groundtruth from:', self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
-                                                   key='tng_tei_file_folder')
-        tng_dict[self.tng_attr_ratio] = {'train':100 - self.state.tng_dev_percentage - self.state.tng_test_percentage,'dev':self.state.tng_dev_percentage,'test':self.state.tng_test_percentage}
+            st.write('With this configuration you have ',
+                     100 - self.state.tng_dev_percentage - self.state.tng_test_percentage,
+                     '% of the data for the train set, ', self.state.tng_dev_percentage,
+                     '% for the development set and',
+                     self.state.tng_test_percentage, '% for the test set.')
+        self.state.tng_teifile_folder = st.text_input(
+            'Choose a Folder containing only TEI Files to build the groundtruth from:',
+            self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
+            key='tng_tei_file_folder')
+        tng_dict[self.tng_attr_ratio] = {'train': 100 - self.state.tng_dev_percentage - self.state.tng_test_percentage,
+                                         'dev': self.state.tng_dev_percentage, 'test': self.state.tng_test_percentage}
         if st.button('Build Groundtruth'):
             pass
 
