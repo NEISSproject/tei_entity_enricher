@@ -1,0 +1,1 @@
+{"ntd": {"entitylist": ["pers", "date", "place"], "name": "Sturm Edition", "template": false}, "entity_dict": {"pers": [["persName", {}], ["persname", {}]], "place": [["placeName", {}], ["placename", {}]], "date": [["date", {}]]}, "name": "Sturm Edition", "template": true}
