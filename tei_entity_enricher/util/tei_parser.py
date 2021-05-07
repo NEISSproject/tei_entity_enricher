@@ -4,7 +4,7 @@ import re
 
 class TEIFile:
 
-    def __init__(self, filename, tr_config, entity_dict=None, nlp=None, openfile=None):
+    def __init__(self, filename, tr_config, entity_dict=None, nlp=None, openfile=None ,with_position_tags=False):
         self._pagelist = []
         self._soup = None
         if self._soup is None:
@@ -17,6 +17,7 @@ class TEIFile:
         self._note_list = []
         self._tagged_note_list = []
         self._note_statistics = {}
+        self._with_position_tags=with_position_tags
         if tr_config['use_notes']:
             self._note_tags = tr_config['note_tags']
         else:
@@ -28,8 +29,8 @@ class TEIFile:
         self._tagged_text_line_list = []
         self._tagged_note_line_list = []
 
-        # if nlp is not None:
-        #    self._nlp=nlp
+        if nlp is not None:
+            self._nlp=nlp
         # else:
         #    self._nlp=spacy.load('de_core_news_sm')
 
@@ -183,16 +184,25 @@ class TEIFile:
             tagged_text_list = tagged_text_line.split(' ')
             for text_part in tagged_text_list:
                 if text_part.startswith('<') and text_part.endswith('>'):
-                    if text_part[1] == '/':
-                        cur_tag = 'O'  # O is the sign for without tag
+                    if text_part[1]=='/':
+                        cur_tag='O' #O is the sign for without tag
                     else:
-                        cur_tag = text_part[1:-1]
-                elif text_part is not None and text_part != '':
-                    # Sentence extraction doesn't work for capitalized words, that is why we use the following
-                    if text_part.upper() == text_part:
-                        cur_line_list.append([text_part.lower(), cur_tag, 1])
+                        cur_tag=text_part[1:-1]
+                        first_tag_element=True
+                elif text_part is not None and text_part!='':
+                    if self._with_position_tags and cur_tag!='O':
+                        if first_tag_element:
+                            modified_tag='B-'+cur_tag
+                            first_tag_element=False
+                        else:
+                            modified_tag='I-'+cur_tag
                     else:
-                        cur_line_list.append([text_part, cur_tag, 0])
+                        modified_tag=cur_tag
+                    #Sentence extraction doesn't work for capitalized words, that is why we use the following
+                    if text_part.upper()==text_part:
+                        cur_line_list.append([text_part.lower(),modified_tag,1])
+                    else:
+                        cur_line_list.append([text_part,modified_tag,0])
             self._tagged_text_line_list.append(cur_line_list)
         # Seperate sentences with the help of spacy
         for i in range(len(self._tagged_text_line_list)):
@@ -241,16 +251,25 @@ class TEIFile:
             tagged_note_list = tagged_note_line.split(' ')
             for note_part in tagged_note_list:
                 if note_part.startswith('<') and note_part.endswith('>'):
-                    if note_part[1] == '/':
-                        cur_tag = 'O'  # O is the sign for without tag
+                    if note_part[1]=='/':
+                        cur_tag='O' #O is the sign for without tag
                     else:
-                        cur_tag = note_part[1:-1]
-                elif note_part is not None and note_part != '':
-                    # Sentence extraction doesn't work for capitalized words, that is why we use the following
-                    if note_part.upper() == note_part:
-                        cur_line_list.append([note_part.lower(), cur_tag, 1])
+                        cur_tag=note_part[1:-1]
+                        first_tag_element=True
+                elif note_part is not None and note_part!='':
+                    if self._with_position_tags and cur_tag!='O':
+                        if first_tag_element:
+                            modified_tag='B-'+cur_tag
+                            first_tag_element=False
+                        else:
+                            modified_tag='I-'+cur_tag
                     else:
-                        cur_line_list.append([note_part, cur_tag, 0])
+                        modified_tag=cur_tag
+                    #Sentence extraction doesn't work for capitalized words, that is why we use the following
+                    if note_part.upper()==note_part:
+                        cur_line_list.append([note_part.lower(),modified_tag,1])
+                    else:
+                        cur_line_list.append([note_part,modified_tag,0])
             self._tagged_note_line_list.append(cur_line_list)
         # Seperate sentences with the help of spacy
         for i in range(len(self._tagged_note_line_list)):
@@ -321,6 +340,21 @@ class TEIFile:
     def print_note_statistics(self):
         for key in self._note_statistics.keys():
             print(key, self._note_statistics[key])
+
+def split_into_sentences(tagged_text_line_list):
+    cur_sentence = []
+    sentence_list = []
+    for text_part in tagged_text_line_list:
+        for word in text_part:
+            if word[2] == 2:
+                if len(cur_sentence) > 0:
+                    sentence_list.append(cur_sentence)
+                cur_sentence = [word]
+            else:
+                cur_sentence.append(word)
+    if len(cur_sentence) > 0:
+        sentence_list.append(cur_sentence)
+    return sentence_list
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 import os
-from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path
+from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.components import editable_single_column_table
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 
@@ -20,10 +20,8 @@ class NERTaskDef:
         self.ntd_mode_dupl = 'duplicate'
         self.ntd_mode_edit = 'edit'
 
-        if not os.path.isdir(self.ntd_Folder):
-            os.mkdir(self.ntd_Folder)
-        if not os.path.isdir(self.template_ntd_Folder):
-            os.mkdir(self.template_ntd_Folder)
+        makedir_if_necessary(self.ntd_Folder)
+        makedir_if_necessary(self.template_ntd_Folder)
 
         self.defslist = []
         for defFile in sorted(os.listdir(self.template_ntd_Folder)):

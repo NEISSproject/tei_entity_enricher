@@ -4,7 +4,7 @@ import json
 import os
 from tei_entity_enricher.util.helper import get_listoutput, transform_arbitrary_text_to_markdown
 from tei_entity_enricher.util.components import editable_single_column_table
-from tei_entity_enricher.util.helper import module_path, local_save_path
+from tei_entity_enricher.util.helper import module_path, local_save_path,makedir_if_necessary
 
 
 class TEIReader():
@@ -24,10 +24,8 @@ class TEIReader():
         self.tr_config_mode_edit = 'edit'
 
         self.configslist = []
-        if not os.path.isdir(self.config_Folder):
-            os.mkdir(self.config_Folder)
-        if not os.path.isdir(self.template_config_Folder):
-            os.mkdir(self.template_config_Folder)
+        makedir_if_necessary(self.config_Folder)
+        makedir_if_necessary(self.template_config_Folder)
 
         for configFile in sorted(os.listdir(self.template_config_Folder)):
             if configFile.endswith('json'):

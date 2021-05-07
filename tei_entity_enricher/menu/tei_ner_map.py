@@ -2,12 +2,11 @@ import streamlit as st
 import json
 import os
 
-from tei_entity_enricher.util.helper import module_path, local_save_path
+from tei_entity_enricher.util.helper import module_path, local_save_path, makedir_if_necessary,transform_arbitrary_text_to_markdown
 from tei_entity_enricher.util.components import editable_multi_column_table
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.util.tei_parser as tp
-from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown
 
 
 class TEINERMap():
@@ -25,10 +24,8 @@ class TEINERMap():
         self.tnm_mode_dupl = 'duplicate'
         self.tnm_mode_edit = 'edit'
 
-        if not os.path.isdir(self.tnm_Folder):
-            os.mkdir(self.tnm_Folder)
-        if not os.path.isdir(self.template_tnm_Folder):
-            os.mkdir(self.template_tnm_Folder)
+        makedir_if_necessary(self.tnm_Folder)
+        makedir_if_necessary(self.template_tnm_Folder)
 
         self.mappingslist = []
         for mappingFile in sorted(os.listdir(self.template_tnm_Folder)):
