@@ -225,7 +225,7 @@ class TEIFile:
                     word_to_insert = str(sent[wordindex])
                     if cur_tag_element[2] == 1:
                         word_to_insert = word_to_insert.upper()
-                    if wordindex == 0:
+                    if wordindex == 0 and not cur_tag_element[1].startswith('I-'):
                         new_line_list.append([word_to_insert, cur_tag_element[1], 2])
                     elif space_before:
                         new_line_list.append([word_to_insert, cur_tag_element[1], 0])
@@ -292,7 +292,7 @@ class TEIFile:
                     word_to_insert = str(sent[wordindex])
                     if cur_tag_element[2] == 1:
                         word_to_insert = word_to_insert.upper()
-                    if wordindex == 0:
+                    if wordindex == 0  and not cur_tag_element[1].startswith('I-'):
                         new_line_list.append([word_to_insert, cur_tag_element[1], 2])
                     elif space_before:
                         new_line_list.append([word_to_insert, cur_tag_element[1], 0])
