@@ -8,6 +8,7 @@ import math
 from tei_entity_enricher.util.helper import module_path, local_save_path, makedir_if_necessary
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
+import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
 
 
@@ -33,30 +34,26 @@ class TEINERGroundtruthBuilder():
         self.shuffle_options_dict = {'Shuffle by TEI File': True, 'Shuffle by Sentences': False}
 
         makedir_if_necessary(self.tng_Folder)
-        # if not os.path.isdir(self.template_tng_Folder):
-        #    os.mkdir(self.template_tng_Folder)
 
-        # self.mappingslist = []
-        # for mappingFile in sorted(os.listdir(self.template_tnm_Folder)):
-        #    if mappingFile.endswith('json'):
-        #        with open(os.path.join(self.template_tnm_Folder, mappingFile)) as f:
-        #            self.mappingslist.append(json.load(f))
-        # for mappingFile in sorted(os.listdir(self.tnm_Folder)):
-        #    if mappingFile.endswith('json'):
-        #        with open(os.path.join(self.tnm_Folder, mappingFile)) as f:
-        #            self.mappingslist.append(json.load(f))
-
-        # self.mappingdict = {}
-        # self.editable_mapping_names = []
-        # for mapping in self.mappingslist:
-        #    self.mappingdict[mapping[self.tnm_attr_name]] = mapping
-        #    if not mapping[self.tnm_attr_template]:
-        #        self.editable_mapping_names.append(mapping[self.tnm_attr_name])
+        self.refresh_tng_list()
 
         if show_menu:
             self.tnm = tei_map.TEINERMap(state, show_menu=False)
             self.tr = tei_reader.TEIReader(state, show_menu=False)
+            self.ntd = ner_task.NERTaskDef(state, show_menu=False)
             self.show()
+
+    def refresh_tng_list(self):
+        self.tnglist = []
+        for gt_folder in sorted(os.listdir(self.tng_Folder)):
+            if os.path.isdir(os.path.join(self.tng_Folder, gt_folder)) and os.path.isfile(
+                    os.path.join(self.tng_Folder, gt_folder, os.path.basename(gt_folder) + '.json')):
+                with open(os.path.join(self.tng_Folder, gt_folder, os.path.basename(gt_folder) + '.json')) as f:
+                    self.tnglist.append(json.load(f))
+
+        self.tngdict = {}
+        for tng in self.tnglist:
+            self.tngdict[tng[self.tng_attr_name]] = tng
 
     def get_spacy_lm(self, lang):
         if not spacy.util.is_package(self.lang_dict[lang]):
@@ -93,6 +90,8 @@ class TEINERGroundtruthBuilder():
         makedir_if_necessary(save_train_folder)
 
         nlp = self.get_spacy_lm(build_config[self.tng_attr_lang])
+        if build_config[self.tng_attr_lang] == 'Multilingual':
+            nlp.add_pipe('sentencizer')
         by_file = self.shuffle_options_dict[build_config[self.tng_attr_shuffle_type]]
         filelist = os.listdir(folder_path)
         if not by_file:
@@ -154,6 +153,46 @@ class TEINERGroundtruthBuilder():
         with open(os.path.join(save_folder, build_config[self.tng_attr_name].replace(' ', '_') + '.json'), 'w+') as h2:
             json.dump(build_config, h2)
         progressoutput.success(f'Groundtruth {build_config[self.tng_attr_name]} succesfully builded.')
+        st.write(f'Statistics for {build_config[self.tng_attr_name]}')
+        self.show_statistics_to_saved_groundtruth(save_folder, build_config[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][
+            self.ntd.ntd_attr_entitylist])
+        self.refresh_tng_list()
+
+    def build_tng_stats_tablestring(self, entity_list, train_stats, dev_stats, test_stats):
+        tablestring = 'Entity | \# All | \# Train | \# Test | \# Devel \n -----|-------|-------|-------|-------'
+        for entity in entity_list:
+            train_num = train_stats['B-' + entity] if 'B-' + entity in train_stats.keys() else 0
+            test_num = test_stats['B-' + entity] if 'B-' + entity in test_stats.keys() else 0
+            dev_num = dev_stats['B-' + entity] if 'B-' + entity in dev_stats.keys() else 0
+            tablestring += '\n ' + entity + ' | ' + str(train_num + test_num + dev_num) + ' | ' + str(
+                train_num) + ' | ' + str(test_num) + ' | ' + str(dev_num)
+        train_num = train_stats['O'] if 'O' in train_stats.keys() else 0
+        test_num = test_stats['O'] if 'O' in test_stats.keys() else 0
+        dev_num = dev_stats['O'] if 'O' in dev_stats.keys() else 0
+        tablestring += '\n ' + 'unlabeled words' + ' | ' + str(train_num + test_num + dev_num) + ' | ' + str(
+            train_num) + ' | ' + str(test_num) + ' | ' + str(dev_num)
+        return tablestring
+
+    def build_ner_statistics(self, directory):
+        tag_collect = {}
+        for filename in os.listdir(directory):
+            with open(os.path.join(directory, filename)) as f:
+                training_data = json.load(f)
+            for i in range(len(training_data)):
+                for j in range(len(training_data[i])):
+                    if training_data[i][j][1] in tag_collect.keys():
+                        tag_collect[training_data[i][j][1]] += 1
+                    else:
+                        tag_collect[training_data[i][j][1]] = 1
+        return {k: v for k, v in sorted(tag_collect.items(), key=lambda item: item[1])}
+
+    def show_statistics_to_saved_groundtruth(self, directory, entity_list):
+        test_folder = os.path.join(directory, self.tng_gt_type_test)
+        dev_folder = os.path.join(directory, self.tng_gt_type_dev)
+        train_folder = os.path.join(directory, self.tng_gt_type_train)
+        st.markdown(self.build_tng_stats_tablestring(entity_list, self.build_ner_statistics(train_folder),
+                                                     self.build_ner_statistics(dev_folder),
+                                                     self.build_ner_statistics(test_folder)), unsafe_allow_html=True)
 
     def show_build_gt_environment(self):
         tng_dict = {}
@@ -226,6 +265,29 @@ class TEINERGroundtruthBuilder():
             if self.validate_build_configuration(tng_dict, self.state.tng_teifile_folder):
                 self.build_groundtruth(tng_dict, self.state.tng_teifile_folder)
 
+    def build_tng_tablestring(self):
+        tablestring = 'Name | TEI Reader Config | TEI NER Entity Mapping | Language | Shuffle Type | Partition Ratio \n -----|-------|-------|-------|-------|-------'
+        for tng in self.tnglist:
+            if self.shuffle_options_dict[tng[self.tng_attr_shuffle_type]]:
+                shuffle_type = 'by file'
+            else:
+                shuffle_type = 'by sentences'
+            partition_ratio = f'Train: {tng[self.tng_attr_ratio][self.tng_gt_type_train]}%, Test: {tng[self.tng_attr_ratio][self.tng_gt_type_test]}%, Devel: {tng[self.tng_attr_ratio][self.tng_gt_type_dev]}%'
+            tablestring += '\n ' + tng[self.tng_attr_name] + ' | ' + tng[self.tng_attr_tr][
+                self.tr.tr_config_attr_name] + ' | ' + tng[self.tng_attr_tnm][self.tnm.tnm_attr_name] + ' | ' + tng[
+                               self.tng_attr_lang] + ' | ' + shuffle_type + ' | ' + partition_ratio
+        return tablestring
+
+    def show_existing_tng(self):
+        st.markdown(self.build_tng_tablestring())
+        self.state.tng_selected_display_tng_name = st.selectbox(f'Choose a groundtruth for displaying its statistics:',
+                                                                list(self.tngdict.keys()), key='tng_stats')
+        if self.state.tng_selected_display_tng_name:
+            cur_sel_tng = self.tngdict[self.state.tng_selected_display_tng_name]
+            self.show_statistics_to_saved_groundtruth(
+                os.path.join(self.tng_Folder, cur_sel_tng[self.tng_attr_name].replace(' ', '_')),
+                cur_sel_tng[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_entitylist])
+
     def show(self):
         st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
         tng_build_new = st.beta_expander("Build new TEI NER Groundtruth", expanded=False)
@@ -236,4 +298,4 @@ class TEINERGroundtruthBuilder():
             pass
         tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
         with tng_show:
-            pass
+            self.show_existing_tng()
