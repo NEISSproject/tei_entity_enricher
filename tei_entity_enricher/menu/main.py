@@ -1,4 +1,6 @@
 import streamlit as st
+
+from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.util.SessionState import _get_state
 from PIL import Image
 import os
@@ -64,12 +66,7 @@ class Main:
             state.input = "Konrad"
 
     def ner_trainer(self, state):
-        st.latex('\\text{\Huge{NER Trainer}}')
-        state.input = st.text_input("Set input value.", state.input or "")
-        st.write("Page state:", state.page)
-        if st.button("Jump to Pred"):
-            state.page = "NER Prediction"
-            st.experimental_rerun()
+        NERTrainer(state)
 
     def ner_prediction(self, state):
         st.latex('\\text{\Huge{NER Prediction}}')
