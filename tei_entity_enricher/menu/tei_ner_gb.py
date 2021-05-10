@@ -4,6 +4,7 @@ import os
 import spacy
 import random
 import math
+import shutil
 
 from tei_entity_enricher.util.helper import module_path, local_save_path, makedir_if_necessary
 import tei_entity_enricher.menu.tei_ner_map as tei_map
@@ -265,6 +266,18 @@ class TEINERGroundtruthBuilder():
             if self.validate_build_configuration(tng_dict, self.state.tng_teifile_folder):
                 self.build_groundtruth(tng_dict, self.state.tng_teifile_folder)
 
+    def delete_groundtruth(self, groundtruth):
+        val = True
+        if val:
+            shutil.rmtree(os.path.join(self.tng_Folder, groundtruth[self.tng_attr_name].replace(' ', '_')))
+            self.state.tng_selected_display_tng_name = None
+            st.experimental_rerun()
+
+    def show_del_environment(self):
+        selected_gt_name = st.selectbox('Select a groundtruth to delete!', list(self.tngdict.keys()))
+        if st.button('Delete Selected Groundtruth'):
+            self.delete_groundtruth(self.tngdict[selected_gt_name])
+
     def build_tng_tablestring(self):
         tablestring = 'Name | TEI Reader Config | TEI NER Entity Mapping | Language | Shuffle Type | Partition Ratio \n -----|-------|-------|-------|-------|-------'
         for tng in self.tnglist:
@@ -295,7 +308,7 @@ class TEINERGroundtruthBuilder():
             self.show_build_gt_environment()
         tng_delete = st.beta_expander("Delete existing TEI NER Groundtruth", expanded=False)
         with tng_delete:
-            pass
+            self.show_del_environment()
         tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
