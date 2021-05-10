@@ -6,15 +6,16 @@ import shutil
 import streamlit as st
 
 from tei_entity_enricher.util import config_io
-from tei_entity_enricher.util.helper import module_path
+from tei_entity_enricher.util.helper import module_path, state_ok, state_failed, state_uncertain
 
 logger = logging.getLogger(__name__)
 
 
 class NERTrainer(object):
-    def __init__(self, state, show_menu=True,):
+    def __init__(self, state, show_menu=True, ):
         self._workdir_path = None
         self.state = state
+        self.trainer_params_json = None
         if self.workdir() != 0:
             return
         logger.info("load trainer params")
@@ -33,8 +34,26 @@ class NERTrainer(object):
         return 0
 
     def data_configuration(self):
-        print(json.dumps(self.trainer_params_json, indent=2))
-        st.text_input("train.lists", value=self.trainer_params_json["gen"]["train"]["lists"])
+        # print(json.dumps(self.trainer_params_json, indent=2))
+        train_lists_field, train_lists_state = st.beta_columns([10, 1])
+        train_lists_field = train_lists_field.text_input("train.lists",
+                                                         value=self.trainer_params_json["gen"]["train"]["lists"])
+        train_lists_str = str(train_lists_field)
+        if train_lists_field:
+            # print(train_lists_field, type(train_lists_field))
+            if train_lists_str.startswith("["):
+                train_lists_str = train_lists_str[1:]
+            if train_lists_str.endswith("]"):
+                train_lists_str = train_lists_str[:-1]
+            train_lists_list = [str(x).replace(" ", "") for x in train_lists_str.split(",")]
+            ok = True
+            for list_name in train_lists_list:
+                if not os.path.isfile(list_name):
+                    st.error(f"Can not find file: {list_name}")
+                    ok = False
+
+            train_lists_state.latex(state_ok if ok else state_failed)
+
         # state.input = st.text_input("Set input value.", state.input or "")
         # st.write("Page state:", state.page)
         # if st.button("Jump to Pred"):
@@ -56,19 +75,20 @@ class NERTrainer(object):
         else:
             workdir_path = os.getcwd()
 
-        wdp_status = st_wdp_status.latex(r"\huge\color{orange}\bigcirc")
-        self._workdir_path = st_workdir_path.text_input("Workdir:", value=workdir_path, help="absolute path to working directory")
+        wdp_status = st_wdp_status.latex(state_uncertain)
+        self._workdir_path = st_workdir_path.text_input("Workdir:", value=workdir_path,
+                                                        help="absolute path to working directory")
         wdp_status = wdp_status.latex(r"\checkmark")
         # wdp_button = st_wdp_button.button("Set")
         if os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
-                wdp_status = wdp_status.latex(r"\huge\color{green}\checkmark")
+            wdp_status = wdp_status.latex(state_ok)
         if st_workdir_path:
             if os.path.isdir(self._workdir_path):
                 config_io.set_config({"workdir": self._workdir_path, "config_path": start_config_path})
-                if not os.path.isfile(os.path.join(self._workdir_path,"trainer_params.json")):
-                    shutil.copy(os.path.join(module_path, "templates", "trainer", "trainer_params.json"), self._workdir_path)
+                if not os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
+                    shutil.copy(os.path.join(module_path, "templates", "trainer", "trainer_params.json"),
+                                self._workdir_path)
             else:
-                wdp_status = wdp_status.latex(r"\huge\color{red}X")
+                wdp_status = wdp_status.latex(state_failed)
                 return -1
         return 0
-

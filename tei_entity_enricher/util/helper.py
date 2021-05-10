@@ -3,6 +3,9 @@ import os
 module_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 local_save_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+state_ok = r"\huge\color{green}\checkmark"
+state_failed = r"\huge\color{red}X"
+state_uncertain = r"\huge\color{orange}\bigcirc"
 
 def get_listoutput(list):
     output = ""

@@ -1,3 +1,5 @@
+import logging
+
 import streamlit as st
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
@@ -10,14 +12,21 @@ import tei_entity_enricher.menu.tei_ner_map as tnm
 import tei_entity_enricher.menu.tei_ner_gb as tng
 from tei_entity_enricher.util.helper import module_path
 
+logger = logging.getLogger(__name__)
+
 
 class Main:
-    def __init__(self):
-        self.show()
+    def __init__(self, args):
+        self.state = None
+        self.show(args)
 
-    def show(self):
+    # def decode_arguments(self, args):
+    #     for key_value in args:
+    #         if
+
+    def show(self, args):
         st.set_page_config(layout='wide')  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
-        state = _get_state()
+        self.state = _get_state()
         pages = {
             "TEI Reader Config": self.tei_reader,
             "NER Task Entity Definition": self.ner_task_def,
@@ -36,36 +45,38 @@ class Main:
         logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
-        state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),
-                                      tuple(pages.keys()).index(state.page) if state.page else 0)
+        self.state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),
+                                           tuple(pages.keys()).index(self.state.page) if self.state.page else int(
+                                               args.start_state))
 
         # Display the selected page with the session state
-        pages[state.page](state)
+        pages[self.state.page]()
 
         # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
-        state.sync()
+        self.state.sync()
 
-    def tei_reader(self, state):
-        tr.TEIReader(state)
+    def tei_reader(self):
+        tr.TEIReader(self.state)
 
-    def ner_task_def(self, state):
-        ntd.NERTaskDef(state)
+    def ner_task_def(self):
+        ntd.NERTaskDef(self.state)
 
-    def tei_ner_map(self, state):
-        tnm.TEINERMap(state)
+    def tei_ner_map(self):
+        tnm.TEINERMap(self.state)
 
-    def gt_builder(self, state):
-        tng.TEINERGroundtruthBuilder(state)
+    def gt_builder(self):
+        tng.TEINERGroundtruthBuilder(self.state)
 
-    def tei_ner_writer(self, state):
+    def tei_ner_writer(self):
         st.latex('\\text{\Huge{TEI NER Writer Config}}')
+        logger.info(self.state)
 
+    def ner_trainer(self):
+        NERTrainer(self.state)
 
-    def ner_trainer(self, state):
-        NERTrainer(state)
-
-    def ner_prediction(self, state):
+    def ner_prediction(self):
         st.latex('\\text{\Huge{NER Prediction}}')
+        logger.info(self.state)
 
 # def page_dashboard(state):
 #    st.title(":chart_with_upwards_trend: Dashboard page")
