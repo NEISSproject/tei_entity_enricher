@@ -2,9 +2,10 @@ import streamlit as st
 import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
-from tei_entity_enricher.util.helper import get_listoutput
+from tei_entity_enricher.util.helper import get_listoutput, transform_arbitrary_text_to_markdown
 from tei_entity_enricher.util.components import editable_single_column_table
-from tei_entity_enricher.util.helper import module_path, local_save_path
+from tei_entity_enricher.util.helper import module_path, local_save_path, makedir_if_necessary
+import tei_entity_enricher.menu.tei_ner_gb as gb
 
 
 class TEIReader():
@@ -24,10 +25,8 @@ class TEIReader():
         self.tr_config_mode_edit = 'edit'
 
         self.configslist = []
-        if not os.path.isdir(self.config_Folder):
-            os.mkdir(self.config_Folder)
-        if not os.path.isdir(self.template_config_Folder):
-            os.mkdir(self.template_config_Folder)
+        makedir_if_necessary(self.config_Folder)
+        makedir_if_necessary(self.template_config_Folder)
 
         for configFile in sorted(os.listdir(self.template_config_Folder)):
             if configFile.endswith('json'):
@@ -45,6 +44,7 @@ class TEIReader():
             if not config[self.tr_config_attr_template]:
                 self.editable_config_names.append(config[self.tr_config_attr_name])
         if show_menu:
+            self.tng = gb.TEINERGroundtruthBuilder(state, show_menu=False)
             self.show()
 
     def validate_and_saving_config(self, config, mode):
@@ -58,10 +58,21 @@ class TEIReader():
             val = False
             st.error(
                 f'Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!')
+        if len(config[self.tr_config_attr_excl_tags]) > 0:
+            for excl_tag in config[self.tr_config_attr_excl_tags]:
+                if ' ' in excl_tag:
+                    val = False
+                    st.error(
+                        f'You defined an exclude tag ({excl_tag}) containing a space character. This is not allowed!')
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
             st.error(
                 'You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes.')
+        elif config[self.tr_config_attr_use_notes]:
+            for note_tag in config[self.tr_config_attr_note_tags]:
+                if ' ' in note_tag:
+                    val = False
+                    st.error(f'You defined an note tag ({note_tag}) containing a space character. This is not allowed!')
         if config[self.tr_config_attr_use_notes] and len(
                 set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0:
             val = False
@@ -70,6 +81,12 @@ class TEIReader():
             else:
                 warntext = f'Tags can either be excluded or marked as note tags. Please define for the tag {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether it should be excluded or considered as a note.'
             st.error(warntext)
+        for gt in self.tng.tnglist:
+            if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
+                val = False
+                st.error(
+                    f'To edit the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth.')
+
         if val:
             config[self.tr_config_attr_template] = False
             with open(os.path.join(self.config_Folder, config[self.tr_config_attr_name].replace(' ', '_') + '.json'),
@@ -81,6 +98,12 @@ class TEIReader():
 
     def validate_and_delete_config(self, config):
         val = True
+        for gt in self.tng.tnglist:
+            if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
+                val = False
+                st.error(
+                    f'To delete the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth.')
+
         if val:
             os.remove(os.path.join(self.config_Folder, config[self.tr_config_attr_name].replace(' ', '_') + '.json'))
             self.reset_tr_edit_states()
@@ -192,14 +215,14 @@ class TEIReader():
                                                                        self.state.tr_test_selected_config_name) if self.state.tr_test_selected_config_name else 0,
                                                                    key='tr_test')
             config = self.configdict[self.state.tr_test_selected_config_name]
-            self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "",key='tr_test_tei_file')
+            self.state.teifile = st.text_input('Choose a TEI File:', self.state.teifile or "", key='tr_test_tei_file')
             if self.state.teifile:
                 tei = tp.TEIFile(self.state.teifile, config)
                 st.subheader('Text Content:')
-                st.text(tei.get_text())
+                st.markdown(transform_arbitrary_text_to_markdown(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
                     st.subheader('Note Content:')
-                    st.text(tei.get_notes())
+                    st.markdown(transform_arbitrary_text_to_markdown(tei.get_notes()))
 
     def build_config_tablestring(self):
         tablestring = 'Name | Exclude Tags | Tagging Notes | Note Tags | Template \n -----|-------|-------|-------|-------'

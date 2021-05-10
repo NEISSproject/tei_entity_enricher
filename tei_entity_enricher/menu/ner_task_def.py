@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 import os
-from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path
+from tei_entity_enricher.util.helper import get_listoutput, module_path, local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.components import editable_single_column_table
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 
@@ -20,10 +20,8 @@ class NERTaskDef:
         self.ntd_mode_dupl = 'duplicate'
         self.ntd_mode_edit = 'edit'
 
-        if not os.path.isdir(self.ntd_Folder):
-            os.mkdir(self.ntd_Folder)
-        if not os.path.isdir(self.template_ntd_Folder):
-            os.mkdir(self.template_ntd_Folder)
+        makedir_if_necessary(self.ntd_Folder)
+        makedir_if_necessary(self.template_ntd_Folder)
 
         self.defslist = []
         for defFile in sorted(os.listdir(self.template_ntd_Folder)):
@@ -65,6 +63,10 @@ class NERTaskDef:
             if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
                 val = False
                 st.error('There are at least two entities with the same name. This is not allowed!')
+            for entity in definition[self.ntd_attr_entitylist]:
+                if ' ' in entity:
+                    val=False
+                    st.error(f'You defined an entity name ({entity}) containing a space character. This is not allowed!')
         for mapping in self.tnm.mappingslist:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False

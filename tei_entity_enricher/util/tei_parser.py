@@ -4,13 +4,20 @@ import re
 
 class TEIFile:
 
-    def __init__(self, filename, tr_config, entity_dict=None, nlp=None):
-        # self._allowed_tags={'rs':['person','city','ground','water','org'],'persName':[],'persname':[],'placeName':['city','ground','water'],'placename':['city','ground','water'],'orgName':[],'orgname':[],'date':[]}
+    def __init__(self, filename, tr_config, entity_dict=None, nlp=None, openfile=None ,with_position_tags=False):
         self._pagelist = []
         self._soup = None
+        if self._soup is None:
+            if openfile is not None:
+                self._soup = BeautifulSoup(openfile.getvalue().decode('utf-8'), 'xml')
+            else:
+                with open(filename, 'r') as tei:
+                    self._soup = BeautifulSoup(tei, 'xml')  # 'html.parser' )#'lxml')
+
         self._note_list = []
         self._tagged_note_list = []
         self._note_statistics = {}
+        self._with_position_tags=with_position_tags
         if tr_config['use_notes']:
             self._note_tags = tr_config['note_tags']
         else:
@@ -22,8 +29,8 @@ class TEIFile:
         self._tagged_text_line_list = []
         self._tagged_note_line_list = []
 
-        # if nlp is not None:
-        #    self._nlp=nlp
+        if nlp is not None:
+            self._nlp=nlp
         # else:
         #    self._nlp=spacy.load('de_core_news_sm')
 
@@ -47,22 +54,6 @@ class TEIFile:
                 if attrs_match:
                     return tag_entry[0]
         return None
-
-    # def _add_content_to_statistics(self, content, statistics, content_text_list):
-    #    tagkey = content.name
-    #    tagtext = ""
-    #    for i in range(len(content_text_list)):
-    #        if i > 0:
-    #            tagtext = tagtext + ' '
-    #        tagtext = tagtext + content_text_list[i]
-    #    if content.attrs is not None and 'subtype' in content.attrs.keys():
-    #        tagkey = tagkey + content['subtype']
-    #    if tagkey not in statistics.keys():
-    #        statistics[tagkey] = [1, [tagtext]]
-    #    else:
-    #        statistics[tagkey][0] += 1
-    #        statistics[tagkey][1].append(tagtext)
-    #    return statistics, tagkey
 
     def _add_content_to_statistics(self, entity, statistics, content_text_list):
         tagtext = ""
@@ -96,8 +87,6 @@ class TEIFile:
                     pagecontent.name in self._note_tags and is_already_note)) \
                     and pagecontent.name not in self._exclude_tags and pagecontent != '\n' and str(
                 pagecontent.__class__.__name__) != 'Comment':
-                # if pagecontent.name is not None and not (pagecontent.name in self._allowed_tags.keys() and (len(self._allowed_tags[pagecontent.name])==0
-                #                                                                                              or ('subtype' in pagecontent.attrs.keys() and pagecontent.attrs['subtype'] in self._allowed_tags[pagecontent.name]))):
                 entity = self.get_entity_name_to_pagecontent(pagecontent)
                 if pagecontent.name is not None and entity is None:
                     text_list_to_add, tagged_text_list_to_add, statistics_to_add = self._get_text_from_contentlist(
@@ -134,9 +123,6 @@ class TEIFile:
         return text_list, tagged_text_list, statistics
 
     def _get_text_and_statistics(self, filename):
-        if self._soup is None:
-            with open(filename, 'r') as tei:
-                self._soup = BeautifulSoup(tei, 'xml')  # 'html.parser' )#'lxml')
         textcontent = self._soup.find('text')
         text_list = []
         tagged_text_list = []
@@ -198,16 +184,25 @@ class TEIFile:
             tagged_text_list = tagged_text_line.split(' ')
             for text_part in tagged_text_list:
                 if text_part.startswith('<') and text_part.endswith('>'):
-                    if text_part[1] == '/':
-                        cur_tag = 'O'  # O is the sign for without tag
+                    if text_part[1]=='/':
+                        cur_tag='O' #O is the sign for without tag
                     else:
-                        cur_tag = text_part[1:-1]
-                elif text_part is not None and text_part != '':
-                    # Sentence extraction doesn't work for capitalized words, that is why we use the following
-                    if text_part.upper() == text_part:
-                        cur_line_list.append([text_part.lower(), cur_tag, 1])
+                        cur_tag=text_part[1:-1]
+                        first_tag_element=True
+                elif text_part is not None and text_part!='':
+                    if self._with_position_tags and cur_tag!='O':
+                        if first_tag_element:
+                            modified_tag='B-'+cur_tag
+                            first_tag_element=False
+                        else:
+                            modified_tag='I-'+cur_tag
                     else:
-                        cur_line_list.append([text_part, cur_tag, 0])
+                        modified_tag=cur_tag
+                    #Sentence extraction doesn't work for capitalized words, that is why we use the following
+                    if text_part.upper()==text_part:
+                        cur_line_list.append([text_part.lower(),modified_tag,1])
+                    else:
+                        cur_line_list.append([text_part,modified_tag,0])
             self._tagged_text_line_list.append(cur_line_list)
         # Seperate sentences with the help of spacy
         for i in range(len(self._tagged_text_line_list)):
@@ -230,7 +225,7 @@ class TEIFile:
                     word_to_insert = str(sent[wordindex])
                     if cur_tag_element[2] == 1:
                         word_to_insert = word_to_insert.upper()
-                    if wordindex == 0:
+                    if wordindex == 0 and not cur_tag_element[1].startswith('I-'):
                         new_line_list.append([word_to_insert, cur_tag_element[1], 2])
                     elif space_before:
                         new_line_list.append([word_to_insert, cur_tag_element[1], 0])
@@ -256,16 +251,25 @@ class TEIFile:
             tagged_note_list = tagged_note_line.split(' ')
             for note_part in tagged_note_list:
                 if note_part.startswith('<') and note_part.endswith('>'):
-                    if note_part[1] == '/':
-                        cur_tag = 'O'  # O is the sign for without tag
+                    if note_part[1]=='/':
+                        cur_tag='O' #O is the sign for without tag
                     else:
-                        cur_tag = note_part[1:-1]
-                elif note_part is not None and note_part != '':
-                    # Sentence extraction doesn't work for capitalized words, that is why we use the following
-                    if note_part.upper() == note_part:
-                        cur_line_list.append([note_part.lower(), cur_tag, 1])
+                        cur_tag=note_part[1:-1]
+                        first_tag_element=True
+                elif note_part is not None and note_part!='':
+                    if self._with_position_tags and cur_tag!='O':
+                        if first_tag_element:
+                            modified_tag='B-'+cur_tag
+                            first_tag_element=False
+                        else:
+                            modified_tag='I-'+cur_tag
                     else:
-                        cur_line_list.append([note_part, cur_tag, 0])
+                        modified_tag=cur_tag
+                    #Sentence extraction doesn't work for capitalized words, that is why we use the following
+                    if note_part.upper()==note_part:
+                        cur_line_list.append([note_part.lower(),modified_tag,1])
+                    else:
+                        cur_line_list.append([note_part,modified_tag,0])
             self._tagged_note_line_list.append(cur_line_list)
         # Seperate sentences with the help of spacy
         for i in range(len(self._tagged_note_line_list)):
@@ -288,7 +292,7 @@ class TEIFile:
                     word_to_insert = str(sent[wordindex])
                     if cur_tag_element[2] == 1:
                         word_to_insert = word_to_insert.upper()
-                    if wordindex == 0:
+                    if wordindex == 0  and not cur_tag_element[1].startswith('I-'):
                         new_line_list.append([word_to_insert, cur_tag_element[1], 2])
                     elif space_before:
                         new_line_list.append([word_to_insert, cur_tag_element[1], 0])
@@ -337,11 +341,26 @@ class TEIFile:
         for key in self._note_statistics.keys():
             print(key, self._note_statistics[key])
 
+def split_into_sentences(tagged_text_line_list):
+    cur_sentence = []
+    sentence_list = []
+    for text_part in tagged_text_line_list:
+        for word in text_part:
+            if word[2] == 2:
+                if len(cur_sentence) > 0:
+                    sentence_list.append(cur_sentence)
+                cur_sentence = [word]
+            else:
+                cur_sentence.append(word)
+    if len(cur_sentence) > 0:
+        sentence_list.append(cur_sentence)
+    return sentence_list
+
 
 if __name__ == '__main__':
-    # brief=tei_file('../data_040520/briefe/0003_060000.xml')
-    # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml'
-    # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml'
+    # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
+    # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
+    # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
     brief = TEIFile('../uwe_johnson_data/data_040520/briefe/0119_060109.xml')
     print(brief.get_text())
     print(brief.get_notes())
