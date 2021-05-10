@@ -27,12 +27,13 @@ class Main:
             "NER Trainer": self.ner_trainer,
             "NER Prediction": self.ner_prediction,
         }
-        st.sidebar.latex('\\text{\Huge{N-TEE}}')
+        logo_frame, heading_frame = st.sidebar.beta_columns([1, 2])
+        heading_frame.latex('\\text{\Huge{N-TEE}}')
         st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
 
         # Include NEISS Logo
         neiss_logo = Image.open(os.path.join(module_path, 'images', 'neiss_logo_nn_pentagon01b2.png'))
-        st.sidebar.image(neiss_logo)
+        logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
         state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),
