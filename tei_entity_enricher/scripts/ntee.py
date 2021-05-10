@@ -20,7 +20,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description='The n-tee app')
 
-    parser.add_argument('--start_state', default="tei_reader",
+    parser.add_argument('--start_state', default=0,
                         help="set start state/tab: 0-tei_reader, 1-ner_task_def, 2-tei_ner_map, "
                              "3-gt_builder, 4-tei_ner_writer, 5-ner_trainer, 6-ner_prediction")
 
