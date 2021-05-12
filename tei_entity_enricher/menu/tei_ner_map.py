@@ -3,7 +3,7 @@ import json
 import os
 
 from tei_entity_enricher.util.helper import module_path, local_save_path, makedir_if_necessary, \
-    transform_arbitrary_text_to_markdown
+    transform_arbitrary_text_to_markdown, transform_arbitrary_text_to_latex, latex_color_list
 from tei_entity_enricher.util.components import editable_multi_column_table
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
@@ -239,34 +239,41 @@ class TEINERMap():
                 self.state.tnm_edit_options) if self.state.tnm_edit_options else 0)
             options[self.state.tnm_edit_options]()
 
-    def mark_entities_in_text(self, text, entitylist, all_entities):
-        newtext = transform_arbitrary_text_to_markdown(text)
+    def mark_entities_in_text(self, text, entitylist, all_entities, show_entity_names):
+        newtext = transform_arbitrary_text_to_latex(text)
+        colorindex = 0
         for entity in all_entities:
             if entity in entitylist:
-                newtext = newtext.replace('<' + entity + '>', '<**s>').replace('</' + entity + '>',
-                                                                               ' _\(' + entity + ')_<**e>')
+
+                newtext = newtext.replace('<' + entity + '>',
+                                          '<**s>$\\text{\\textcolor{' + latex_color_list[colorindex] + '}{')
+                if show_entity_names:
+                    newtext = newtext.replace('</' + entity + '>', ' (' + entity + ')}}$<**e>')
+                else:
+                    newtext = newtext.replace('</' + entity + '>', '}}$<**e>')
             else:
                 newtext = newtext.replace('<' + entity + '>', '').replace('</' + entity + '>', '')
+            colorindex += 1
         # workaround for nested entities
         open = 0
-        while newtext.find('<**s>') >= 0 or newtext.find('<**e>') >= 0:
-            start = newtext.find('<**s>')
-            end = newtext.find('<**e>')
+        while newtext.find('<**s>$\\text{') >= 0 or newtext.find('}$<**e>') >= 0:
+            start = newtext.find('<**s>$\\text{')
+            end = newtext.find('}$<**e>')
             if start > 0:
                 if start < end:
                     open += 1
                     if open > 1:
-                        newtext = newtext.replace('<**s>', '', 1)
+                        newtext = newtext.replace('<**s>$\\text{', '', 1)
                     else:
-                        newtext = newtext.replace('<**s>', '**', 1)
+                        newtext = newtext.replace('<**s>$\\text{', '$\\text{', 1)
                 else:
                     open += -1
                     if open > 0:
-                        newtext = newtext.replace('<**e>', '', 1)
+                        newtext = newtext.replace('}$<**e>', '', 1)
                     else:
-                        newtext = newtext.replace('<**e>', '**', 1)
+                        newtext = newtext.replace('}$<**e>', '}$', 1)
             elif end > 0:
-                newtext = newtext.replace('<**e>', '**', 1)
+                newtext = newtext.replace('}$<**e>', '}$', 1)
         return newtext
 
     def show_test_environment(self):
@@ -301,10 +308,24 @@ class TEINERMap():
                         if st.checkbox('Show Entity ' + entity + ' (' + str(statistics[entity][0]) + ')', True,
                                        key='tnm' + entity + 'text'):
                             self.state.tnm_test_entity_list.append(entity)
+                    st.subheader('Display Options:')
+                    tnm_test_show_entity_name = st.checkbox('Display Entity names',
+                                           False,
+                                           key='tnm_display_entity_names')
+                    st.subheader('Legend:')
+                    index = 0
+                    for entity in mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]:
+                        if entity in statistics.keys():
+                            # st.write('$\\text{\\colorbox{' + latex_color_list[
+                            #    index % len(latex_color_list)] + '}{ \\hspace{5em} }}$')
+                            st.write('$\\color{' + latex_color_list[
+                                index % len(latex_color_list)] + '}{\\Large\\bullet}$ ' + entity)
+                        index += 1
+
                 with col2:
                     st.subheader('Tagged Text Content:')
-                    st.markdown(self.mark_entities_in_text(tei.get_tagged_text(), self.state.tnm_test_entity_list,
-                                                           mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]))
+                    st.write(self.mark_entities_in_text(tei.get_tagged_text(), self.state.tnm_test_entity_list,
+                                                        mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],show_entity_names=tnm_test_show_entity_name))
                 if config[self.tr.tr_config_attr_use_notes]:
                     col1_note, col2_note = st.beta_columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
@@ -312,14 +333,29 @@ class TEINERMap():
                     with col1_note:
                         st.subheader('Tagged Entites:')
                         for entity in note_statistics.keys():
-                            if st.checkbox('Show Entity ' + entity + ' (' + str(note_statistics[entity][0]) + ')', True,
+                            if st.checkbox('Show Entity ' + entity + ' (' + str(note_statistics[entity][0]) + ')',
+                                           True,
                                            key='tnm' + entity + 'note'):
                                 self.state.tnm_test_note_entity_list.append(entity)
+                        st.subheader('Display Options:')
+                        tnm_test_note_show_entity_name = st.checkbox('Display Entity names',
+                                           False,
+                                           key='tnm_display_entity_names_note')
+                        st.subheader('Legend: ')
+                        index = 0
+                        for entity in mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]:
+                            if entity in note_statistics.keys():
+                                # st.write('$\\text{\\colorbox{' + latex_color_list[
+                                #    index % len(latex_color_list)] + '}{ \\hspace{5em} }}$')
+                                st.write('$\\color{' + latex_color_list[
+                                    index % len(latex_color_list)] + '}{\\bullet}$ ' + entity)
+                            index += 1
+
                     with col2_note:
                         st.subheader('Tagged Note Content:')
-                        st.markdown(
+                        st.write(
                             self.mark_entities_in_text(tei.get_tagged_notes(), self.state.tnm_test_note_entity_list,
-                                                       mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]))
+                                                       mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],show_entity_names=tnm_test_note_show_entity_name))
                 # st.markdown('Das ist **Konrad _(pers)_**')
 
     def build_tnm_tablestring(self):
