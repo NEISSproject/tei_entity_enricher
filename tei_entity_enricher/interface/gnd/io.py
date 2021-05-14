@@ -192,7 +192,7 @@ class Cache:
    
 class FileWriter:
     def __init__(self, data: Union[str, None] = None, filepath: Union[str, None] = None, show_printmessages: bool = True):
-        """writes dict conform data into json files
+        """writes data (dict type) into json files
         
         data: contains data of json files as a string, delivered by FileReader or Cache class
         filepath: path to file to write
@@ -203,7 +203,7 @@ class FileWriter:
     def writefile(self, do_if_file_exists: str = "cancel") -> bool:
         """method to write a new or enrich an existing json file,
         do_if_file_exists parameter controls behavior in case a file in self.filepath already exists,
-        there are 3 sub-methods defined for a sort of switch statement"""
+        there are 3 submethods defined for a sort of switch statement"""
         def do_if_file_exists_cancel() -> bool:
             print("file already exists: cancel writing process") if self.show_printmessages else None
             return False

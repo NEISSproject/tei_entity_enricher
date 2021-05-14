@@ -1,6 +1,6 @@
 import os
 import requests
-from typing import Union, List, Optional
+from typing import Union, List
 from tei_entity_enricher.interface.gnd.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import module_path
 
@@ -18,14 +18,14 @@ class Connector:
         check_connectivity: execute connectivity check to selected api in __init__() or not
         show_printmessages: show class internal printmessages on runtime or not
 
-        apilist: configuration list of dicts, defining api`s url and aliases for filtering purposes (see get_gnd_data())
-        connection_established: data from an api has already been recieved or not
-        remaining_apis_to_check: list of apiindex values, which has not been checked yet in connectivitycheck_loop()"""
+        apilist: list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
+        connection_established: data from an api has already been received or not
+        remaining_apis_to_check: list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
         print("initializing connector..") if show_printmessages else None
         self.show_printmessages: bool = show_printmessages
         self.gnd: Union[str, List[str]] = gnd
         self.apiindex: int = apiindex
-        self.apilist: Optional[dict] = FileReader(os.path.join(module_path, "util/apilist.json"), "local", True).loadfile_json()
+        self.apilist: Union[dict, None] = FileReader(os.path.join(module_path, "util/apilist.json"), "local", True).loadfile_json()
         if self.apilist is None:
             print("connector error: could not find apilist.json. using default settings...") if self.show_printmessages else None
             self.apilist: List[dict] = [
@@ -80,7 +80,7 @@ class Connector:
     def connectivitycheck_loop(self) -> int:
         """recursive connectivity check, checking every single api in self.apilist (ascending)
         and setting self.apiindex to the value of those api, which is first to pass the check successfully.
-        return 0 or -1 for unittest purposes"""
+        returns 0 or -1 for unittest purposes"""
         if self.check_connectivity == False:
             self.check_connectivity == True
         if len(self.remaining_apis_to_check) > 0:
@@ -100,7 +100,7 @@ class Connector:
     def print_complete_url(self, index: int = 0) -> int:
         """print baseUrl string of the currently selected api defined in self.apilist,
         formatted with a gnd number of self.gnd (list or str) selected by index value.
-        return 0 or -1 for unittest purposes"""
+        returns 0 or -1 for unittest purposes"""
         if self.apiindex not in [i for i,_ in enumerate(self.apilist)]:
             print("connector.print_complete_url() error: apiindex is not defined correctly. using default api...") if self.show_printmessages else None
             self.apiindex = 0
@@ -127,7 +127,7 @@ class Connector:
         else:
             print("connector error in return_complete_url(): no gnd number has been passed to connector object yet.") if self.show_printmessages else None
             return None
-    def get_gnd_data(self, data_selection: Optional[Union[str, List[str]]] = None) -> Union[dict, None]:
+    def get_gnd_data(self, data_selection: Union[str, List[str], None] = None) -> Union[dict, None]:
         """method to receive data from api with the possibility to filter results.
         a dict is created, having gnd numbers as keys and filtered or unfiltered response json data as values"""
         if self.check_connectivity == False:
