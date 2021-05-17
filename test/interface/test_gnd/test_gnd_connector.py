@@ -3,21 +3,24 @@ import tempfile
 from tei_entity_enricher.interface.gnd.connector import Connector
 
 class TestGNDConnector(unittest.TestCase):
-    def setUp(self) -> None:
+    #auxiliaries
+    def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()  # use this dir for tests
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
-    def get_connectors(self):  # not a test (does not start with 'test')
+    def get_connectors(self):
         gndlist = ["118629662", "11855817X", "4015796-9"]
         return [Connector(gndlist, apiindex, False, False) for apiindex in [0, 1]]
 
+    #tests
     def test_init(self):
         for con in self.get_connectors():
             self.assertIsInstance(con, Connector, "variable con should refer to an instance of Connector class")
             self.assertEqual(type(con.apilist[con.apiindex]), dict, "entry of apilist should be of type dict")
             self.assertIn("name", con.apilist[0], "first entry of apilist should have key 'name'")
             if con.connection_established == False:
-                self.assertTrue(con.connectivitycheck_single(0), "single connectivity check should has passed: response status should be 200 and response.json() should has been successfully executed")
+                self.assertTrue(con.connectivitycheck_single(0), "single connectivity check should have passed: response status should be 200 and response.json() should has been successfully executed")
+                self.assertEqual(con.connectivitycheck_loop(), 0, "connectivity check loop should have passed and returned 0")
     def test_print_url(self):
         for con in self.get_connectors():
             self.assertEqual(con.print_complete_url(), 0, "print_complete_url() should return 0")

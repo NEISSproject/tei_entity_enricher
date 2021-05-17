@@ -304,20 +304,19 @@ class TEINERMap():
                 self.state.tnm_test_entity_list = []
                 with col1:
                     st.subheader('Tagged Entites:')
-                    for entity in statistics.keys():
-                        if st.checkbox('Show Entity ' + entity + ' (' + str(statistics[entity][0]) + ')', True,
-                                       key='tnm' + entity + 'text'):
-                            self.state.tnm_test_entity_list.append(entity)
+                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                        if entity in statistics.keys():
+                            if st.checkbox('Show Entity ' + entity + ' (' + str(statistics[entity][0]) + ')', True,
+                                           key='tnm' + entity + 'text'):
+                                self.state.tnm_test_entity_list.append(entity)
                     st.subheader('Display Options:')
                     tnm_test_show_entity_name = st.checkbox('Display Entity names',
-                                           False,
-                                           key='tnm_display_entity_names')
+                                                            False,
+                                                            key='tnm_display_entity_names')
                     st.subheader('Legend:')
                     index = 0
-                    for entity in mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]:
+                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                         if entity in statistics.keys():
-                            # st.write('$\\text{\\colorbox{' + latex_color_list[
-                            #    index % len(latex_color_list)] + '}{ \\hspace{5em} }}$')
                             st.write('$\\color{' + latex_color_list[
                                 index % len(latex_color_list)] + '}{\\Large\\bullet}$ ' + entity)
                         index += 1
@@ -325,28 +324,27 @@ class TEINERMap():
                 with col2:
                     st.subheader('Tagged Text Content:')
                     st.write(self.mark_entities_in_text(tei.get_tagged_text(), self.state.tnm_test_entity_list,
-                                                        mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],show_entity_names=tnm_test_show_entity_name))
+                                                        sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                                                        show_entity_names=tnm_test_show_entity_name))
                 if config[self.tr.tr_config_attr_use_notes]:
                     col1_note, col2_note = st.beta_columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
                     self.state.tnm_test_note_entity_list = []
                     with col1_note:
                         st.subheader('Tagged Entites:')
-                        for entity in note_statistics.keys():
-                            if st.checkbox('Show Entity ' + entity + ' (' + str(note_statistics[entity][0]) + ')',
-                                           True,
-                                           key='tnm' + entity + 'note'):
-                                self.state.tnm_test_note_entity_list.append(entity)
+                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                            if entity in note_statistics.keys():
+                                if st.checkbox('Show Entity ' + entity + ' (' + str(note_statistics[entity][0]) + ')',
+                                               True, key='tnm' + entity + 'note'):
+                                    self.state.tnm_test_note_entity_list.append(entity)
                         st.subheader('Display Options:')
                         tnm_test_note_show_entity_name = st.checkbox('Display Entity names',
-                                           False,
-                                           key='tnm_display_entity_names_note')
+                                                                     False,
+                                                                     key='tnm_display_entity_names_note')
                         st.subheader('Legend: ')
                         index = 0
-                        for entity in mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]:
+                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                             if entity in note_statistics.keys():
-                                # st.write('$\\text{\\colorbox{' + latex_color_list[
-                                #    index % len(latex_color_list)] + '}{ \\hspace{5em} }}$')
                                 st.write('$\\color{' + latex_color_list[
                                     index % len(latex_color_list)] + '}{\\bullet}$ ' + entity)
                             index += 1
@@ -355,7 +353,8 @@ class TEINERMap():
                         st.subheader('Tagged Note Content:')
                         st.write(
                             self.mark_entities_in_text(tei.get_tagged_notes(), self.state.tnm_test_note_entity_list,
-                                                       mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],show_entity_names=tnm_test_note_show_entity_name))
+                                                       sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                                                       show_entity_names=tnm_test_note_show_entity_name))
                 # st.markdown('Das ist **Konrad _(pers)_**')
 
     def build_tnm_tablestring(self):

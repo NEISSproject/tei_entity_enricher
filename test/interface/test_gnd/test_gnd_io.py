@@ -6,6 +6,7 @@ from tei_entity_enricher.util.helper import module_path
 
 
 class TestGNDio(unittest.TestCase):
+    #auxiliaries
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()  # use this dir for tests
     def tearDown(self) -> None:
@@ -16,6 +17,7 @@ class TestGNDio(unittest.TestCase):
                 FileReader("http://lobid.org/gnd/1105592812.json", "web", False, False), \
                 FileReader(os.path.join(module_path, "util/apilist.json"), "local", False, False)]
 
+    #tests
     def test_FileReader_init(self):
         for fr in self.get_FileReaders():
             self.assertIsInstance(fr, FileReader, "variable fr should refer to an instance of FileReader class")
