@@ -36,7 +36,8 @@ class Connector:
                         "type": ["@type", "str", "categorial", {"person": "person", "organisation": "organisation", "place": "place"}],
                         "name": ["preferredName", "str", "nominal"],
                         "furtherNames": ["variantName", ["str"], "nominal"],
-                        "sameAs": ["sameAs", [{"@id": "str"}], "nominal"]
+                        "sameAs": ["sameAs", [{"@id": "str"}], "nominal"],
+                        "pseudonyms": ["pseudonym", [{"preferredName": "str"}], "nominal"]
                     },
                     "personAliases": {},
                     "placeAliases": {},
@@ -49,7 +50,8 @@ class Connector:
                         "type": ["type", ["str"], "categorial", {"person": "Person", "organisation": "CorporateBody", "place": "PlaceOrGeographicName"}],
                         "name": ["preferredName", "str", "nominal"],
                         "furtherNames": ["variantName", ["str"], "nominal"],
-                        "sameAs": ["sameAs", [{"id": "str"}], "nominal"]
+                        "sameAs": ["sameAs", [{"id": "str"}], "nominal"],
+                        "pseudonyms": ["variantNameEntityForThePerson", [{"forename": ["str"], "surname": ["str"]}], "nominal"]
                     },
                     "personAliases": {},
                     "placeAliases": {},
@@ -166,7 +168,8 @@ class Connector:
                 else:
                     print("connector.get_gnd_data() status: for gnd {} ({}) of {} no data could be delivered by api".format(index + 1, gnd, len(self.gnd))) if self.show_printmessages else None
             self.connection_established = True
-        #filtering: build new dict with selected values, which should be returned (base = all base aliases from apilist definition. list = select specific aliases from base set)
+        # filtering: build new dict with selected values, which should be returned (base = all base aliases from apilist definition. list = select specific aliases from base set)
+        # defining sub method for filtering
         def filter_received_data(gnd: str, mode: Union[str, List[str]]) -> dict:
             """sub method, which extracts the key-value pairs from the raw data revieved from api for one gnd number and renames the keys and/or values.
             alias definitions in self.apilist are used for this filtering process:
@@ -179,59 +182,40 @@ class Connector:
                     example 1: using culturegraph api the value of the base category 'type' is assigned to 'person', if the raw data json object has a key '@type' with the value 'person' of type str,
                     example 2: using lobid api the value of the base category 'type' is assigned to 'person', if the raw data json object has a key 'type' with a list as a value, which has itself a value 'Person' of type str in it,
             mode parameter excepts str 'base' (all base aliases will be extracted) or a list of str (specific aliases will be extracted)"""
-            if mode == "base":
-                base_categories = list(self.apilist[self.apiindex]["baseAliases"].keys())
-                base_categories_data = {}
-                for category in base_categories:
+            # todo: handle additional alias definition sets in apilist.json by user
+            #   category_sets = {'base': [list(self.apilist[self.apiindex]["baseAliases"].keys()), 'baseAliases'],
+            #                    'custom': [list(self.apilist[self.apiindex]["custom"].keys()), 'custom']
+            #                   }
+            #   selected_categories_list = category_sets.get(mode)[0] if type(mode) == str else mode
+            #   selected_categories_alias = category_sets.get(mode)[1] if type(mode) == str else 'baseAliases'
+            #       => allow parsing a list of categories to get_gnd_data() only if they are defined in baseAlias set?
+            base_categories = list(self.apilist[self.apiindex]["baseAliases"].keys())
+            selected_categories = base_categories if mode == "base" else mode
+            selected_categories_data = {}
+            for category in selected_categories:
+                _temp_data = []
+                try:
+                    _temp_data = result[gnd][self.apilist[self.apiindex]["baseAliases"][category][0]]
+                except KeyError:
                     _temp_data = []
-                    try:
-                        _temp_data = result[gnd][self.apilist[self.apiindex]["baseAliases"][category][0]]
-                    except KeyError:
-                        _temp_data = []
-                        print("connector.get_gnd_data() filtering note: could not find {} information for {} in raw data. continuing processing...".format(category, gnd)) if self.show_printmessages else None
-                    #handling of categorical data types
-                    if len(_temp_data) > 0 and self.apilist[self.apiindex]["baseAliases"][category][2] == "categorial" and type(self.apilist[self.apiindex]["baseAliases"][category][3] == dict):
-                        _temp_category_data_form = self.apilist[self.apiindex]["baseAliases"][category][1]
-                        _temp_categorial_values = self.apilist[self.apiindex]["baseAliases"][category][3]
-                        #change the found categorial string to selfdefined string (i.e. 'Person' to 'person')
-                        if type(_temp_category_data_form) == str:
-                            for _type in _temp_categorial_values:
-                                if _temp_data == _temp_categorial_values[_type]:
-                                    _temp_data = _type
-                        #replace the found categorial list with selfdefined string (i.e. ['Person', 'PoliticalLeader'] to 'person')
-                        elif type(_temp_category_data_form) == list:
-                            for _type in _temp_categorial_values:
-                                if _temp_categorial_values[_type] in _temp_data:
-                                    _temp_data = _type
-                    base_categories_data[category] = _temp_data
-                return base_categories_data
-            elif type(mode) == list:
-                base_categories = list(self.apilist[self.apiindex]["baseAliases"].keys())
-                selected_categories_data = {}
-                for category in base_categories:
-                    if category in mode:
-                        _temp_data = []
-                        try:
-                            _temp_data = result[gnd][self.apilist[self.apiindex]["baseAliases"][category][0]]
-                        except KeyError:
-                            _temp_data = []
-                            print("connector.get_gnd_data() filtering note: could not find {} information for {} in raw data. continuing processing...".format(category, gnd)) if self.show_printmessages else None
-                        #handling of categorical data types
-                        if len(_temp_data) > 0 and self.apilist[self.apiindex]["baseAliases"][category][2] == "categorial" and type(self.apilist[self.apiindex]["baseAliases"][category][3] == dict):
-                            _temp_category_data_form = self.apilist[self.apiindex]["baseAliases"][category][1]
-                            _temp_categorial_values = self.apilist[self.apiindex]["baseAliases"][category][3]
-                            #change found categorial string to selfdefined string (i.e. 'Person' to 'person')
-                            if type(_temp_category_data_form) == str:
-                                for _type in _temp_categorial_values:
-                                    if _temp_data == _temp_categorial_values[_type]:
-                                        _temp_data = _type
-                            #replace found categorial list with selfdefined string (i.e. ['Person', 'PoliticalLeader'] to 'person')
-                            elif type(_temp_category_data_form) == list:
-                                for _type in _temp_categorial_values:
-                                    if _temp_categorial_values[_type] in _temp_data:
-                                        _temp_data = _type
-                        selected_categories_data[category] = _temp_data
-                return selected_categories_data
+                    print("connector.get_gnd_data() filtering note: could not find {} information for {} in raw data. continuing processing...".format(category, gnd)) if self.show_printmessages else None
+                #handling of categorical data types
+                if len(_temp_data) > 0 and self.apilist[self.apiindex]["baseAliases"][category][2] == "categorial" and type(self.apilist[self.apiindex]["baseAliases"][category][3] == dict):
+                    _temp_category_data_form = self.apilist[self.apiindex]["baseAliases"][category][1]
+                    _temp_categorial_values = self.apilist[self.apiindex]["baseAliases"][category][3]
+                    #change found categorial string to selfdefined string (i.e. 'Person' to 'person')
+                    if type(_temp_category_data_form) == str:
+                        for _type in _temp_categorial_values:
+                            if _temp_data == _temp_categorial_values[_type]:
+                                _temp_data = _type
+                    #replace found categorial list with selfdefined string (i.e. ['Person', 'PoliticalLeader'] to 'person')
+                    elif type(_temp_category_data_form) == list:
+                        for _type in _temp_categorial_values:
+                            if _temp_categorial_values[_type] in _temp_data:
+                                _temp_data = _type
+                selected_categories_data[category] = _temp_data
+            return selected_categories_data
+        #executing sub method for filtering
         if data_selection is not None:
             if type(self.gnd) == str:
                 _new_dict = {list(result.keys())[0]: filter_received_data(self.gnd, data_selection)}

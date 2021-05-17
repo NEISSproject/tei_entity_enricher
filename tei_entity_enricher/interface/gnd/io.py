@@ -150,21 +150,22 @@ class Cache:
         lines = self.data.split("\n")
         for line in lines:
             if re.search(regex_meta_lines, line) != None:
-                if (re.search(regex_prefix_line, line) != None):
+                if re.search(regex_prefix_line, line) != None:
                     found = True
                     break
             else:
                 continue
         return found
     def get_gndids_of_beacon_file(self) -> List[str]:
-        """method to get all listed gnd numbers of a beacon file"""
+        """method to get all listed gnd numbers from a beacon file"""
         if self.check_beacon_prefix_statement() == True:
             regex_gndid = re.compile("^.{9,10}(?=\|)")
             lines = self.data.split("\n")
             result_list = []
             for line in lines:
-                if re.search(regex_gndid, line) != None:
-                    result_list.append(re.search(regex_gndid, line).group(0))
+                line_search_result = re.search(regex_gndid, line)
+                if line_search_result != None:
+                    result_list.append(line_search_result.group(0))
             print("in beacon found gndids: {}\ndata: {}".format(len(result_list), result_list)) if self.show_printmessages else None
             return result_list
         else:
@@ -234,17 +235,17 @@ class FileWriter:
         }
         already_existing_file = FileReader(self.filepath, "local", True)
         already_existing_file_cache = Cache(already_existing_file.loadfile_json())
-        if (already_existing_file_cache.data == None):
+        if already_existing_file_cache.data == None:
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print("new file {} successfully created".format(self.filepath)) if self.show_printmessages else None
             return True
-        elif (already_existing_file_cache.data == "empty"):
+        elif already_existing_file_cache.data == "empty":
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print("file already exists, but was empty: file successfully written") if self.show_printmessages else None
             return True
-        elif (already_existing_file_cache.data == False):
+        elif already_existing_file_cache.data == False:
             print("internal error: cancel writing process") if self.show_printmessages else None
             return False
         else:

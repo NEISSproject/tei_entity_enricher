@@ -4,12 +4,11 @@ import os
 from tei_entity_enricher.interface.gnd.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import module_path
 
-
 class TestGNDio(unittest.TestCase):
     #auxiliaries
-    def setUp(self) -> None:
+    def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()  # use this dir for tests
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
     def get_FileReaders(self):
         return [FileReader("http://www.andreas-praefcke.de/temp/BEACON-GND-Bern.txt", "web", False, False), \
