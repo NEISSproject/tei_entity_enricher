@@ -12,9 +12,9 @@ class TestGNDio(unittest.TestCase):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
     def get_FileReaders(self):
         return [FileReader("http://www.andreas-praefcke.de/temp/BEACON-GND-Bern.txt", "web", False, False), \
-                FileReader(os.path.join(module_path, "util/beacon_file_for_tests.txt"), "local", False, False), \
+                FileReader(os.path.join(module_path, "util", "beacon_file_for_tests.txt"), "local", False, False), \
                 FileReader("http://lobid.org/gnd/1105592812.json", "web", False, False), \
-                FileReader(os.path.join(module_path, "util/apilist.json"), "local", False, False)]
+                FileReader(os.path.join(module_path, "util", "apilist.json"), "local", False, False)]
 
     #tests
     def test_FileReader_init(self):
@@ -75,21 +75,21 @@ class TestGNDio(unittest.TestCase):
         self.assertIsInstance(fw, FileWriter, "variable fw should refer to an instance of FileWriter class")
     def test_FileWriter_write_file(self):
         test_dict = {"123": {"name": "123", "type": "a"}, "456": {"name": "456", "type": "b"}, "789": {"name": "789", "type": "a"}}
-        if os.path.exists(os.path.join(module_path, "util/testfile.json")):
+        if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
             print("test_FileWriter_write_file(): testfile.json already exists. Delete and continue test? (Y or skip with everything else)")
             answer = input()
             if answer == "Y":
-                os.remove(os.path.join(module_path, "util/testfile.json"))
+                os.remove(os.path.join(module_path, "util", "testfile.json"))
             else:
                 self.skipTest("test_FileWriter_write_file(): Test skipped by User")
-        fw = FileWriter(test_dict, os.path.join(module_path, "util/testfile.json"), False)
+        fw = FileWriter(test_dict, os.path.join(module_path, "util", "testfile.json"), False)
         self.assertTrue(fw.writefile(), "writefile() should return True, when writing a new file")
         self.assertFalse(fw.writefile(), "writefile() should return False, when a file with filepath already exists and writefile()s parameter 'do_if_file_exists' is 'cancel'")
         self.assertTrue(fw.writefile("replace"), "writefile() should return True, when replacing an existing file and writefile()s parameter 'do_if_file_exists' is 'replace'")
         fw.data = {"1234": {"name": "1234", "type": "a"}, "4567": {"name": "4567", "type": "b"}, "7890": {"name": "7890", "type": "a"}}
         self.assertTrue(fw.writefile("merge"), "writefile() should return True, when merging data with an existing file and writefile()s parameter 'do_if_file_exists' is 'merge'")
-        if os.path.exists(os.path.join(module_path, "util/testfile.json")):
-            os.remove(os.path.join(module_path, "util/testfile.json"))
+        if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
+            os.remove(os.path.join(module_path, "util", "testfile.json"))
 
 if __name__ == '__main__':
     unittest.main()
