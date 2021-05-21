@@ -6,7 +6,8 @@
             "type": ["@type", "str", "categorial", {"person": "person", "organisation": "organisation", "place": "place"}],
             "name": ["preferredName", "str", "nominal"],
             "furtherNames": ["variantName", ["str"], "nominal"],
-            "sameAs": ["sameAs", [{"@id": "str"}], "nominal"]
+            "sameAs": ["sameAs", [{"@id": "str"}], "nominal"],
+            "pseudonyms": ["pseudonym", [{"preferredName": "str"}], "nominal"]
         },
         "personAliases": {},
         "placeAliases": {},
@@ -19,7 +20,8 @@
             "type": ["type", ["str"], "categorial", {"person": "Person", "organisation": "CorporateBody", "place": "PlaceOrGeographicName"}],
             "name": ["preferredName", "str", "nominal"],
             "furtherNames": ["variantName", ["str"], "nominal"],
-            "sameAs": ["sameAs", [{"id": "str"}], "nominal"]
+            "sameAs": ["sameAs", [{"id": "str"}], "nominal"],
+            "pseudonyms": ["variantNameEntityForThePerson", [{"forename": ["str"], "surname": ["str"]}], "nominal"]
         },
         "personAliases": {},
         "placeAliases": {},

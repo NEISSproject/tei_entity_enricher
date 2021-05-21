@@ -9,7 +9,8 @@ class FileReader:
                  filepath: Union[str, None] = None, \
                  origin: Union[str, None] = None, \
                  internal_call: bool = False, \
-                 show_printmessages: bool = True):
+                 show_printmessages: bool = True) \
+                 -> None:
         """loads json and beacon files from local file system or web source,
         used internally in Connector and FileWriter class and on its own in a beacon file processing pipeline,
         in which gnd id numbers are extracted out of a beacon file, enriched with related information and saved in a json file
@@ -29,13 +30,13 @@ class FileReader:
             a string 'empty' (in case a file in self.filepath was found, but is empty),
             None (in case of preceding definition errors)
             or False (in case of file not found error or bad format error)"""
-        if (self.filepath == None):
+        if self.filepath == None:
             print("internal error: FileReader.filepath not defined") if self.show_printmessages else None
             return False
-        if (self.origin == None):
+        if self.origin == None:
             print("internal error: FileReader.origin not defined") if self.show_printmessages else None
             return False
-        elif (self.origin == "local"):
+        elif self.origin == "local":
             try:
                 with open(self.filepath) as loaded_file:
                     if (os.stat(self.filepath).st_size == 0):
@@ -44,10 +45,10 @@ class FileReader:
                         imported_data = json.load(loaded_file)
                 return imported_data
             except FileNotFoundError:
-                if (self.internal_call == False):
+                if self.internal_call == False:
                     print("error: file not found") if self.show_printmessages else None
                 return None
-        elif (self.origin == "web"):
+        elif self.origin == "web":
             try:
                 response = requests.get(self.filepath)
                 imported_data = response.json()
@@ -65,20 +66,20 @@ class FileReader:
             a string 'empty' (in case a file in self.filepath was found, but is empty),
             None (in case of preceding definition errors)
             or False (in case of file not found error or bad format error)"""
-        if (self.filepath == None):
+        if self.filepath == None:
             print("internal error: FileReader.filepath not defined") if self.show_printmessages else None
             return False
-        if (self.origin == None):
+        if self.origin == None:
             print("internal error: FileReader.origin not defined") if self.show_printmessages else None
             return False
-        if (self.origin == "local"):
+        if self.origin == "local":
             try:
                 with open(self.filepath) as loaded_file:
                     return loaded_file.read()
             except FileNotFoundError:
                 print("error: file not found") if self.show_printmessages else None
                 return None
-        elif (self.origin == "web"):
+        elif self.origin == "web":
             try:
                 response = requests.get(self.filepath)
                 loaded_file = response.text
@@ -88,7 +89,10 @@ class FileReader:
                 return None
 
 class Cache:
-    def __init__(self, data: Union[str, None] = None, show_printmessages: bool = True):
+    def __init__(self, \
+                 data: Union[str, None] = None, \
+                 show_printmessages: bool = True) \
+                 -> None:
         """saves data for manipulation processes used in a beacon file processing pipeline,
         
         data: contains data of beacon or json files as a string, delivered by FileReader class
@@ -99,8 +103,12 @@ class Cache:
     def print_cache(self) -> int:
         print(self.data) if self.show_printmessages else None
         return 0
-    def check_for_redundancy(self, gnd: str, category: str, value: Union[str, dict, list, bool, None]) -> Tuple[bool, bool]:
-        """used to check a dict in self.data for an existing gnd number and value,
+    def check_for_redundancy(self, \
+                             gnd: str, \
+                             category: str, \
+                             value: Union[str, dict, list, bool, None]) \
+                             -> Tuple[bool, bool]:
+        """checks a dict in self.data for an existing gnd number and value,
         a specific dict structure is presupposed:
         {'gnd1':
             {'gnd1_key1': 'gnd1_val1',
@@ -112,14 +120,14 @@ class Cache:
         this check is used in FileWriter class as part
         of a merging process of an existing json file and new json data,
         which should be added to the file:
-        if a specific gnd number and a specific value is already present in the file,
-        the merging process will be canceled (see FileWriter class for more information)"""
+        but if a specific gnd number and a specific value is already present in the file,
+        the merging process will be canceled (see FileWriter class)"""
         gnd_is_redundant = False
         value_is_redundant = False
         for key in self.data:
-            if (key == gnd):
+            if key == gnd:
                 gnd_is_redundant = True
-            if (self.data[key][category] == value):
+            if self.data[key][category] == value:
                 value_is_redundant = True
         return gnd_is_redundant, value_is_redundant
     def check_json_structure(self) -> bool:
@@ -150,30 +158,35 @@ class Cache:
         lines = self.data.split("\n")
         for line in lines:
             if re.search(regex_meta_lines, line) != None:
-                if (re.search(regex_prefix_line, line) != None):
+                if re.search(regex_prefix_line, line) != None:
                     found = True
                     break
             else:
                 continue
         return found
     def get_gndids_of_beacon_file(self) -> List[str]:
-        """method to get all listed gnd numbers of a beacon file"""
+        """method to get all listed gnd numbers from a beacon file"""
         if self.check_beacon_prefix_statement() == True:
             regex_gndid = re.compile("^.{9,10}(?=\|)")
             lines = self.data.split("\n")
             result_list = []
             for line in lines:
-                if re.search(regex_gndid, line) != None:
-                    result_list.append(re.search(regex_gndid, line).group(0))
+                line_search_result = re.search(regex_gndid, line)
+                if line_search_result != None:
+                    result_list.append(line_search_result.group(0))
             print("in beacon found gndids: {}\ndata: {}".format(len(result_list), result_list)) if self.show_printmessages else None
             return result_list
         else:
             print("error: loaded beacon-file doesn't refer to gnd data or is corrupted") if self.show_printmessages else None
             return None
-    def get_items_with_specific_value_in_a_category(self, category: str, value: str, mode: str = "dict") -> Union[dict, list, bool]:
+    def get_items_with_specific_value_in_a_category(self, \
+                                                    category: str, \
+                                                    value: str, \
+                                                    mode: str = "dict") \
+                                                    -> Union[dict, list, bool]:
         """method to filter self.data dict, refering to the existance of a specific value in a category,
         i.e. get all gnd entities, which are of type person,
-        parameter 'mode' controls format of the return value"""
+        parameter 'mode' controls the format of the return value"""
         if mode == "dict":
             result = {}
             for gnd in self.data:
@@ -191,7 +204,11 @@ class Cache:
             return False
    
 class FileWriter:
-    def __init__(self, data: Union[str, None] = None, filepath: Union[str, None] = None, show_printmessages: bool = True):
+    def __init__(self, \
+                 data: Union[str, None] = None, \
+                 filepath: Union[str, None] = None, \
+                 show_printmessages: bool = True) \
+                 -> None:
         """writes data (dict type) into json files
         
         data: contains data of json files as a string, delivered by FileReader or Cache class
@@ -200,7 +217,9 @@ class FileWriter:
         self.data: Union[str, None] = data
         self.filepath: Union[str, None] = filepath
         self.show_printmessages: bool = show_printmessages
-    def writefile(self, do_if_file_exists: str = "cancel") -> bool:
+    def writefile(self, \
+                  do_if_file_exists: str = "cancel") \
+                  -> bool:
         """method to write a new or enrich an existing json file,
         do_if_file_exists parameter controls behavior in case a file in self.filepath already exists,
         there are 3 submethods defined for a sort of switch statement"""
@@ -234,17 +253,17 @@ class FileWriter:
         }
         already_existing_file = FileReader(self.filepath, "local", True)
         already_existing_file_cache = Cache(already_existing_file.loadfile_json())
-        if (already_existing_file_cache.data == None):
+        if already_existing_file_cache.data == None:
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print("new file {} successfully created".format(self.filepath)) if self.show_printmessages else None
             return True
-        elif (already_existing_file_cache.data == "empty"):
+        elif already_existing_file_cache.data == "empty":
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print("file already exists, but was empty: file successfully written") if self.show_printmessages else None
             return True
-        elif (already_existing_file_cache.data == False):
+        elif already_existing_file_cache.data == False:
             print("internal error: cancel writing process") if self.show_printmessages else None
             return False
         else:
