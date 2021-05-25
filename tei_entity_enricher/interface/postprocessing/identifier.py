@@ -10,6 +10,7 @@ class Identifier:
         """delivers suggestions to which entity(ies) refers the input string(s)
         
         input: contains a list of tuples, which themself consists of a name and a type string
+        current_result_data: buffer to save and print current query results
         show_printmessages: show class internal printmessages on runtime or not"""
         self.input: Union[List[Tuple[str, str]], None] = input
         self.current_result_data: Union[dict, None] = current_result_data
@@ -17,7 +18,8 @@ class Identifier:
 
     def query(self, \
               filter_for_precise_spelling: bool = True, \
-              filter_for_correct_type: bool = True) \
+              filter_for_correct_type: bool = True, \
+              check_connectivity: bool = False) \
               -> Union[Dict[str, list], bool]:
         """starts wikidata query and saves results in self.current_result_data
         
@@ -26,8 +28,9 @@ class Identifier:
         api are returned,
         filter_for_correct_type variable determines wheather the entities returned by api
         will be checked semantically with sparql queries in correspondance with the delivered
-        type strings in self.input; only entities of a correct type will be returned"""
-        c = WikidataConnector(self.input)
+        type strings in self.input; only entities of a correct type will be returned
+        check_connectivity: execute connectivity check in called WikidataConnector instance or not"""
+        c = WikidataConnector(self.input, check_connectivity, self.show_printmessages)
         result = c.get_wikidata_search_results(filter_for_precise_spelling, filter_for_correct_type)
         self.current_result_data = result
         return result
