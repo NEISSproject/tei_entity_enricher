@@ -1,21 +1,21 @@
 import unittest
 import tempfile
-from tei_entity_enricher.interface.gnd.connector import Connector
+from tei_entity_enricher.interface.postprocessing.gnd_connector import GndConnector
 
-class TestGNDConnector(unittest.TestCase):
+class TestPostprocessingGndConnector(unittest.TestCase):
     #auxiliaries
     def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()  # use this dir for tests
     def tearDown(self):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
     def get_connectors(self):
-        gndlist = ["118629662", "11855817X", "4015796-9"]
-        return [Connector(gndlist, apiindex, False, False) for apiindex in [0, 1]]
+        gnd_id_list = ["118629662", "11855817X", "4015796-9"]
+        return [GndConnector(gnd_id_list, apiindex, False, False) for apiindex in [0, 1]]
 
     #tests
     def test_init(self):
         for con in self.get_connectors():
-            self.assertIsInstance(con, Connector, "variable con should refer to an instance of Connector class")
+            self.assertIsInstance(con, GndConnector, "variable con should refer to an instance of GndConnector class")
             self.assertEqual(type(con.apilist[con.apiindex]), dict, "entry of apilist should be of type dict")
             self.assertIn("name", con.apilist[0], "first entry of apilist should have key 'name'")
             if con.connection_established == False:
@@ -26,7 +26,7 @@ class TestGNDConnector(unittest.TestCase):
             self.assertEqual(con.print_complete_url(), 0, "print_complete_url() should return 0")
     def test_return_url(self):
         for con in self.get_connectors():
-            self.assertEqual(con.return_complete_url(), con.apilist[con.apiindex]["baseUrl"].format(con.gnd[0]), "return_complete_url() should return a string constructed of 'baseUrl' value (first object in apilist) and gnd '118629662'")
+            self.assertEqual(con.return_complete_url(), con.apilist[con.apiindex]["baseUrl"].format(con.gnd_id[0]), "return_complete_url() should return a string constructed of 'baseUrl' value (first object in apilist) and gnd id '118629662'")
     def test_get_raw_json(self):
         for con in self.get_connectors():
             response = con.get_gnd_data()

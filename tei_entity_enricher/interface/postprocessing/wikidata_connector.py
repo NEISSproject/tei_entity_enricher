@@ -1,25 +1,75 @@
 from typing import Union, List, Tuple, Dict
 from SPARQLWrapper import SPARQLWrapper, JSON
-from tei_entity_enricher.interface.gnd.io import FileReader
+from tei_entity_enricher.interface.postprocessing.io import FileReader
+from tei_entity_enricher import __version__
 import math
 
-class Identifier:
+class WikidataConnector:
     def __init__(self, \
                  input: Union[List[Tuple[str, str]], None] = None, \
+                 check_connectivity: bool = True, \
                  show_printmessages: bool = True) \
                  -> None:
-        """returns suggestions to which entity(ies) refers the input string(s)
+        """establishes connection to wikida web api and wikidata´s sparql endpoint,
+        used to get a list of possible entities refering to input name and type strings
         
         input: contains a list of tuples, which themself consists of a name and a type string
-        show_printmessages: show class internal printmessages on runtime or not"""
+        check_connectivity: execute connectivity check in __init__() or not (see connectivity_check())
+        show_printmessages: show class internal printmessages on runtime or not
+        
+        self.wikidata_web_api_baseUrl: baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
+        self.wikidata_web_api_language: language setting of wikidata web api
+        self.wikidata_web_api_limit: maximum amount of search hits in wikidata web api query results
+        connection_established: data from an api has already been received or not"""
+        print("initializing WikidataConnector..") if show_printmessages else None
         self.input: Union[List[Tuple[str, str]], None] = input
+        self.check_connectivity: bool = check_connectivity
         self.show_printmessages: bool = show_printmessages
+        self.wikidata_web_api_baseUrl: str = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&limit={}"
+        self.wikidata_web_api_language: str = "de"
+        self.wikidata_web_api_limit: str = "50"
+        self.connection_established: bool = False
+        if self.check_connectivity == True:
+            self.connectivity_check()
+        else:
+            print("WikidataConnector: initialization has been done without connectivity check.") if self.show_printmessages else None
+
+    def connectivity_check(self) -> int:
+        """checking wikidata web api (preset query string: 'Berlin') and wikidata sparql endpoint (preset query input: ('Berlin', 'place')).
+        returns 0 or -1 for unittest purposes"""
+        def check_wikidata_web_api() -> bool:
+            try:
+                result = FileReader(self.wikidata_web_api_baseUrl.format("Berlin", self.wikidata_web_api_language, self.wikidata_web_api_limit), "web", True, self.show_printmessages)
+            except:
+                print("WikidataConnector connectivity_check() error: internal failure in check_wikidata_web_api() trying to initiate FileReader instance") if self.show_printmessages else None
+                return False
+            if result != None and result != False:
+                return True
+            print("WikidataConnector connectivity_check() error: no connection to wikidata web api") if self.show_printmessages else None
+            return False
+        def check_wikidata_sparql_endpoint() -> bool:
+            try:
+                result = self.check_wikidata_entity_type('Q64', 'place')
+            except:
+                print("WikidataConnector connectivity_check() error: internal failure in check_wikidata_sparql_endpoint() trying to do sparql query on wikidata sparql endpoint") if self.show_printmessages else None
+                return False
+            if type(result) == bool:
+                return True
+            print("WikidataConnector connectivity_check() error: no connection to wikidata sparql endpoint") if self.show_printmessages else None
+            return False
+        if self.check_connectivity == False:
+            self.check_connectivity == True
+        if all((check_wikidata_web_api(), check_wikidata_sparql_endpoint())):
+            print("WikidataConnector connectivity_check() passed: Connection to wikidata web api and wikidata sparql endpoint could be established.") if self.show_printmessages else None
+            self.connection_established = True
+            return 0
+        return -1
 
     def get_wikidata_search_results(self, \
                                     filter_for_precise_spelling: bool = True, \
                                     filter_for_correct_type: bool = True) \
                                     -> Union[Dict[str, list], bool]:
-        """sends a entity query to wikidata api using input strings of self.input
+        """sends a entity query to wikidata web api using input strings of self.input
         and returns a dict with input strings as keys and a list as values,
         which consists of the number of search hits and the returned data object,
         filter_for_precise_spelling variable determines wheather only exact matches
@@ -29,16 +79,16 @@ class Identifier:
         will be checked semantically with sparql queries in correspondance with the delivered
         type strings in self.input; only entities of a correct type will be returned"""
         if self.input == None:
-            print('Identifier.get_wikidata_search_results() Error: Identifier has no input data.') if self.show_printmessages == True else None
+            print('WikidataConnector get_wikidata_search_results() Error: WikidataConnector has no input data.') if self.show_printmessages == True else None
             return False
         if (type(self.input) != list) or (len(self.input) < 1) or (type(self.input[0]) != tuple) or (type(self.input[0][0]) != str):
-            print('Identifier.get_wikidata_search_results() Error: Identifier input data is in a wrong format.') if self.show_printmessages == True else None
+            print('WikidataConnector get_wikidata_search_results() Error: WikidataConnector input data is in a wrong format.') if self.show_printmessages == True else None
             return False
         result_dict = {}
         for string_tuple in self.input:
-            filereader = FileReader("https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language=de".format(string_tuple[0]), "web", True, self.show_printmessages)
+            filereader = FileReader(self.wikidata_web_api_baseUrl.format(string_tuple[0], self.wikidata_web_api_language, self.wikidata_web_api_limit), "web", True, self.show_printmessages)
             filereader_result = filereader.loadfile_json()
-            if not filter_for_precise_spelling == True and not filter_for_correct_type == True:
+            if not all((filter_for_precise_spelling, filter_for_correct_type)):
                 print(f"no filtering in {string_tuple} result") if self.show_printmessages == True else None
             if filter_for_precise_spelling == True:
                 precise_spelling = []
@@ -66,12 +116,12 @@ class Identifier:
         return result_dict
 
     def check_wikidata_entity_type(self, \
-                                   entity_id: str, \
-                                   type: str) \
-                                   -> bool:
+                                entity_id: str, \
+                                type: str) \
+                                -> bool:
         """used in get_wikidata_search_results() to check, if those wikidata entities delivered
         by self.get_wikidata_search_results() query are of the type, which has been defined inside
-        the self.input tuples of Identifier class
+        the self.input tuples of WikidataConnector class
         
         this check uses the wikidata semantic web data base by sending queries to the wikidata sparql endpoint;
         get_wikidata_search_results() retrieves wikidata id numbers, which are used here in an ASK-query,
@@ -86,11 +136,8 @@ class Identifier:
         this method checks only one entity at once and has to be used in an iteration
         
         """
-        # todo: import __version__ variable from __init__.py
-        __version__ = '0.0.0'
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = 'NEISS TEI Enricher v.{}'.format(__version__)
-        
         queries = {
             'person': [
                 """
@@ -142,58 +189,8 @@ class Identifier:
                 """
             ],
         }
-
         sparql = SPARQLWrapper(endpoint_url, agent=user_agent)
         sparql.setQuery(queries.get(type)[0]%entity_id)
         sparql.setReturnFormat(JSON)
-        return sparql.query().convert()['boolean']
-
-def identifier_demo(input):
-    i = Identifier(input)
-
-    print(f'\n\nIdentifier started, input: {input}\n\n\n---------------getting raw result------------------')
-    i_result_raw = i.get_wikidata_search_results(False, False)
-    print('\n\nraw result\n##########')
-    for key in i_result_raw:
-        print("{}: {}".format(key, i_result_raw[key][0]))
-        for hit in i_result_raw[key][1]['search']:
-            descr = hit.get('description', 'No description delivered')
-            print(f"----- {descr}")
-    print('\n')
-    print(i_result_raw)
-
-    print('\n\n\n\n\n---------------getting spell filtered result------------------')
-    i_result_spelling_filtered = i.get_wikidata_search_results(True, False)
-    print('\n\nfiltered result #1 (filtered by exact spelling)\n##########')
-    for key in i_result_spelling_filtered:
-        print("{}: {}".format(key, i_result_spelling_filtered[key][0]))
-        for hit in i_result_spelling_filtered[key][1]['search']:
-            descr = hit.get('description', 'No description delivered')
-            print(f"----- {descr}")
-    print('\n')
-    print(i_result_spelling_filtered)
-
-    print('\n\n\n\n\n---------------getting type filtered result------------------')
-    i_result_type_filtered = i.get_wikidata_search_results(False, True)
-    print('\n\nfiltered result #2 (filtered by type)\n##########')
-    for key in i_result_type_filtered:
-        print("{}: {}".format(key, i_result_type_filtered[key][0]))
-        for hit in i_result_type_filtered[key][1]['search']:
-            descr = hit.get('description', 'No description delivered')
-            print(f"----- {descr}")
-    print('\n')
-    print(i_result_type_filtered)
-
-    print('\n\n\n\n\n\n---------------getting fully filtered result------------------')
-    i_result_all_filtered = i.get_wikidata_search_results()
-    print('\n\nfiltered result #3 (filtered by spelling and by type)\n##########')
-    for key in i_result_all_filtered:
-        print("{}: {}".format(key, i_result_all_filtered[key][0]))
-        for hit in i_result_all_filtered[key][1]['search']:
-            descr = hit.get('description', 'No description delivered')
-            print(f"----- {descr}")
-    print('\n')
-    print(i_result_all_filtered)
-
-if __name__ == '__main__':
-    identifier_demo([('Mecklenburg', 'place'), ('Roger Labahn', 'person'), ('Uwe Johnson Gesellschaft', 'organisation'), ('Rostock', 'place')])
+        result = sparql.query().convert()
+        return result['boolean']
