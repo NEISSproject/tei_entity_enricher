@@ -1,13 +1,17 @@
 from typing import Union, List, Tuple, Dict
 from SPARQLWrapper import SPARQLWrapper, JSON
-from tei_entity_enricher.interface.postprocessing.io import FileReader
+from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher import __version__
 import math
+import os
 
 class WikidataConnector:
     def __init__(self, \
                  input: Union[List[Tuple[str, str]], None] = None, \
                  check_connectivity: bool = True, \
+                 wikidata_web_api_language: str = "de", \
+                 wikidata_web_api_limit: str = "50", \
                  show_printmessages: bool = True) \
                  -> None:
         """establishes connection to wikida web api and wikidata´s sparql endpoint,
@@ -15,19 +19,76 @@ class WikidataConnector:
         
         input: contains a list of tuples, which themself consists of a name and a type string
         check_connectivity: execute connectivity check in __init__() or not (see connectivity_check())
+        wikidata_web_api_language: language setting of wikidata web api
+        wikidata_web_api_limit: maximum amount of returned search hits in wikidata web api query results
         show_printmessages: show class internal printmessages on runtime or not
         
         self.wikidata_web_api_baseUrl: baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
-        self.wikidata_web_api_language: language setting of wikidata web api
-        self.wikidata_web_api_limit: maximum amount of search hits in wikidata web api query results
         connection_established: data from an api has already been received or not"""
         print("initializing WikidataConnector..") if show_printmessages else None
         self.input: Union[List[Tuple[str, str]], None] = input
         self.check_connectivity: bool = check_connectivity
         self.show_printmessages: bool = show_printmessages
         self.wikidata_web_api_baseUrl: str = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&limit={}"
-        self.wikidata_web_api_language: str = "de"
-        self.wikidata_web_api_limit: str = "50"
+        self.wikidata_web_api_language: str = wikidata_web_api_language
+        self.wikidata_web_api_limit: str = wikidata_web_api_limit
+        self.wikidata_sparql_queries_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "sparql_queries.json")
+        self.wikidata_sparql_queries: Union[dict, None] = FileReader(self.wikidata_sparql_queries_filepath, "local", True).loadfile_json()
+        if self.wikidata_sparql_queries is None:
+            print("WikidataConnector: could not find sparql_queries.json in config dir. creating file with default settings...") if self.show_printmessages else None
+            self.wikidata_sparql_queries: dict = {
+                'person': [
+                    """
+                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+                        PREFIX wd: <http://www.wikidata.org/entity/>
+
+                        ASK
+                        {
+                        wd:%s wdt:P31/wdt:P279* ?o .
+                        FILTER (?o IN (wd:Q5))
+                        }
+                    """,
+                    """
+                        q5 = human
+                    """
+                ],
+                'organisation': [
+                    """
+                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+                        PREFIX wd: <http://www.wikidata.org/entity/>
+
+                        ASK
+                        {
+                        wd:%s wdt:P31/wdt:P279* ?o .
+                        FILTER (?o IN (wd:Q43229))
+                        }
+                    """,
+                    """
+                        Q43229 = organization
+                    """
+                ],
+                'place': [
+                    """
+                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+                        PREFIX wd: <http://www.wikidata.org/entity/>
+
+                        ASK
+                        {
+                        wd:%s wdt:P31/wdt:P279* ?o .
+                        FILTER (?o IN (wd:Q515, wd:Q27096213))
+                        }
+                    """,
+                    """
+                        Q515 = city
+                        Q27096213 = geographic entity
+
+                        note: at the moment this category includes the categories 'city', 'ground' and 'water',
+                        which should be differentiated
+                    """
+                ],
+            }
+            makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
+            FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
         self.connection_established: bool = False
         if self.check_connectivity == True:
             self.connectivity_check()
@@ -127,7 +188,7 @@ class WikidataConnector:
         get_wikidata_search_results() retrieves wikidata id numbers, which are used here in an ASK-query,
         which determines, if the entity in question is a member of one of specific classes
         (see 'queries' variable for details: 'wdt:P31/wdt:P279*'-property means 'is a member of a specific class or
-        a member of any subclass (any level above) of a specific class' and the FILTER statement defines a set of classes,
+        a member of any subclass (any level beneath) of a specific class' and the FILTER statement defines a set of classes,
         out of which only one class has to match the query statement to let the query return true)
 
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
@@ -137,60 +198,9 @@ class WikidataConnector:
         
         """
         endpoint_url = "https://query.wikidata.org/sparql"
-        user_agent = 'NEISS TEI Enricher v.{}'.format(__version__)
-        queries = {
-            'person': [
-                """
-                    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                    PREFIX wd: <http://www.wikidata.org/entity/>
-
-                    ASK
-                    {
-                    wd:%s wdt:P31/wdt:P279* ?o .
-                    FILTER (?o IN (wd:Q5))
-                    }
-                """,
-                """
-                    q5 = human
-                """
-            ],
-            'organisation': [
-                """
-                    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                    PREFIX wd: <http://www.wikidata.org/entity/>
-
-                    ASK
-                    {
-                    wd:%s wdt:P31/wdt:P279* ?o .
-                    FILTER (?o IN (wd:Q43229))
-                    }
-                """,
-                """
-                    Q43229 = organization
-                """
-            ],
-            'place': [
-                """
-                    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                    PREFIX wd: <http://www.wikidata.org/entity/>
-
-                    ASK
-                    {
-                    wd:%s wdt:P31/wdt:P279* ?o .
-                    FILTER (?o IN (wd:Q515, wd:Q27096213))
-                    }
-                """,
-                """
-                    Q515 = city
-                    Q27096213 = geographic entity
-
-                    note: at the moment this category includes the categories 'city', 'ground' and 'water',
-                    which should be differentiated
-                """
-            ],
-        }
+        user_agent = 'NEISS TEI Entity Enricher v.{}'.format(__version__)
         sparql = SPARQLWrapper(endpoint_url, agent=user_agent)
-        sparql.setQuery(queries.get(type)[0]%entity_id)
+        sparql.setQuery(self.wikidata_sparql_queries.get(type)[0]%entity_id)
         sparql.setReturnFormat(JSON)
         result = sparql.query().convert()
         return result['boolean']

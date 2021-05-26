@@ -1,10 +1,11 @@
 from typing import Union
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.helper import local_save_path
 import os
 
 class EntityLibrary:
     def __init__(self, \
-                 data_file: Union[str, None] = None, \
+                 data_file: Union[str, None] = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json"), \
                  show_printmessages: bool = True) \
                  -> None:
         """is a memory of entities (saved properties are: name, furtherNames, type, gnd_id, wikidata_id),
@@ -20,6 +21,8 @@ class EntityLibrary:
         """
         self.data_file: Union[str, None] = data_file
         self.show_printmessages: bool = show_printmessages
+
+        # HIER WEITER: differentiation of file extension necessary? create dir and file if not existent
 
         if self.data_file is not None:
             self.data: Union[dict, None, bool] = self.load_library()

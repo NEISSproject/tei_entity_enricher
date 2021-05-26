@@ -1,7 +1,7 @@
 import os
 from typing import Union, List
-from tei_entity_enricher.interface.postprocessing.io import FileReader
-from tei_entity_enricher.util.helper import module_path
+from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 
 class GndConnector:
     def __init__(self, \
@@ -18,6 +18,7 @@ class GndConnector:
         check_connectivity: execute connectivity check in __init__() or not (see connectivitycheck_loop())
         show_printmessages: show class internal printmessages on runtime or not
 
+        apilist_filepath: path to apilist config file
         apilist: list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
         connection_established: data from an api has already been received or not
         remaining_apis_to_check: list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
@@ -25,9 +26,10 @@ class GndConnector:
         self.show_printmessages: bool = show_printmessages
         self.gnd_id: Union[str, List[str]] = gnd_id
         self.apiindex: int = apiindex
-        self.apilist: Union[dict, None] = FileReader(os.path.join(module_path, "util", "gnd_apilist.json"), "local", True).loadfile_json()
+        self.apilist_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "gnd_apilist.json")
+        self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
         if self.apilist is None:
-            print("gnd connector error: could not find gnd_apilist.json. using default settings...") if self.show_printmessages else None
+            print("GndConnector: could not find gnd_apilist.json in config dir. creating file with default settings...") if self.show_printmessages else None
             self.apilist: List[dict] = [
                 {
                     "name": "culturegraph",
@@ -59,6 +61,8 @@ class GndConnector:
                 }
             ]
             self.apiindex: int = 0
+            makedir_if_necessary(os.path.dirname(self.apilist_filepath))
+            FileWriter(self.apilist, self.apilist_filepath).writefile_json()
         self.check_connectivity: bool = check_connectivity
         self.connection_established: bool = False
         self.remaining_apis_to_check: list = [i for i,_ in enumerate(self.apilist)]
@@ -88,17 +92,17 @@ class GndConnector:
             self.check_connectivity == True
         if len(self.remaining_apis_to_check) > 0:
             if self.connectivitycheck_single(self.remaining_apis_to_check[0]) == True:
-                print(f"gnd connector: connectivity check passed, connection to {self.apilist[self.remaining_apis_to_check[0]]['name']} api established.") if self.show_printmessages else None
+                print(f"GndConnector: connectivity check passed, connection to {self.apilist[self.remaining_apis_to_check[0]]['name']} api established.") if self.show_printmessages else None
                 self.apiindex = self.remaining_apis_to_check[0]
                 self.remaining_apis_to_check = [i for i,_ in enumerate(self.apilist)]
                 self.connection_established = True
                 return 0
             else:
-                print(f"gnd connector connectivity check: {self.apilist[self.remaining_apis_to_check[0]]['name']} api is currently not responding as expected. checking for alternatives...") if self.show_printmessages else None
+                print(f"GndConnector connectivity check: {self.apilist[self.remaining_apis_to_check[0]]['name']} api is currently not responding as expected. checking for alternatives...") if self.show_printmessages else None
                 self.remaining_apis_to_check.remove(self.remaining_apis_to_check[0])
                 self.connectivitycheck_loop()
         else:
-            print("gnd connector connectivity check error: none of the listed apis is responding as expected.") if self.show_printmessages else None
+            print("GndConnector connectivity check error: none of the listed apis is responding as expected.") if self.show_printmessages else None
             return -1
     def print_complete_url(self, \
                            index: int = 0) \
@@ -107,16 +111,16 @@ class GndConnector:
         formatted with a gnd id number of self.gnd_id (list or str) selected by index value.
         returns 0 or -1 for unittest purposes"""
         if self.apiindex not in [i for i,_ in enumerate(self.apilist)]:
-            print("gnd connector print_complete_url() error: apiindex is not defined correctly. using default api...") if self.show_printmessages else None
+            print("GndConnector print_complete_url() error: apiindex is not defined correctly. using default api...") if self.show_printmessages else None
             self.apiindex = 0
         if self.gnd_id is not None:
             if type(self.gnd_id) == str:
-                print(f"gnd connector complete URL: {self.apilist[self.apiindex]['baseUrl'].format(self.gnd_id)}") if self.show_printmessages else None
+                print(f"GndConnector complete URL: {self.apilist[self.apiindex]['baseUrl'].format(self.gnd_id)}") if self.show_printmessages else None
             elif type(self.gnd_id) == list:
-                print(f"gnd connector complete URL of gnd id number {index + 1} in passed gnd id list: {self.apilist[self.apiindex]['baseUrl'].format(self.gnd_id[index])}") if self.show_printmessages else None
+                print(f"GndConnector complete URL of gnd id number {index + 1} in passed gnd id list: {self.apilist[self.apiindex]['baseUrl'].format(self.gnd_id[index])}") if self.show_printmessages else None
             return 0
         else:
-            print("gnd connector error in print_complete_url(): no gnd id number has been passed to connector object yet.") if self.show_printmessages else None
+            print("GndConnector error in print_complete_url(): no gnd id number has been passed to connector object yet.") if self.show_printmessages else None
             return -1
     def return_complete_url(self, \
                             index: int = 0) \
@@ -124,7 +128,7 @@ class GndConnector:
         """return baseUrl string of the currently selected api defined in self.apilist,
         formatted with a gnd id number of self.gnd_id (list or str) selected by index value"""
         if self.apiindex not in [i for i,_ in enumerate(self.apilist)]:
-            print("gnd connector return_complete_url() error: apiindex is not defined correctly. using default api...") if self.show_printmessages else None
+            print("GndConnector return_complete_url() error: apiindex is not defined correctly. using default api...") if self.show_printmessages else None
             self.apiindex = 0
         if self.gnd_id is not None:
             if type(self.gnd_id) == str:
@@ -132,7 +136,7 @@ class GndConnector:
             elif type(self.gnd_id) == list:
                 return self.apilist[self.apiindex]["baseUrl"].format(self.gnd_id[index])
         else:
-            print("gnd connector error in return_complete_url(): no gnd id number has been passed to connector object yet.") if self.show_printmessages else None
+            print("GndConnector error in return_complete_url(): no gnd id number has been passed to connector object yet.") if self.show_printmessages else None
             return None
     def get_gnd_data(self, \
                      data_selection: Union[str, List[str], None] = None) \
@@ -140,9 +144,9 @@ class GndConnector:
         """method to receive data from api with the possibility to filter results.
         a dict is created, having gnd id numbers as keys and filtered or unfiltered response json data as values"""
         if self.check_connectivity == False:
-            print(f"gnd connector note: connections to apis have not been checked yet. to do so manually execute connectivitycheck_loop() method of the current connector object. continuing attempt to receive gnd data from {self.apilist[self.apiindex]['name']} api...") if self.show_printmessages else None
+            print(f"GndConnector note: connections to apis have not been checked yet. to do so manually execute connectivitycheck_loop() method of the current connector object. continuing attempt to receive gnd data from {self.apilist[self.apiindex]['name']} api...") if self.show_printmessages else None
         elif self.connection_established == False:
-            print("gnd connector connectivity error: after connectivity check no connection could has been established to any of the available apis. gnd data queries can not be executed at the moment.") if self.show_printmessages else None
+            print("GndConnector connectivity error: after connectivity check no connection could has been established to any of the available apis. gnd data queries can not be executed at the moment.") if self.show_printmessages else None
             return None
         result = {}
         if type(self.gnd_id) == str:
@@ -151,14 +155,14 @@ class GndConnector:
                 filereader = FileReader(self.return_complete_url(), "web", True, True)
                 _temp_data = filereader.loadfile_json()
             except:
-                print("gnd connector connectivity error in get_gnd_data() method: could not load resource from api as expected.") if self.show_printmessages else None
+                print("GndConnector connectivity error in get_gnd_data() method: could not load resource from api as expected.") if self.show_printmessages else None
                 return None
             self.connection_established = True
             if _temp_data != None and _temp_data != False:
                 result[self.gnd_id] = _temp_data
-                print(f"gnd connector get_gnd_data() status: data for gnd id {self.gnd_id} received.") if self.show_printmessages else None
+                print(f"GndConnector get_gnd_data() status: data for gnd id {self.gnd_id} received.") if self.show_printmessages else None
             else:
-                print(f"gnd connector get_gnd_data() status: for gnd id {self.gnd_id} no data could be delivered by api") if self.show_printmessages else None
+                print(f"GndConnector get_gnd_data() status: for gnd id {self.gnd_id} no data could be delivered by api") if self.show_printmessages else None
                 return None
         elif type(self.gnd_id) == list:
             for index, gnd in enumerate(self.gnd_id):
@@ -167,13 +171,13 @@ class GndConnector:
                     filereader = FileReader(self.return_complete_url(index), "web", True, True)
                     _temp_data = filereader.loadfile_json()
                 except:
-                    print("gnd connector connectivity error in get_gnd_data() method: could not load resource from api as expected.") if self.show_printmessages else None
+                    print("GndConnector connectivity error in get_gnd_data() method: could not load resource from api as expected.") if self.show_printmessages else None
                     return None
                 if _temp_data != None and _temp_data != False:
                     result[gnd] = _temp_data
-                    print(f"gnd connector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed") if self.show_printmessages else None
+                    print(f"GndConnector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed") if self.show_printmessages else None
                 else:
-                    print(f"gnd connector get_gnd_data() status: for gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} no data could be delivered by api") if self.show_printmessages else None
+                    print(f"GndConnector get_gnd_data() status: for gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} no data could be delivered by api") if self.show_printmessages else None
             self.connection_established = True
         # filtering: build new dict with selected values, which should be returned (base mode = all base aliases from apilist definition. list mode = select specific aliases from base set)
         # defining sub method for filtering
@@ -207,7 +211,7 @@ class GndConnector:
                     _temp_data = result[gnd_id][self.apilist[self.apiindex]["baseAliases"][category][0]]
                 except KeyError:
                     _temp_data = []
-                    print(f"gnd connector get_gnd_data() filtering note: could not find {category} information for {gnd_id} in raw data. continuing processing...") if self.show_printmessages else None
+                    print(f"GndConnector get_gnd_data() filtering note: could not find {category} information for {gnd_id} in raw data. continuing processing...") if self.show_printmessages else None
                 #handling of categorical data types
                 if len(_temp_data) > 0 and self.apilist[self.apiindex]["baseAliases"][category][2] == "categorial" and type(self.apilist[self.apiindex]["baseAliases"][category][3] == dict):
                     _temp_category_data_form = self.apilist[self.apiindex]["baseAliases"][category][1]

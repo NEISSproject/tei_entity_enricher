@@ -4,17 +4,17 @@ from tei_entity_enricher.interface.postprocessing.wikidata_connector import Wiki
 class Identifier:
     def __init__(self, \
                  input: Union[List[Tuple[str, str]], None] = None, \
-                 current_result_data: Union[dict, None] = None, \
                  show_printmessages: bool = True) \
                  -> None:
         """delivers suggestions to which entity(ies) refers the input string(s)
         
         input: contains a list of tuples, which themself consists of a name and a type string
-        current_result_data: buffer to save and print current query results
-        show_printmessages: show class internal printmessages on runtime or not"""
+        show_printmessages: show class internal printmessages on runtime or not
+        
+        current_result_data: buffer to save and print current query results"""
         self.input: Union[List[Tuple[str, str]], None] = input
-        self.current_result_data: Union[dict, None] = current_result_data
         self.show_printmessages: bool = show_printmessages
+        self.current_result_data: Union[dict, None] = None
 
     def query(self, \
               filter_for_precise_spelling: bool = True, \
