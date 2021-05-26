@@ -1,0 +1,3 @@
+[console_scripts]
+ntee-start = tei_entity_enricher.scripts.ntee:run
+
