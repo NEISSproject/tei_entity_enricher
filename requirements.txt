@@ -7,3 +7,5 @@ requests
 pandas
 pytest
 spacy
+SPARQLWrapper
+black

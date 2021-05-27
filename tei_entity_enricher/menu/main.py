@@ -25,7 +25,9 @@ class Main:
     #         if
 
     def show(self, args):
-        st.set_page_config(layout='wide')  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
+        st.set_page_config(
+            layout="wide"
+        )  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         self.state = _get_state()
         pages = {
             "TEI Reader Config": self.tei_reader,
@@ -37,17 +39,25 @@ class Main:
             "NER Prediction": self.ner_prediction,
         }
         logo_frame, heading_frame = st.sidebar.beta_columns([1, 2])
-        heading_frame.latex('\\text{\Huge{N-TEE}}')
-        st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
+        heading_frame.latex("\\text{\Huge{N-TEE}}")
+        st.sidebar.latex(
+            "\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}"
+        )
 
         # Include NEISS Logo
-        neiss_logo = Image.open(os.path.join(module_path, 'images', 'neiss_logo_nn_pentagon01b2.png'))
+        neiss_logo = Image.open(
+            os.path.join(module_path, "images", "neiss_logo_nn_pentagon01b2.png")
+        )
         logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
-        self.state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),
-                                           tuple(pages.keys()).index(self.state.page) if self.state.page else int(
-                                               args.start_state))
+        self.state.page = st.sidebar.radio(
+            "Main Menu",
+            tuple(pages.keys()),
+            tuple(pages.keys()).index(self.state.page)
+            if self.state.page
+            else int(args.start_state),
+        )
 
         # Display the selected page with the session state
         pages[self.state.page]()
@@ -68,15 +78,16 @@ class Main:
         tng.TEINERGroundtruthBuilder(self.state)
 
     def tei_ner_writer(self):
-        st.latex('\\text{\Huge{TEI NER Writer Config}}')
+        st.latex("\\text{\Huge{TEI NER Writer Config}}")
         logger.info(self.state)
 
     def ner_trainer(self):
         NERTrainer(self.state)
 
     def ner_prediction(self):
-        st.latex('\\text{\Huge{NER Prediction}}')
+        st.latex("\\text{\Huge{NER Prediction}}")
         logger.info(self.state)
+
 
 # def page_dashboard(state):
 #    st.title(":chart_with_upwards_trend: Dashboard page")

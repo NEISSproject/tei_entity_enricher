@@ -6,7 +6,6 @@ from streamlit.server.server import Server
 
 
 class _SessionState:
-
     def __init__(self, session, hash_funcs):
         """Initialize SessionState instance."""
         self.__dict__["_state"] = {
@@ -59,7 +58,9 @@ class _SessionState:
             self._state["is_rerun"] = False
 
         elif self._state["hash"] is not None:
-            if self._state["hash"] != self._state["hasher"].to_bytes(self._state["data"], None):
+            if self._state["hash"] != self._state["hasher"].to_bytes(
+                self._state["data"], None
+            ):
                 self._state["is_rerun"] = True
                 self._state["session"].request_rerun()
 
