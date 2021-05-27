@@ -14,7 +14,7 @@ class TestPostprocessingWikidataConnector(unittest.TestCase):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
 
     def get_connectors(self):
-        return [WikidataConnector([("Berlin", "place")], True, True)]
+        return [WikidataConnector([("Berlin", "place")], True, "de", "10", True)]
 
     # tests
     def test_init(self):

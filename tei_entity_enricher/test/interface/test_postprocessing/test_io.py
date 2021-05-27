@@ -33,7 +33,7 @@ class TestPostprocessingIo(unittest.TestCase):
             ),
             FileReader("http://lobid.org/gnd/1105592812.json", "web", False, False),
             FileReader(
-                os.path.join(module_path, "util", "gnd_apilist.json"),
+                os.path.join(module_path, "util", "json_file_for_tests.json"),
                 "local",
                 False,
                 False,

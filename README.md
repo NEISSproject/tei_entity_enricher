@@ -9,4 +9,4 @@ pip install -e tei_entity_enricher
 ntee-start
 ### Run tests
 activate virtualenv
-pytest -v tei_entity_enricher/test
+pytest -v tei_entity_enricher/tei_entity_enricher/test

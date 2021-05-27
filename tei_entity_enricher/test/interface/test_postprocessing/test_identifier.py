@@ -12,7 +12,7 @@ class TestPostprocessingIdentifier(unittest.TestCase):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
 
     def get_identifiers(self):
-        return [Identifier([("Berlin", "place")], None, True)]
+        return [Identifier([("Berlin", "place")], True)]
 
     # tests
     def test_init(self):
@@ -30,7 +30,7 @@ class TestPostprocessingIdentifier(unittest.TestCase):
 
     def test_query(self):
         for identifier in self.get_identifiers():
-            result = identifier.query()
+            result = identifier.query(True, True, "de", "5")
             self.assertIsInstance(
                 result, dict, "return value type of query() should be dict"
             )
