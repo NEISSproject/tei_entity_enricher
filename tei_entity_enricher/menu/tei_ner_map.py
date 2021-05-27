@@ -324,7 +324,8 @@ class TEINERMap():
                 with col2:
                     st.subheader('Tagged Text Content:')
                     st.write(self.mark_entities_in_text(tei.get_tagged_text(), self.state.tnm_test_entity_list,
-                                                        sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                                                        sorted(
+                                                            mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
                                                         show_entity_names=tnm_test_show_entity_name))
                 if config[self.tr.tr_config_attr_use_notes]:
                     col1_note, col2_note = st.beta_columns([0.2, 0.8])
