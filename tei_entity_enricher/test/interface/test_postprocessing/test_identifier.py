@@ -30,7 +30,7 @@ class TestPostprocessingIdentifier(unittest.TestCase):
 
     def test_query(self):
         for identifier in self.get_identifiers():
-            result = identifier.query()
+            result = identifier.query(True, True, "de", "5")
             self.assertIsInstance(
                 result, dict, "return value type of query() should be dict"
             )

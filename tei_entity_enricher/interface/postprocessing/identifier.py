@@ -24,6 +24,8 @@ class Identifier:
         self,
         filter_for_precise_spelling: bool = True,
         filter_for_correct_type: bool = True,
+        wikidata_web_api_language: str = "de",
+        wikidata_web_api_limit: str = "50",
         check_connectivity: bool = False,
     ) -> Union[Dict[str, list], bool]:
         """starts wikidata query and saves results in self.current_result_data
@@ -35,7 +37,13 @@ class Identifier:
         will be checked semantically with sparql queries in correspondance with the delivered
         type strings in self.input; only entities of a correct type will be returned
         check_connectivity: execute connectivity check in called WikidataConnector instance or not"""
-        c = WikidataConnector(self.input, check_connectivity, self.show_printmessages)
+        c = WikidataConnector(
+            self.input,
+            check_connectivity,
+            wikidata_web_api_language,
+            wikidata_web_api_limit,
+            self.show_printmessages,
+        )
         result = c.get_wikidata_search_results(
             filter_for_precise_spelling, filter_for_correct_type
         )
