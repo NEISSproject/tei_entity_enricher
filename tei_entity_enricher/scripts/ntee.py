@@ -10,7 +10,7 @@ this_file = os.path.abspath(__file__)
 logging.basicConfig(level="INFO")
 
 
-def run(args):
+def run(*args):
     subprocess.call(["streamlit", "run", this_file,
                      "--browser.gatherUsageStats", "false",
                      "--logger.messageFormat", "%(asctime)s %(levelname) -7s %(name)s: %(message)s",
