@@ -22,7 +22,9 @@ def get_config(config_path):
 
 
 def set_config(config_dict):
-    assert os.path.isfile(config_dict["config_path"]), f"Incorrect config_path in: {config_dict}"
+    assert os.path.isfile(
+        config_dict["config_path"]
+    ), f"Incorrect config_path in: {config_dict}"
     with open(config_dict["config_path"], "w") as fp:
         json.dump(config_dict, fp, indent=2)
     return 0

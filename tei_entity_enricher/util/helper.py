@@ -5,19 +5,32 @@ import streamlit as st
 
 logger = logging.getLogger(__name__)
 module_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-local_save_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+local_save_path = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 state_ok = r"\huge\color{green}\checkmark"
 state_failed = r"\huge\color{red}X"
 state_uncertain = r"\huge\color{orange}\bigcirc"
 
-latex_color_list = ['red', 'green', 'blue', 'orange', 'purple', 'aqua', 'black', 'yellow', 'brown', 'gray']
+latex_color_list = [
+    "red",
+    "green",
+    "blue",
+    "orange",
+    "purple",
+    "aqua",
+    "black",
+    "yellow",
+    "brown",
+    "gray",
+]
 
 
 def get_listoutput(list):
     output = ""
     for element in list:
-        output += element + ', '
+        output += element + ", "
     if len(list) > 0:
         output = output[:-2]
     else:
@@ -31,12 +44,22 @@ def makedir_if_necessary(directory):
 
 
 def transform_arbitrary_text_to_markdown(text):
-    return text.replace('\n', '\n\n').replace('*', '\*').replace('_', '\_').replace('{', '\{').replace('}', '\}') \
-        .replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('#', '\#')
+    return (
+        text.replace("\n", "\n\n")
+        .replace("*", "\*")
+        .replace("_", "\_")
+        .replace("{", "\{")
+        .replace("}", "\}")
+        .replace("(", "\(")
+        .replace(")", "\)")
+        .replace("[", "\[")
+        .replace("]", "\]")
+        .replace("#", "\#")
+    )
 
 
 def clean_list_str(list_string: str):
-    list_string = list_string.replace("'", "").replace('"', '')
+    list_string = list_string.replace("'", "").replace('"', "")
     if list_string.startswith("["):
         list_string = list_string[1:]
     if list_string.endswith("]"):
@@ -75,8 +98,13 @@ def file_lists_entry_widget(list_param: list, name: str, help=None) -> list:
         return []
 
 
-def numbers_lists_entry_widget(list_param: list, name: str, expect_amount: int = -1, expect_int: bool = False,
-                               help=None) -> list:
+def numbers_lists_entry_widget(
+    list_param: list,
+    name: str,
+    expect_amount: int = -1,
+    expect_int: bool = False,
+    help=None,
+) -> list:
     """
     create a list text input field and checks if expected amount and type matches if set.
     :param list_param: a list variable handled by this wiget
@@ -144,8 +172,13 @@ def check_dir_ask_make(dir_string):
         return False
 
 
-def model_dir_entry_widget(string_param: str, name: str, expect_saved_model: bool = False, ask_make_dir=False,
-                           help=None) -> str:
+def model_dir_entry_widget(
+    string_param: str,
+    name: str,
+    expect_saved_model: bool = False,
+    ask_make_dir=False,
+    help=None,
+) -> str:
     string_field, string_state = st.beta_columns([10, 1])
     string_field = string_field.text_input(name, value=string_param, help=help)
     ok = True
@@ -184,4 +217,4 @@ def model_dir_entry_widget(string_param: str, name: str, expect_saved_model: boo
 
 
 def transform_arbitrary_text_to_latex(text):
-    return text.replace('\n', '\n\n')
+    return text.replace("\n", "\n\n")

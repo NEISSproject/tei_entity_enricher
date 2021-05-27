@@ -8,3 +8,4 @@ pandas
 pytest
 spacy
 SPARQLWrapper
+black
