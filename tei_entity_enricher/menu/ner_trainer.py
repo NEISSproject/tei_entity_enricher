@@ -16,6 +16,7 @@ from tei_entity_enricher.util.helper import (
     model_dir_entry_widget,
     text_entry_with_check,
     check_dir_ask_make,
+    remember_cwd,
 )
 from tei_entity_enricher.util.train_manager import get_manager
 
@@ -28,23 +29,25 @@ class NERTrainer(object):
         state,
         show_menu=True,
     ):
-        self._workdir_path = None
+        self._workdir_path = os.getcwd()
         self.state = state
         self.trainer_params_json = None
         if self.workdir() != 0:
             return
-        logger.info("load trainer params")
-        if self.load_trainer_params() != 0:
-            st.error("Failed to load trainer_params.json")
-            return
-        if self.data_configuration() != 0:
-            st.error("Failed to run data_configuration")
-            return
+        with remember_cwd():
+            os.chdir(self._workdir_path)
+            logger.info("load trainer params")
+            if self.load_trainer_params() != 0:
+                st.error("Failed to load trainer_params.json")
+                return
+            if self.data_configuration() != 0:
+                st.error("Failed to run data_configuration")
+                return
 
-        train_manager = get_manager()
-        if st.button("Set trainer params"):
-            train_manager.set_params(self.trainer_params_json)
-            logger.info("trainer params set!")
+            train_manager = get_manager()
+            if st.button("Set trainer params"):
+                train_manager.set_params(self.trainer_params_json)
+                logger.info("trainer params set!")
 
     def load_trainer_params(self):
         if not os.path.isfile("trainer_params.json"):
@@ -58,6 +61,7 @@ class NERTrainer(object):
 
     def data_configuration(self):
         check_list = []
+
         train_lists = file_lists_entry_widget(
             self.trainer_params_json["gen"]["train"]["lists"],
             name="train.lists",
@@ -80,7 +84,6 @@ class NERTrainer(object):
                 self.save_train_params()
             else:
                 check_list.append("train.list_ratios")
-
         val_lists = file_lists_entry_widget(
             self.trainer_params_json["gen"]["val"]["lists"],
             name="val.lists",
@@ -161,10 +164,10 @@ class NERTrainer(object):
             wdp_status = wdp_status.latex(state_ok)
         if st_workdir_path:
             if os.path.isdir(self._workdir_path):
-                config_io.set_config({"workdir": self._workdir_path, "config_path": start_config_path})
+                config_io.set_config({"workdir": self._workdir_path, "config_path": start_config_path}, allow_new=True)
                 if not os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
                     shutil.copy(
-                        os.path.join(module_path, "templates", "trainer", "trainer_params.json"),
+                        os.path.join(module_path, "templates", "trainer", "test_workdir", "trainer_params.json"),
                         self._workdir_path,
                     )
             else:

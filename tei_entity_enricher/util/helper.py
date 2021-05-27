@@ -1,5 +1,6 @@
 import os
 import logging
+import contextlib
 
 import streamlit as st
 
@@ -34,6 +35,15 @@ def get_listoutput(list):
     else:
         output = ""
     return output
+
+
+@contextlib.contextmanager
+def remember_cwd():
+    curdir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
 
 
 def makedir_if_necessary(directory):

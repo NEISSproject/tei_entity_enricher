@@ -23,9 +23,13 @@ def get_config(config_path):
 
 def set_config(config_dict, allow_new=False):
     if allow_new:
-        assert os.path.isdir(os.path.dirname(config_dict["config_path"])), f"Incorrect config_path in: {config_dict}"
+        assert os.path.isdir(
+            os.path.dirname(config_dict["config_path"])
+        ), f"Incorrect config_path, parent dir does not exist: {config_dict}"
     else:
-        assert os.path.isfile(config_dict["config_path"]), f"Incorrect config_path in: {config_dict}"
+        assert os.path.isfile(
+            config_dict["config_path"]
+        ), f"No config in path: {config_dict}, make a new config is not allowed in this option"
     with open(config_dict["config_path"], "w") as fp:
         json.dump(config_dict, fp, indent=2)
     return 0

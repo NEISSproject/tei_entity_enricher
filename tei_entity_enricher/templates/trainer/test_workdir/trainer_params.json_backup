@@ -12,7 +12,7 @@
   "val_every_n": 1,
   "lav_every_n": 0,
   "lav_min_epoch": 0,
-  "output_dir": "ner_trainer/models_ner/bert_default",
+  "output_dir": "models/ner/bert_default",
   "write_checkpoints": true,
   "export_best": true,
   "export_final": true,
@@ -65,7 +65,7 @@
       "rel_pos_enc": false,
       "rate": 0.1,
       "bert_graph": "BERT",
-      "pretrained_bert": "ner_trainer/models_pretrained/bertmlmrelwwm/best/encoder_only/",
+      "pretrained_bert": "bertmodels/bertmlmabswwa",
       "tags_fn_": "/home/jochen/devel/projects/aip2_ner/data/tags/germeval_wp.txt",
       "target_vocab_size": 29990,
       "oov_id_": 24,
@@ -216,7 +216,7 @@
     },
     "train": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/test_workdir/lists/conll_small_val.lst"
+        "lists/train_germeval_wp.lst"
       ],
       "list_ratios": [
         1.0
@@ -225,7 +225,7 @@
     },
     "val": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/test_workdir/lists/conll_small_val.lst"
+        "lists/val_germeval_wp.lst"
       ],
       "list_ratios": [
         1.0
@@ -237,6 +237,5 @@
   "saved_checkpoint_sub_dir": ".",
   "checkpoint_sub_dir": "",
   "checkpoint_save_freq": "epoch",
-  "__cls__": "tfaip.trainer.params:TrainerParams",
-  "config_path": "trainer_params.json"
+  "__cls__": "tfaip.trainer.params:TrainerParams"
 }

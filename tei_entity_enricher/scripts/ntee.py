@@ -2,6 +2,7 @@ import argparse
 import logging
 import subprocess
 import os
+import sys
 
 import tei_entity_enricher.menu.main as main_menu
 
@@ -10,7 +11,8 @@ this_file = os.path.abspath(__file__)
 logging.basicConfig(level="INFO")
 
 
-def run(*args):
+def run():
+    args = sys.argv
     subprocess.call(
         [
             "streamlit",
@@ -37,7 +39,6 @@ def main():
     )
 
     args, unknown = parser.parse_known_args()
-
     main_menu.Main(args)
 
 
