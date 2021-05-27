@@ -50,9 +50,7 @@ class NERTrainer(object):
         if not os.path.isfile("trainer_params.json"):
             logger.info("copy trainer_params.json from template")
             shutil.copy(
-                os.path.join(
-                    module_path, "templates", "trainer", "trainer_params.json"
-                ),
+                os.path.join(module_path, "templates", "trainer", "trainer_params.json"),
                 os.getcwd(),
             )
         self.trainer_params_json = config_io.get_config("trainer_params.json")
@@ -70,10 +68,7 @@ class NERTrainer(object):
             self.save_train_params()
         else:
             check_list.append("train.lists")
-        if (
-            len(train_lists) > 1
-            or len(self.trainer_params_json["gen"]["train"]["list_ratios"]) > 1
-        ):
+        if len(train_lists) > 1 or len(self.trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
             train_lists_ratio = numbers_lists_entry_widget(
                 self.trainer_params_json["gen"]["train"]["list_ratios"],
                 name="train.list_ratios",
@@ -81,9 +76,7 @@ class NERTrainer(object):
                 help="e.g. '1.0, 2.0' must be same amount as file names",
             )
             if train_lists_ratio:
-                self.trainer_params_json["gen"]["train"][
-                    "list_ratios"
-                ] = train_lists_ratio
+                self.trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
                 self.save_train_params()
             else:
                 check_list.append("train.list_ratios")
@@ -98,10 +91,7 @@ class NERTrainer(object):
             self.save_train_params()
         else:
             check_list.append("val.lists")
-        if (
-            len(val_lists) > 1
-            or len(self.trainer_params_json["gen"]["val"]["list_ratios"]) > 1
-        ):
+        if len(val_lists) > 1 or len(self.trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
             val_lists_ratio = numbers_lists_entry_widget(
                 self.trainer_params_json["gen"]["val"]["list_ratios"],
                 name="val.list_ratios",
@@ -120,9 +110,7 @@ class NERTrainer(object):
             expect_saved_model=True,
         )
         if pretrained_model:
-            self.trainer_params_json["scenario"]["model"][
-                "pretrained_bert"
-            ] = pretrained_model
+            self.trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
             self.save_train_params()
         else:
             check_list.append("model.pretrained_bert")
@@ -154,9 +142,7 @@ class NERTrainer(object):
             return 0
 
     def workdir(self):
-        start_config_path = os.path.join(
-            module_path, "templates", "trainer", "start_config.state"
-        )
+        start_config_path = os.path.join(module_path, "templates", "trainer", "start_config.state")
         start_config = config_io.get_config(start_config_path)
         st_workdir_path, st_wdp_status = st.beta_columns([10, 1])
 
@@ -175,16 +161,10 @@ class NERTrainer(object):
             wdp_status = wdp_status.latex(state_ok)
         if st_workdir_path:
             if os.path.isdir(self._workdir_path):
-                config_io.set_config(
-                    {"workdir": self._workdir_path, "config_path": start_config_path}
-                )
-                if not os.path.isfile(
-                    os.path.join(self._workdir_path, "trainer_params.json")
-                ):
+                config_io.set_config({"workdir": self._workdir_path, "config_path": start_config_path})
+                if not os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
                     shutil.copy(
-                        os.path.join(
-                            module_path, "templates", "trainer", "trainer_params.json"
-                        ),
+                        os.path.join(module_path, "templates", "trainer", "trainer_params.json"),
                         self._workdir_path,
                     )
             else:

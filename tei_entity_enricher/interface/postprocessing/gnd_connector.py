@@ -28,12 +28,8 @@ class GndConnector:
         self.show_printmessages: bool = show_printmessages
         self.gnd_id: Union[str, List[str]] = gnd_id
         self.apiindex: int = apiindex
-        self.apilist_filepath: str = os.path.join(
-            local_save_path, "config", "postprocessing", "gnd_apilist.json"
-        )
-        self.apilist: Union[dict, None] = FileReader(
-            self.apilist_filepath, "local", True
-        ).loadfile_json()
+        self.apilist_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "gnd_apilist.json")
+        self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
         if self.apilist is None:
             print(
                 "GndConnector: could not find gnd_apilist.json in config dir. creating file with default settings..."
@@ -107,9 +103,7 @@ class GndConnector:
                 "GndConnector: initialization has been done without connectivity check."
             ) if self.show_printmessages else None
 
-    def connectivitycheck_single(
-        self, index_to_test: int, gnd_id_to_test: str = "118540238"
-    ) -> bool:
+    def connectivitycheck_single(self, index_to_test: int, gnd_id_to_test: str = "118540238") -> bool:
         """auxiliary method of connectivitycheck_loop(),
         checks a single api`s response status code and if response data type is json,
         preset gnd_id_to_test value refers to Goethe"""
@@ -197,9 +191,7 @@ class GndConnector:
             ) if self.show_printmessages else None
             return None
 
-    def get_gnd_data(
-        self, data_selection: Union[str, List[str], None] = None
-    ) -> Union[dict, None]:
+    def get_gnd_data(self, data_selection: Union[str, List[str], None] = None) -> Union[dict, None]:
         """method to receive data from api with the possibility to filter results.
         a dict is created, having gnd id numbers as keys and filtered or unfiltered response json data as values"""
         if self.check_connectivity == False:
@@ -237,9 +229,7 @@ class GndConnector:
             for index, gnd in enumerate(self.gnd_id):
                 _temp_data = {}
                 try:
-                    filereader = FileReader(
-                        self.return_complete_url(index), "web", True, True
-                    )
+                    filereader = FileReader(self.return_complete_url(index), "web", True, True)
                     _temp_data = filereader.loadfile_json()
                 except:
                     print(
@@ -283,9 +273,7 @@ class GndConnector:
             for category in selected_categories:
                 _temp_data = []
                 try:
-                    _temp_data = result[gnd_id][
-                        self.apilist[self.apiindex]["baseAliases"][category][0]
-                    ]
+                    _temp_data = result[gnd_id][self.apilist[self.apiindex]["baseAliases"][category][0]]
                 except KeyError:
                     _temp_data = []
                     print(
@@ -294,18 +282,11 @@ class GndConnector:
                 # handling of categorical data types
                 if (
                     len(_temp_data) > 0
-                    and self.apilist[self.apiindex]["baseAliases"][category][2]
-                    == "categorial"
-                    and type(
-                        self.apilist[self.apiindex]["baseAliases"][category][3] == dict
-                    )
+                    and self.apilist[self.apiindex]["baseAliases"][category][2] == "categorial"
+                    and type(self.apilist[self.apiindex]["baseAliases"][category][3] == dict)
                 ):
-                    _temp_category_data_form = self.apilist[self.apiindex][
-                        "baseAliases"
-                    ][category][1]
-                    _temp_categorial_values = self.apilist[self.apiindex][
-                        "baseAliases"
-                    ][category][3]
+                    _temp_category_data_form = self.apilist[self.apiindex]["baseAliases"][category][1]
+                    _temp_categorial_values = self.apilist[self.apiindex]["baseAliases"][category][3]
                     # change found categorial string to selfdefined string (i.e. 'Person' to 'person')
                     if type(_temp_category_data_form) == str:
                         for _type in _temp_categorial_values:
@@ -322,11 +303,7 @@ class GndConnector:
         # executing sub method for filtering
         if data_selection is not None:
             if type(self.gnd_id) == str:
-                _new_dict = {
-                    list(result.keys())[0]: filter_received_data(
-                        self.gnd_id, data_selection
-                    )
-                }
+                _new_dict = {list(result.keys())[0]: filter_received_data(self.gnd_id, data_selection)}
             elif type(self.gnd_id) == list:
                 _new_dict = {}
                 for key in result:

@@ -4,9 +4,7 @@ from st_aggrid import AgGrid
 import numpy as np
 
 
-def editable_single_column_table(
-    entry_list, key, head, openentrys=100, height=150, width=1
-):
+def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1):
     response = AgGrid(
         pd.DataFrame({head: entry_list + [""] * openentrys}),  # input_dataframe,
         height=height,
@@ -18,9 +16,7 @@ def editable_single_column_table(
         fit_columns_on_grid_load=True,
         key=key,
     )
-    st.info(
-        "Edit the table by double-click in it and press Enter after changing a cell."
-    )
+    st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     returnlist = []
     if "data" in response:
         all_list = list(response["data"].to_dict()[head].values())
@@ -54,9 +50,7 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
         fit_columns_on_grid_load=True,
         key=key,
     )
-    st.info(
-        "Edit the table by double-click in it and press Enter after changing a cell."
-    )
+    st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     if "data" in response:
         answer_dict = response["data"].to_dict()
         returndict = {}

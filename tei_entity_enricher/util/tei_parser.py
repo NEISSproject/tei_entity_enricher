@@ -52,23 +52,16 @@ class TEIFile:
             for entity in entity_dict:
                 for mapping_entry in entity_dict[entity]:
                     if mapping_entry[0] in self._allowed_tags.keys():
-                        self._allowed_tags[mapping_entry[0]].append(
-                            [entity, mapping_entry[1]]
-                        )
+                        self._allowed_tags[mapping_entry[0]].append([entity, mapping_entry[1]])
                     else:
-                        self._allowed_tags[mapping_entry[0]] = [
-                            [entity, mapping_entry[1]]
-                        ]
+                        self._allowed_tags[mapping_entry[0]] = [[entity, mapping_entry[1]]]
 
     def get_entity_name_to_pagecontent(self, pagecontent):
         if pagecontent.name in self._allowed_tags.keys():
             for tag_entry in self._allowed_tags[pagecontent.name]:
                 attrs_match = True
                 for attr in tag_entry[1].keys():
-                    if not (
-                        attr in pagecontent.attrs.keys()
-                        and pagecontent.attrs[attr] == tag_entry[1][attr]
-                    ):
+                    if not (attr in pagecontent.attrs.keys() and pagecontent.attrs[attr] == tag_entry[1][attr]):
                         attrs_match = False
                 if attrs_match:
                     return tag_entry[0]
@@ -104,10 +97,7 @@ class TEIFile:
         for pagecontent in contentlist:
             if (
                 (
-                    (
-                        pagecontent.name not in ["lb", "pb"]
-                        and pagecontent.name not in self._note_tags
-                    )
+                    (pagecontent.name not in ["lb", "pb"] and pagecontent.name not in self._note_tags)
                     or (pagecontent.name in self._note_tags and is_already_note)
                 )
                 and pagecontent.name not in self._exclude_tags
@@ -120,9 +110,7 @@ class TEIFile:
                         text_list_to_add,
                         tagged_text_list_to_add,
                         statistics_to_add,
-                    ) = self._get_text_from_contentlist(
-                        pagecontent.contents, is_already_note
-                    )
+                    ) = self._get_text_from_contentlist(pagecontent.contents, is_already_note)
                     text_list = text_list + text_list_to_add
                     tagged_text_list = tagged_text_list + tagged_text_list_to_add
                     statistics = self._merge_statistics(statistics, statistics_to_add)
@@ -137,18 +125,11 @@ class TEIFile:
                         text_list_to_add,
                         tagged_text_list_to_add,
                         statistics_to_add,
-                    ) = self._get_text_from_contentlist(
-                        pagecontent.contents, is_already_note
-                    )
+                    ) = self._get_text_from_contentlist(pagecontent.contents, is_already_note)
                     text_list = text_list + text_list_to_add
-                    statistics = self._add_content_to_statistics(
-                        entity, statistics, text_list_to_add
-                    )
+                    statistics = self._add_content_to_statistics(entity, statistics, text_list_to_add)
                     tagged_text_list = (
-                        tagged_text_list
-                        + [" <" + entity + "> "]
-                        + tagged_text_list_to_add
-                        + [" </" + entity + "> "]
+                        tagged_text_list + [" <" + entity + "> "] + tagged_text_list_to_add + [" </" + entity + "> "]
                     )
                     statistics = self._merge_statistics(statistics, statistics_to_add)
             elif pagecontent.name in self._note_tags:
@@ -158,17 +139,9 @@ class TEIFile:
                     note_statistics_to_add,
                 ) = self._get_text_from_contentlist(pagecontent.contents, True)
                 # print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                self._note_list = (
-                    self._note_list + note_list_to_add + [" <linebreak>\n"]
-                )
-                self._tagged_note_list = (
-                    self._tagged_note_list
-                    + tagged_note_list_to_add
-                    + [" <linebreak>\n"]
-                )
-                self._note_statistics = self._merge_statistics(
-                    self._note_statistics, note_statistics_to_add
-                )
+                self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
+                self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                self._note_statistics = self._merge_statistics(self._note_statistics, note_statistics_to_add)
             elif pagecontent.name not in ["lb", "pb"]:
                 text_list.append(" ")
                 tagged_text_list.append(" ")
@@ -198,17 +171,9 @@ class TEIFile:
                         note_statistics_to_add,
                     ) = self._get_text_from_contentlist(page.contents, True)
                     # print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                    self._note_list = (
-                        self._note_list + note_list_to_add + [" <linebreak>\n"]
-                    )
-                    self._tagged_note_list = (
-                        self._tagged_note_list
-                        + tagged_note_list_to_add
-                        + [" <linebreak>\n"]
-                    )
-                    self._note_statistics = self._merge_statistics(
-                        self._note_statistics, note_statistics_to_add
-                    )
+                    self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
+                    self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                    self._note_statistics = self._merge_statistics(self._note_statistics, note_statistics_to_add)
                 else:
                     (
                         new_text_list,
@@ -216,9 +181,7 @@ class TEIFile:
                         new_statistics,
                     ) = self._get_text_from_contentlist(page.contents, False)
                 text_list = text_list + new_text_list + [" <linebreak>\n"]
-                tagged_text_list = (
-                    tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
-                )
+                tagged_text_list = tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
                 statistics = self._merge_statistics(statistics, new_statistics)
                 if page.name == "opener":
                     text_list = text_list + [" <linebreak>\n"]

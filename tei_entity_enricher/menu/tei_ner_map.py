@@ -22,9 +22,7 @@ class TEINERMap:
         self.state = state
 
         self.tnm_Folder = "TNM"
-        self.template_tnm_Folder = os.path.join(
-            module_path, "templates", self.tnm_Folder
-        )
+        self.template_tnm_Folder = os.path.join(module_path, "templates", self.tnm_Folder)
         self.tnm_Folder = os.path.join(local_save_path, self.tnm_Folder)
         self.tnm_attr_name = "name"
         self.tnm_attr_ntd = "ntd"
@@ -79,19 +77,14 @@ class TEINERMap:
             and mode != self.tnm_mode_edit
         ):
             val = False
-            st.error(
-                f"Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!"
-            )
+            st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!")
         # clear empty mapping entries
         entities_to_del = []
         for entity in mapping[self.tnm_attr_entity_dict].keys():
             cleared_list = []
             assingned_tag_list = list(mapping[self.tnm_attr_entity_dict][entity])
             for index in range(len(assingned_tag_list)):
-                if (
-                    assingned_tag_list[index][0] is not None
-                    and assingned_tag_list[index][0] != ""
-                ):
+                if assingned_tag_list[index][0] is not None and assingned_tag_list[index][0] != "":
                     if " " in assingned_tag_list[index][0]:
                         val = False
                         st.error(
@@ -127,15 +120,10 @@ class TEINERMap:
 
         if len(mapping[self.tnm_attr_entity_dict].keys()) == 0:
             val = False
-            st.error(
-                f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save."
-            )
+            st.error(f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.")
 
         for gt in self.tng.tnglist:
-            if (
-                gt[self.tng.tng_attr_tnm][self.tnm_attr_name]
-                == mapping[self.tnm_attr_name]
-            ):
+            if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
                 st.error(
                     f"To edit the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
@@ -157,10 +145,7 @@ class TEINERMap:
     def validate_and_delete_mapping(self, mapping):
         val = True
         for gt in self.tng.tnglist:
-            if (
-                gt[self.tng.tng_attr_tnm][self.tnm_attr_name]
-                == mapping[self.tnm_attr_name]
-            ):
+            if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
                 st.error(
                     f"To delete the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
@@ -183,16 +168,12 @@ class TEINERMap:
         self.state.tnm_entity_dict = None
 
     def show_editable_attr_value_def(self, attr_value_dict, name):
-        st.markdown(
-            "Define optionally attributes with values which have to be set for this tag!"
-        )
+        st.markdown("Define optionally attributes with values which have to be set for this tag!")
         entry_dict = {"Attributes": [], "Values": []}
         for key in attr_value_dict.keys():
             entry_dict["Attributes"].append(key)
             entry_dict["Values"].append(attr_value_dict[key])
-        answer = editable_multi_column_table(
-            entry_dict, "tnm_attr_value" + name, openentrys=20
-        )
+        answer = editable_multi_column_table(entry_dict, "tnm_attr_value" + name, openentrys=20)
         returndict = {}
         for i in range(len(answer["Attributes"])):
             returndict[answer["Attributes"][i]] = answer["Values"][i]
@@ -215,16 +196,12 @@ class TEINERMap:
                     options = list(self.mappingdict.keys())
                 else:
                     options = self.editable_mapping_names
-                selected_tnm_name = st.selectbox(
-                    f"Select a mapping to {mode}!", options, key="tnm" + mode
-                )
+                selected_tnm_name = st.selectbox(f"Select a mapping to {mode}!", options, key="tnm" + mode)
                 if self.state.tnm_sel_mapping_name != selected_tnm_name:
                     self.reset_tnm_edit_states()
                 self.state.tnm_sel_mapping_name = selected_tnm_name
                 tnm_mapping_dict = self.mappingdict[selected_tnm_name].copy()
-                init_tnm_ntd_name = tnm_mapping_dict[self.tnm_attr_ntd][
-                    self.ntd.ntd_attr_name
-                ]
+                init_tnm_ntd_name = tnm_mapping_dict[self.tnm_attr_ntd][self.ntd.ntd_attr_name]
                 init_tnm_entity_dict = tnm_mapping_dict[self.tnm_attr_entity_dict]
                 if mode == self.tnm_mode_dupl:
                     tnm_mapping_dict[self.tnm_attr_name] = ""
@@ -232,18 +209,14 @@ class TEINERMap:
                 tnm_mapping_dict[self.tnm_attr_ntd] = {}
                 tnm_mapping_dict[self.tnm_attr_entity_dict] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
-                self.state.tnm_name = st.text_input(
-                    "New TEI NER Entity Mapping Name:", self.state.tnm_name or ""
-                )
+                self.state.tnm_name = st.text_input("New TEI NER Entity Mapping Name:", self.state.tnm_name or "")
                 if self.state.tnm_name:
                     tnm_mapping_dict[self.tnm_attr_name] = self.state.tnm_name
 
             sel_tnm_ntd_name = st.selectbox(
                 "Corresponding NER task definition",
                 list(self.ntd.defdict.keys()),
-                list(self.ntd.defdict.keys()).index(init_tnm_ntd_name)
-                if init_tnm_ntd_name
-                else 0,
+                list(self.ntd.defdict.keys()).index(init_tnm_ntd_name) if init_tnm_ntd_name else 0,
                 key="tnm_ntd_sel" + mode,
             )
             if self.state.tnm_ntd_name and sel_tnm_ntd_name != self.state.tnm_ntd_name:
@@ -252,27 +225,19 @@ class TEINERMap:
             if self.state.tnm_ntd_name:
                 tnm_edit_entity = st.selectbox(
                     "Define mapping for entity:",
-                    self.ntd.defdict[self.state.tnm_ntd_name][
-                        self.ntd.ntd_attr_entitylist
-                    ],
+                    self.ntd.defdict[self.state.tnm_ntd_name][self.ntd.ntd_attr_entitylist],
                     key="tnm_ent" + mode,
                 )
                 if tnm_edit_entity:
                     self.state.tnm_entity_dict = self.edit_entity(
                         mode,
                         tnm_edit_entity,
-                        self.state.tnm_entity_dict
-                        if self.state.tnm_entity_dict
-                        else init_tnm_entity_dict,
+                        self.state.tnm_entity_dict if self.state.tnm_entity_dict else init_tnm_entity_dict,
                     )
 
             if st.button("Save TEI NER Entity Mapping", key=mode):
-                tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[
-                    self.state.tnm_ntd_name
-                ]
-                tnm_mapping_dict[
-                    self.tnm_attr_entity_dict
-                ] = self.state.tnm_entity_dict.copy()
+                tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
+                tnm_mapping_dict[self.tnm_attr_entity_dict] = self.state.tnm_entity_dict.copy()
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
 
     def edit_entity(self, mode, tnm_edit_entity, cur_entity_dict):
@@ -284,11 +249,7 @@ class TEINERMap:
             mapping_entry[0] = st.text_input(
                 "Tag " + str(index),
                 mapping_entry[0] or "",
-                key="tnm"
-                + self.state.tnm_ntd_name
-                + tnm_edit_entity
-                + mode
-                + str(index),
+                key="tnm" + self.state.tnm_ntd_name + tnm_edit_entity + mode + str(index),
             )
             if mapping_entry[0]:
                 mapping_entry[1] = self.show_editable_attr_value_def(
@@ -308,16 +269,12 @@ class TEINERMap:
         self.show_editable_mapping_content(self.tnm_mode_edit)
 
     def tei_ner_map_del(self):
-        selected_mapping_name = st.selectbox(
-            "Select a mapping to delete!", self.editable_mapping_names
-        )
+        selected_mapping_name = st.selectbox("Select a mapping to delete!", self.editable_mapping_names)
         if st.button("Delete Selected Mapping"):
             self.validate_and_delete_mapping(self.mappingdict[selected_mapping_name])
 
     def show_edit_environment(self):
-        tnm_definer = st.beta_expander(
-            "Add or edit existing TEI NER Entity Mapping", expanded=False
-        )
+        tnm_definer = st.beta_expander("Add or edit existing TEI NER Entity Mapping", expanded=False)
         with tnm_definer:
             options = {
                 "Add TEI NER Entity Mapping": self.tei_ner_map_add,
@@ -328,9 +285,7 @@ class TEINERMap:
             self.state.tnm_edit_options = st.radio(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.tnm_edit_options)
-                if self.state.tnm_edit_options
-                else 0,
+                tuple(options.keys()).index(self.state.tnm_edit_options) if self.state.tnm_edit_options else 0,
             )
             options[self.state.tnm_edit_options]()
 
@@ -345,15 +300,11 @@ class TEINERMap:
                     "<**s>$\\text{\\textcolor{" + latex_color_list[colorindex] + "}{",
                 )
                 if show_entity_names:
-                    newtext = newtext.replace(
-                        "</" + entity + ">", " (" + entity + ")}}$<**e>"
-                    )
+                    newtext = newtext.replace("</" + entity + ">", " (" + entity + ")}}$<**e>")
                 else:
                     newtext = newtext.replace("</" + entity + ">", "}}$<**e>")
             else:
-                newtext = newtext.replace("<" + entity + ">", "").replace(
-                    "</" + entity + ">", ""
-                )
+                newtext = newtext.replace("<" + entity + ">", "").replace("</" + entity + ">", "")
             colorindex += 1
         # workaround for nested entities
         open = 0
@@ -378,16 +329,12 @@ class TEINERMap:
         return newtext
 
     def show_test_environment(self):
-        tnm_test_expander = st.beta_expander(
-            "Test TEI NER Entity Mapping", expanded=False
-        )
+        tnm_test_expander = st.beta_expander("Test TEI NER Entity Mapping", expanded=False)
         with tnm_test_expander:
             self.state.tnm_test_selected_config_name = st.selectbox(
                 "Select a TEI Reader Config for the mapping test!",
                 list(self.tr.configdict.keys()),
-                index=list(self.tr.configdict.keys()).index(
-                    self.state.tnm_test_selected_config_name
-                )
+                index=list(self.tr.configdict.keys()).index(self.state.tnm_test_selected_config_name)
                 if self.state.tnm_test_selected_config_name
                 else 0,
                 key="tnm_tr_test",
@@ -396,9 +343,7 @@ class TEINERMap:
             self.state.tnm_test_selected_mapping_name = st.selectbox(
                 "Select a TEI NER Entity Mapping to test!",
                 list(self.mappingdict.keys()),
-                index=list(self.mappingdict.keys()).index(
-                    self.state.tnm_test_selected_mapping_name
-                )
+                index=list(self.mappingdict.keys()).index(self.state.tnm_test_selected_mapping_name)
                 if self.state.tnm_test_selected_mapping_name
                 else 0,
                 key="tnm_tr_test",
@@ -424,16 +369,10 @@ class TEINERMap:
                 self.state.tnm_test_entity_list = []
                 with col1:
                     st.subheader("Tagged Entites:")
-                    for entity in sorted(
-                        mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                    ):
+                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                         if entity in statistics.keys():
                             if st.checkbox(
-                                "Show Entity "
-                                + entity
-                                + " ("
-                                + str(statistics[entity][0])
-                                + ")",
+                                "Show Entity " + entity + " (" + str(statistics[entity][0]) + ")",
                                 True,
                                 key="tnm" + entity + "text",
                             ):
@@ -444,9 +383,7 @@ class TEINERMap:
                     )
                     st.subheader("Legend:")
                     index = 0
-                    for entity in sorted(
-                        mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                    ):
+                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                         if entity in statistics.keys():
                             st.write(
                                 "$\\color{"
@@ -462,9 +399,7 @@ class TEINERMap:
                         self.mark_entities_in_text(
                             tei.get_tagged_text(),
                             self.state.tnm_test_entity_list,
-                            sorted(
-                                mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                            ),
+                            sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
                             show_entity_names=tnm_test_show_entity_name,
                         )
                     )
@@ -474,16 +409,10 @@ class TEINERMap:
                     self.state.tnm_test_note_entity_list = []
                     with col1_note:
                         st.subheader("Tagged Entites:")
-                        for entity in sorted(
-                            mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                        ):
+                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                             if entity in note_statistics.keys():
                                 if st.checkbox(
-                                    "Show Entity "
-                                    + entity
-                                    + " ("
-                                    + str(note_statistics[entity][0])
-                                    + ")",
+                                    "Show Entity " + entity + " (" + str(note_statistics[entity][0]) + ")",
                                     True,
                                     key="tnm" + entity + "note",
                                 ):
@@ -496,9 +425,7 @@ class TEINERMap:
                         )
                         st.subheader("Legend: ")
                         index = 0
-                        for entity in sorted(
-                            mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                        ):
+                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
                             if entity in note_statistics.keys():
                                 st.write(
                                     "$\\color{"
@@ -514,11 +441,7 @@ class TEINERMap:
                             self.mark_entities_in_text(
                                 tei.get_tagged_notes(),
                                 self.state.tnm_test_note_entity_list,
-                                sorted(
-                                    mapping[self.tnm_attr_ntd][
-                                        self.ntd.ntd_attr_entitylist
-                                    ]
-                                ),
+                                sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
                                 show_entity_names=tnm_test_note_show_entity_name,
                             )
                         )
@@ -561,12 +484,7 @@ class TEINERMap:
         tablestring = "Entity | Tag | Attributes \n -----|-------|-------"
         for entity in tnm[self.tnm_attr_entity_dict].keys():
             tablestring += (
-                "\n "
-                + entity
-                + " | "
-                + self.build_tnm_entity_detail_string(
-                    tnm[self.tnm_attr_entity_dict][entity]
-                )
+                "\n " + entity + " | " + self.build_tnm_entity_detail_string(tnm[self.tnm_attr_entity_dict][entity])
             )
         return tablestring
 
@@ -580,9 +498,7 @@ class TEINERMap:
                 key="tnm_details",
             )
             if self.state.tnm_selected_display_tnm_name:
-                cur_sel_mapping = self.mappingdict[
-                    self.state.tnm_selected_display_tnm_name
-                ]
+                cur_sel_mapping = self.mappingdict[self.state.tnm_selected_display_tnm_name]
                 st.markdown(
                     self.build_tnm_detail_tablestring(cur_sel_mapping),
                     unsafe_allow_html=True,

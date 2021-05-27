@@ -16,9 +16,7 @@ class NERTaskDef:
         self.state = state
 
         self.ntd_Folder = "NTD"
-        self.template_ntd_Folder = os.path.join(
-            module_path, "templates", self.ntd_Folder
-        )
+        self.template_ntd_Folder = os.path.join(module_path, "templates", self.ntd_Folder)
         self.ntd_Folder = os.path.join(local_save_path, self.ntd_Folder)
         self.ntd_attr_name = "name"
         self.ntd_attr_entitylist = "entitylist"
@@ -70,24 +68,15 @@ class NERTaskDef:
             and mode != self.ntd_mode_edit
         ):
             val = False
-            st.error(
-                f"Choose another name. There is already a definition with name {definition[self.ntd_attr_name]}!"
-            )
+            st.error(f"Choose another name. There is already a definition with name {definition[self.ntd_attr_name]}!")
 
-        if (
-            self.ntd_attr_entitylist not in definition.keys()
-            or len(definition[self.ntd_attr_entitylist]) == 0
-        ):
+        if self.ntd_attr_entitylist not in definition.keys() or len(definition[self.ntd_attr_entitylist]) == 0:
             val = False
             st.error("Please define at least one entity for the task definition!")
         else:
-            if len(definition[self.ntd_attr_entitylist]) != len(
-                set(definition[self.ntd_attr_entitylist])
-            ):
+            if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
                 val = False
-                st.error(
-                    "There are at least two entities with the same name. This is not allowed!"
-                )
+                st.error("There are at least two entities with the same name. This is not allowed!")
             for entity in definition[self.ntd_attr_entitylist]:
                 if " " in entity:
                     val = False
@@ -95,10 +84,7 @@ class NERTaskDef:
                         f"You defined an entity name ({entity}) containing a space character. This is not allowed!"
                     )
         for mapping in self.tnm.mappingslist:
-            if (
-                mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name]
-                == definition[self.ntd_attr_name]
-            ):
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
                 st.error(
                     f"To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
@@ -120,10 +106,7 @@ class NERTaskDef:
     def validate_and_delete_definition(self, definition):
         val = True
         for mapping in self.tnm.mappingslist:
-            if (
-                mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name]
-                == definition[self.ntd_attr_name]
-            ):
+            if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
                 st.error(
                     f"Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
@@ -141,9 +124,7 @@ class NERTaskDef:
 
     def show_editable_entitylist(self, entitylist, mode, name):
         st.markdown("Define a list of entities for the ner task.")
-        return editable_single_column_table(
-            entry_list=entitylist, key="ntd_entitylist" + mode + name, head="Entities"
-        )
+        return editable_single_column_table(entry_list=entitylist, key="ntd_entitylist" + mode + name, head="Entities")
 
     def reset_ntd_edit_states(self):
         self.state.ntd_name = None
@@ -165,9 +146,7 @@ class NERTaskDef:
                     options = list(self.defdict.keys())
                 else:
                     options = self.editable_def_names
-                selected_ntd_name = st.selectbox(
-                    f"Select a definition to {mode}!", options, key=mode
-                )
+                selected_ntd_name = st.selectbox(f"Select a definition to {mode}!", options, key=mode)
                 if self.state.ntd_sel_definition_name != selected_ntd_name:
                     self.reset_ntd_edit_states()
                 self.state.ntd_sel_definition_name = selected_ntd_name
@@ -177,25 +156,17 @@ class NERTaskDef:
             if mode == self.ntd_mode_add:
                 ntd_definition_dict[self.ntd_attr_entitylist] = []
             if mode in [self.ntd_mode_dupl, self.ntd_mode_add]:
-                self.state.ntd_name = st.text_input(
-                    "New NER Task Entity Definition Name:", self.state.ntd_name or ""
-                )
+                self.state.ntd_name = st.text_input("New NER Task Entity Definition Name:", self.state.ntd_name or "")
                 if self.state.ntd_name:
                     ntd_definition_dict[self.ntd_attr_name] = self.state.ntd_name
             init_entitylist = ntd_definition_dict[self.ntd_attr_entitylist]
             self.state.ntd_entitylist = self.show_editable_entitylist(
-                self.state.ntd_entitylist
-                if self.state.ntd_entitylist
-                else init_entitylist,
+                self.state.ntd_entitylist if self.state.ntd_entitylist else init_entitylist,
                 mode,
-                ntd_definition_dict[self.ntd_attr_name]
-                if self.ntd_attr_name in ntd_definition_dict.keys()
-                else "",
+                ntd_definition_dict[self.ntd_attr_name] if self.ntd_attr_name in ntd_definition_dict.keys() else "",
             )
             if st.button("Save NER Task Entity Definition", key=mode):
-                ntd_definition_dict[
-                    self.ntd_attr_entitylist
-                ] = self.state.ntd_entitylist
+                ntd_definition_dict[self.ntd_attr_entitylist] = self.state.ntd_entitylist
                 self.validate_and_saving_definition(ntd_definition_dict, mode)
 
     def tei_ner_map_add(self):
@@ -208,16 +179,12 @@ class NERTaskDef:
         self.show_editable_definition_content(self.ntd_mode_edit)
 
     def tei_ner_map_del(self):
-        selected_definition_name = st.selectbox(
-            "Select a definition to delete!", self.editable_def_names
-        )
+        selected_definition_name = st.selectbox("Select a definition to delete!", self.editable_def_names)
         if st.button("Delete Selected Definition"):
             self.validate_and_delete_definition(self.defdict[selected_definition_name])
 
     def show_edit_environment(self):
-        ntd_definer = st.beta_expander(
-            "Add or edit existing NER Task Entity Definition", expanded=False
-        )
+        ntd_definer = st.beta_expander("Add or edit existing NER Task Entity Definition", expanded=False)
         with ntd_definer:
             options = {
                 "Add NER Task Entity Definition": self.tei_ner_map_add,
@@ -228,9 +195,7 @@ class NERTaskDef:
             self.state.ntd_edit_options = st.radio(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.ntd_edit_options)
-                if self.state.ntd_edit_options
-                else 0,
+                tuple(options.keys()).index(self.state.ntd_edit_options) if self.state.ntd_edit_options else 0,
             )
             options[self.state.ntd_edit_options]()
 
@@ -252,9 +217,7 @@ class NERTaskDef:
         return tablestring
 
     def show_ntds(self):
-        ntd_show = st.beta_expander(
-            "Existing NER Task Entity Definitions", expanded=True
-        )
+        ntd_show = st.beta_expander("Existing NER Task Entity Definitions", expanded=True)
         with ntd_show:
             st.markdown(self.build_ntd_tablestring())
 

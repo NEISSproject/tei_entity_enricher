@@ -20,9 +20,7 @@ class TEIReader:
         self.state = state
 
         self.config_Folder = "TR_Configs"
-        self.template_config_Folder = os.path.join(
-            module_path, "templates", self.config_Folder
-        )
+        self.template_config_Folder = os.path.join(module_path, "templates", self.config_Folder)
         self.config_Folder = os.path.join(local_save_path, self.config_Folder)
         self.tr_config_attr_name = "name"
         self.tr_config_attr_excl_tags = "exclude_tags"
@@ -75,9 +73,7 @@ class TEIReader:
             and mode != self.tr_config_mode_edit
         ):
             val = False
-            st.error(
-                f"Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!"
-            )
+            st.error(f"Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!")
         if len(config[self.tr_config_attr_excl_tags]) > 0:
             for excl_tag in config[self.tr_config_attr_excl_tags]:
                 if " " in excl_tag:
@@ -85,10 +81,7 @@ class TEIReader:
                     st.error(
                         f"You defined an exclude tag ({excl_tag}) containing a space character. This is not allowed!"
                     )
-        if (
-            config[self.tr_config_attr_use_notes]
-            and len(config[self.tr_config_attr_note_tags]) < 1
-        ):
+        if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
             st.error(
                 "You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes."
@@ -97,36 +90,19 @@ class TEIReader:
             for note_tag in config[self.tr_config_attr_note_tags]:
                 if " " in note_tag:
                     val = False
-                    st.error(
-                        f"You defined an note tag ({note_tag}) containing a space character. This is not allowed!"
-                    )
+                    st.error(f"You defined an note tag ({note_tag}) containing a space character. This is not allowed!")
         if (
             config[self.tr_config_attr_use_notes]
-            and len(
-                set(config[self.tr_config_attr_note_tags]).intersection(
-                    config[self.tr_config_attr_excl_tags]
-                )
-            )
-            > 0
+            and len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0
         ):
             val = False
-            if (
-                len(
-                    set(config[self.tr_config_attr_note_tags]).intersection(
-                        config[self.tr_config_attr_excl_tags]
-                    )
-                )
-                > 1
-            ):
+            if len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 1:
                 warntext = f"Tags can either be excluded or marked as note tags. Please define for the tags {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether they should be excluded or considered as notes."
             else:
                 warntext = f"Tags can either be excluded or marked as note tags. Please define for the tag {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether it should be excluded or considered as a note."
             st.error(warntext)
         for gt in self.tng.tnglist:
-            if (
-                gt[self.tng.tng_attr_tr][self.tr_config_attr_name]
-                == config[self.tr_config_attr_name]
-            ):
+            if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
                 st.error(
                     f"To edit the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
@@ -149,10 +125,7 @@ class TEIReader:
     def validate_and_delete_config(self, config):
         val = True
         for gt in self.tng.tnglist:
-            if (
-                gt[self.tng.tng_attr_tr][self.tr_config_attr_name]
-                == config[self.tr_config_attr_name]
-            ):
+            if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
                 st.error(
                     f"To delete the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
@@ -171,15 +144,11 @@ class TEIReader:
 
     def show_editable_exclude_tags(self, excl_list, mode, name):
         st.markdown("Define Tags to Exclude from the text which should be considered.")
-        return editable_single_column_table(
-            entry_list=excl_list, key="tr_excl" + mode + name, head="Exclude"
-        )
+        return editable_single_column_table(entry_list=excl_list, key="tr_excl" + mode + name, head="Exclude")
 
     def show_editable_note_tags(self, note_list, mode, name):
         st.markdown("Define Tags that contain notes.")
-        return editable_single_column_table(
-            entry_list=note_list, key="tr_note" + mode + name, head="Note tags"
-        )
+        return editable_single_column_table(entry_list=note_list, key="tr_note" + mode + name, head="Note tags")
 
     def reset_tr_edit_states(self):
         self.state.tr_exclude_list = None
@@ -208,9 +177,7 @@ class TEIReader:
                     options = list(self.configdict.keys())
                 else:
                     options = self.editable_config_names
-                selected_config_name = st.selectbox(
-                    f"Select a config to {mode}!", options, key=mode
-                )
+                selected_config_name = st.selectbox(f"Select a config to {mode}!", options, key=mode)
                 if self.state.tr_sel_config_name != selected_config_name:
                     self.reset_tr_edit_states()
                 self.state.tr_sel_config_name = selected_config_name
@@ -222,21 +189,15 @@ class TEIReader:
                 tr_config_dict[self.tr_config_attr_excl_tags] = []
                 tr_config_dict[self.tr_config_attr_note_tags] = []
             if mode in [self.tr_config_mode_dupl, self.tr_config_mode_add]:
-                self.state.tr_name = st.text_input(
-                    "New TEI Reader Config Name:", self.state.tr_name or ""
-                )
+                self.state.tr_name = st.text_input("New TEI Reader Config Name:", self.state.tr_name or "")
                 if self.state.tr_name:
                     tr_config_dict[self.tr_config_attr_name] = self.state.tr_name
             init_exclude_list = tr_config_dict[self.tr_config_attr_excl_tags]
 
             self.state.tr_exclude_list = self.show_editable_exclude_tags(
-                self.state.tr_exclude_list
-                if self.state.tr_exclude_list
-                else init_exclude_list,
+                self.state.tr_exclude_list if self.state.tr_exclude_list else init_exclude_list,
                 mode,
-                tr_config_dict[self.tr_config_attr_name]
-                if self.tr_config_attr_name in tr_config_dict.keys()
-                else "",
+                tr_config_dict[self.tr_config_attr_name] if self.tr_config_attr_name in tr_config_dict.keys() else "",
             )
             # st.write('Tags to exclude: '+ self.get_listoutput(self.state.tr_exclude_list))
             init_note_tags = tr_config_dict[self.tr_config_attr_note_tags]
@@ -244,22 +205,17 @@ class TEIReader:
             tr_config_dict[self.tr_config_attr_use_notes] = use_notes
             if tr_config_dict[self.tr_config_attr_use_notes]:
                 self.state.tr_note_tags = self.show_editable_note_tags(
-                    self.state.tr_note_tags
-                    if self.state.tr_note_tags
-                    else init_note_tags,
+                    self.state.tr_note_tags if self.state.tr_note_tags else init_note_tags,
                     mode,
                     tr_config_dict[self.tr_config_attr_name]
                     if self.tr_config_attr_name in tr_config_dict.keys()
                     else "",
                 )
             if st.button("Save TEI Reader Config", key=mode):
-                tr_config_dict[
-                    self.tr_config_attr_excl_tags
-                ] = self.state.tr_exclude_list
+                tr_config_dict[self.tr_config_attr_excl_tags] = self.state.tr_exclude_list
                 tr_config_dict[self.tr_config_attr_note_tags] = (
                     self.state.tr_note_tags
-                    if self.state.tr_note_tags
-                    and tr_config_dict[self.tr_config_attr_use_notes]
+                    if self.state.tr_note_tags and tr_config_dict[self.tr_config_attr_use_notes]
                     else []
                 )
                 self.validate_and_saving_config(tr_config_dict, mode)
@@ -274,16 +230,12 @@ class TEIReader:
         self.show_editable_config_content(self.tr_config_mode_edit)
 
     def teireaderdel(self):
-        selected_config_name = st.selectbox(
-            "Select a config to delete!", self.editable_config_names
-        )
+        selected_config_name = st.selectbox("Select a config to delete!", self.editable_config_names)
         if st.button("Delete Selected Config"):
             self.validate_and_delete_config(self.configdict[selected_config_name])
 
     def show_edit_environment(self):
-        tr_config_definer = st.beta_expander(
-            "Add or edit existing Config", expanded=False
-        )
+        tr_config_definer = st.beta_expander("Add or edit existing Config", expanded=False)
         with tr_config_definer:
             options = {
                 "Add TEI Reader Config": self.tei_reader_add,
@@ -294,9 +246,7 @@ class TEIReader:
             self.state.tr_edit_options = st.radio(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.tr_edit_options)
-                if self.state.tr_edit_options
-                else 0,
+                tuple(options.keys()).index(self.state.tr_edit_options) if self.state.tr_edit_options else 0,
             )
             options[self.state.tr_edit_options]()
 
@@ -306,17 +256,13 @@ class TEIReader:
             self.state.tr_test_selected_config_name = st.selectbox(
                 "Select a TEI Reader Config to test!",
                 list(self.configdict.keys()),
-                index=list(self.configdict.keys()).index(
-                    self.state.tr_test_selected_config_name
-                )
+                index=list(self.configdict.keys()).index(self.state.tr_test_selected_config_name)
                 if self.state.tr_test_selected_config_name
                 else 0,
                 key="tr_test",
             )
             config = self.configdict[self.state.tr_test_selected_config_name]
-            self.state.teifile = st.text_input(
-                "Choose a TEI File:", self.state.teifile or "", key="tr_test_tei_file"
-            )
+            self.state.teifile = st.text_input("Choose a TEI File:", self.state.teifile or "", key="tr_test_tei_file")
             if self.state.teifile:
                 tei = tp.TEIFile(self.state.teifile, config)
                 st.subheader("Text Content:")
@@ -326,7 +272,9 @@ class TEIReader:
                     st.markdown(transform_arbitrary_text_to_markdown(tei.get_notes()))
 
     def build_config_tablestring(self):
-        tablestring = "Name | Exclude Tags | Tagging Notes | Note Tags | Template \n -----|-------|-------|-------|-------"
+        tablestring = (
+            "Name | Exclude Tags | Tagging Notes | Note Tags | Template \n -----|-------|-------|-------|-------"
+        )
         for config in self.configslist:
             if config[self.tr_config_attr_use_notes]:
                 use_notes = "yes"

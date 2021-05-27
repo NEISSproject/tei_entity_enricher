@@ -61,15 +61,11 @@ class FileReader:
                 return imported_data
             except FileNotFoundError:
                 if self.internal_call == False:
-                    print(
-                        "FileReader loadfile_json() error: file not found"
-                    ) if self.show_printmessages else None
+                    print("FileReader loadfile_json() error: file not found") if self.show_printmessages else None
                 return None
             except json.decoder.JSONDecodeError:
                 if self.internal_call == False:
-                    print(
-                        "FileReader loadfile_json() error: bad format"
-                    ) if self.show_printmessages else None
+                    print("FileReader loadfile_json() error: bad format") if self.show_printmessages else None
                 return None
         elif self.origin == "web":
             try:
@@ -108,9 +104,7 @@ class FileReader:
                 with open(self.filepath) as loaded_file:
                     return loaded_file.read()
             except FileNotFoundError:
-                print(
-                    "FileReader loadfile_beacon() error: file not found"
-                ) if self.show_printmessages else None
+                print("FileReader loadfile_beacon() error: file not found") if self.show_printmessages else None
                 return None
         elif self.origin == "web":
             try:
@@ -136,9 +130,7 @@ class FileReader:
 
 
 class Cache:
-    def __init__(
-        self, data: Union[str, None] = None, show_printmessages: bool = True
-    ) -> None:
+    def __init__(self, data: Union[str, None] = None, show_printmessages: bool = True) -> None:
         """saves data for manipulation processes used in a beacon file processing pipeline,
 
         data: contains data of beacon or json files as a string, delivered by FileReader class
@@ -305,10 +297,8 @@ class FileWriter:
                 return False
             else:
                 for key in self.data:
-                    redundancy_check_result = (
-                        already_existing_file_cache.check_for_redundancy(
-                            key, "name", self.data[key]["name"]
-                        )
+                    redundancy_check_result = already_existing_file_cache.check_for_redundancy(
+                        key, "name", self.data[key]["name"]
                     )
                     if any(redundancy_check_result):
                         print(

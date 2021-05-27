@@ -31,7 +31,9 @@ class WikidataConnector:
         self.input: Union[List[Tuple[str, str]], None] = input
         self.check_connectivity: bool = check_connectivity
         self.show_printmessages: bool = show_printmessages
-        self.wikidata_web_api_baseUrl: str = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&limit={}"
+        self.wikidata_web_api_baseUrl: str = (
+            "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&limit={}"
+        )
         self.wikidata_web_api_language: str = wikidata_web_api_language
         self.wikidata_web_api_limit: str = wikidata_web_api_limit
         self.wikidata_sparql_queries_filepath: str = os.path.join(
@@ -96,9 +98,7 @@ class WikidataConnector:
                 ],
             }
             makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
-            FileWriter(
-                self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath
-            ).writefile_json()
+            FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
         self.connection_established: bool = False
         if self.check_connectivity == True:
             self.connectivity_check()
@@ -203,9 +203,7 @@ class WikidataConnector:
             )
             filereader_result = filereader.loadfile_json()
             if not all((filter_for_precise_spelling, filter_for_correct_type)):
-                print(
-                    f"no filtering in {string_tuple} result"
-                ) if self.show_printmessages == True else None
+                print(f"no filtering in {string_tuple} result") if self.show_printmessages == True else None
             if filter_for_precise_spelling == True:
                 precise_spelling = []
                 entry_amount = len(filereader_result["search"])
@@ -229,12 +227,7 @@ class WikidataConnector:
                     print(
                         f"type filtering in {string_tuple} result: {math.floor(progressbar * 10 ** 2) / 10 ** 2}"
                     ) if self.show_printmessages == True else None
-                    if (
-                        self.check_wikidata_entity_type(
-                            search_list_element["id"], string_tuple[1]
-                        )
-                        == True
-                    ):
+                    if self.check_wikidata_entity_type(search_list_element["id"], string_tuple[1]) == True:
                         correct_type.append(search_list_element)
                 filereader_result["search"] = correct_type
             result_dict[string_tuple[0]] = [

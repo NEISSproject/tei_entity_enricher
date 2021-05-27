@@ -13,9 +13,7 @@ class TestPostprocessingGndConnector(unittest.TestCase):
 
     def get_connectors(self):
         gnd_id_list = ["118629662", "11855817X", "4015796-9"]
-        return [
-            GndConnector(gnd_id_list, apiindex, False, False) for apiindex in [0, 1]
-        ]
+        return [GndConnector(gnd_id_list, apiindex, False, False) for apiindex in [0, 1]]
 
     # tests
     def test_init(self):
@@ -30,9 +28,7 @@ class TestPostprocessingGndConnector(unittest.TestCase):
                 dict,
                 "entry of apilist should be of type dict",
             )
-            self.assertIn(
-                "name", con.apilist[0], "first entry of apilist should have key 'name'"
-            )
+            self.assertIn("name", con.apilist[0], "first entry of apilist should have key 'name'")
             if con.connection_established == False:
                 self.assertTrue(
                     con.connectivitycheck_single(0),
@@ -46,9 +42,7 @@ class TestPostprocessingGndConnector(unittest.TestCase):
 
     def test_print_url(self):
         for con in self.get_connectors():
-            self.assertEqual(
-                con.print_complete_url(), 0, "print_complete_url() should return 0"
-            )
+            self.assertEqual(con.print_complete_url(), 0, "print_complete_url() should return 0")
 
     def test_return_url(self):
         for con in self.get_connectors():
@@ -74,19 +68,15 @@ class TestPostprocessingGndConnector(unittest.TestCase):
             response = con.get_gnd_data("base")
             response_keys = list(response.keys())
             basealiases = list(con.apilist[con.apiindex]["baseAliases"].keys())
-            err_msg_base_datatype = "get_gnd_data('base') should return a dict with three keys and a dict as their values"
+            err_msg_base_datatype = (
+                "get_gnd_data('base') should return a dict with three keys and a dict as their values"
+            )
             err_msg_base_keys = "get_gnd_data('base') should return a dict with three keys and a dict as their value, which has a key {} as part of the baseAliases defined in apilist"
             self.assertEqual(type(response), dict, err_msg_base_datatype)
             self.assertEqual(len(response), 3, err_msg_base_datatype)
-            self.assertEqual(
-                type(response[response_keys[0]]), dict, err_msg_base_datatype
-            )
-            self.assertEqual(
-                type(response[response_keys[1]]), dict, err_msg_base_datatype
-            )
-            self.assertEqual(
-                type(response[response_keys[2]]), dict, err_msg_base_datatype
-            )
+            self.assertEqual(type(response[response_keys[0]]), dict, err_msg_base_datatype)
+            self.assertEqual(type(response[response_keys[1]]), dict, err_msg_base_datatype)
+            self.assertEqual(type(response[response_keys[2]]), dict, err_msg_base_datatype)
             for basealias in basealiases:
                 self.assertIn(
                     basealias,

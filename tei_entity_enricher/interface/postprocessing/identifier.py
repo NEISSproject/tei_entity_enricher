@@ -44,9 +44,7 @@ class Identifier:
             wikidata_web_api_limit,
             self.show_printmessages,
         )
-        result = c.get_wikidata_search_results(
-            filter_for_precise_spelling, filter_for_correct_type
-        )
+        result = c.get_wikidata_search_results(filter_for_precise_spelling, filter_for_correct_type)
         self.current_result_data = result
         return result
 
@@ -64,9 +62,7 @@ class Identifier:
 def identifier_demo(input):
     i = Identifier(input)
 
-    print(
-        f"\n\nIdentifier started, input: {input}\n\n\n---------------getting raw result------------------"
-    )
+    print(f"\n\nIdentifier started, input: {input}\n\n\n---------------getting raw result------------------")
     i_result_raw = i.query(False, False)
     print("\n\nraw result\n##########")
     i.summarize_current_results()

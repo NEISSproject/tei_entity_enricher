@@ -21,10 +21,11 @@ def get_config(config_path):
         return None
 
 
-def set_config(config_dict):
-    assert os.path.isfile(
-        config_dict["config_path"]
-    ), f"Incorrect config_path in: {config_dict}"
+def set_config(config_dict, allow_new=False):
+    if allow_new:
+        assert os.path.isdir(os.path.dirname(config_dict["config_path"])), f"Incorrect config_path in: {config_dict}"
+    else:
+        assert os.path.isfile(config_dict["config_path"]), f"Incorrect config_path in: {config_dict}"
     with open(config_dict["config_path"], "w") as fp:
         json.dump(config_dict, fp, indent=2)
     return 0

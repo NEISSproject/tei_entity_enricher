@@ -32,16 +32,12 @@ setup(
     author="Neiss authors",
     author_email="jochen.zoellner@uni-rostock.de",
     url="https://github.com/NEISSproject/tei_entity_enricher",
-    download_url="https://github.com/NEISSproject/tei_entity_enricher/archive/{}.tar.gz".format(
-        __version__
-    ),
+    download_url="https://github.com/NEISSproject/tei_entity_enricher/archive/{}.tar.gz".format(__version__),
     entry_points={
         "console_scripts": ["ntee-start=tei_entity_enricher.scripts.ntee:run"],
     },
     python_requires=">=3.7",
-    install_requires=open(os.path.join(this_dir, "requirements.txt"))
-    .read()
-    .split("\n"),
+    install_requires=open(os.path.join(this_dir, "requirements.txt")).read().split("\n"),
     keywords=["ner", "tei", "gui"],
     data_files=[("", [os.path.join(this_dir, "requirements.txt")])],
 )

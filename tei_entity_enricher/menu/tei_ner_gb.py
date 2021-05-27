@@ -59,12 +59,8 @@ class TEINERGroundtruthBuilder:
     def refresh_tng_list(self):
         self.tnglist = []
         for gt_folder in sorted(os.listdir(self.tng_Folder)):
-            if os.path.isdir(
-                os.path.join(self.tng_Folder, gt_folder)
-            ) and os.path.isfile(
-                os.path.join(
-                    self.tng_Folder, gt_folder, os.path.basename(gt_folder) + ".json"
-                )
+            if os.path.isdir(os.path.join(self.tng_Folder, gt_folder)) and os.path.isfile(
+                os.path.join(self.tng_Folder, gt_folder, os.path.basename(gt_folder) + ".json")
             ):
                 with open(
                     os.path.join(
@@ -93,32 +89,22 @@ class TEINERGroundtruthBuilder:
         ):
             val = False
             st.error("Please define a name for the Groundtruth before building it!")
-        elif os.path.isdir(
-            os.path.join(
-                self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_")
-            )
-        ):
+        elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))):
             val = False
             st.error(
                 f"Choose another name. There is already a Groundtruth with name {build_config[self.tng_attr_name]}!"
             )
         if folder_path is None or folder_path == "":
             val = False
-            st.error(
-                f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!"
-            )
+            st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
         elif not os.path.isdir(folder_path):
             val = False
-            st.error(
-                f"The directory {folder_path} doesn't exist. Please choose valid directory!"
-            )
+            st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
         return val
 
     def build_groundtruth(self, build_config, folder_path):
         progressoutput = st.success("Prepare Groundtruth building...")
-        save_folder = os.path.join(
-            self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_")
-        )
+        save_folder = os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))
         makedir_if_necessary(save_folder)
         save_test_folder = os.path.join(save_folder, self.tng_gt_type_test)
         makedir_if_necessary(save_test_folder)
@@ -144,25 +130,17 @@ class TEINERGroundtruthBuilder:
                 brief = tp.TEIFile(
                     os.path.join(folder_path, filelist[fileindex]),
                     build_config[self.tng_attr_tr],
-                    entity_dict=build_config[self.tng_attr_tnm][
-                        self.tnm.tnm_attr_entity_dict
-                    ],
+                    entity_dict=build_config[self.tng_attr_tnm][self.tnm.tnm_attr_entity_dict],
                     nlp=nlp,
                     with_position_tags=True,
                 )
-                raw_ner_data = tp.split_into_sentences(
-                    brief.build_tagged_text_line_list()
-                )
+                raw_ner_data = tp.split_into_sentences(brief.build_tagged_text_line_list())
                 if not by_file:
                     all_data.extend(raw_ner_data)
                 else:
-                    if fileindex <= (
-                        build_config[self.tng_attr_ratio][self.tng_gt_type_test] / 100.0
-                    ) * len(filelist):
+                    if fileindex <= (build_config[self.tng_attr_ratio][self.tng_gt_type_test] / 100.0) * len(filelist):
                         with open(
-                            os.path.join(
-                                save_test_folder, filelist[fileindex] + ".json"
-                            ),
+                            os.path.join(save_test_folder, filelist[fileindex] + ".json"),
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
@@ -174,23 +152,17 @@ class TEINERGroundtruthBuilder:
                         / 100.0
                     ) * len(filelist):
                         with open(
-                            os.path.join(
-                                save_dev_folder, filelist[fileindex] + ".json"
-                            ),
+                            os.path.join(save_dev_folder, filelist[fileindex] + ".json"),
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
                     else:
                         with open(
-                            os.path.join(
-                                save_train_folder, filelist[fileindex] + ".json"
-                            ),
+                            os.path.join(save_train_folder, filelist[fileindex] + ".json"),
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
-            build_gb_progress_bar.progress(
-                math.floor((fileindex + 1) / len(filelist) * 100)
-            )
+            build_gb_progress_bar.progress(math.floor((fileindex + 1) / len(filelist) * 100))
         if not by_file:
             progressoutput.success("Shuffle and save the data...")
             random.shuffle(all_data)
@@ -198,9 +170,7 @@ class TEINERGroundtruthBuilder:
             dev_list = []
             train_list = []
             for data_index in range(len(all_data)):
-                if data_index <= (
-                    build_config[self.tng_attr_ratio][self.tng_gt_type_test] / 100.0
-                ) * len(all_data):
+                if data_index <= (build_config[self.tng_attr_ratio][self.tng_gt_type_test] / 100.0) * len(all_data):
                     test_list.append(all_data[data_index])
                 elif data_index <= (
                     (
@@ -215,10 +185,7 @@ class TEINERGroundtruthBuilder:
             with open(
                 os.path.join(
                     save_test_folder,
-                    self.tng_gt_type_test
-                    + "_"
-                    + build_config[self.tng_attr_name].replace(" ", "_")
-                    + ".json",
+                    self.tng_gt_type_test + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
                 ),
                 "w+",
             ) as g:
@@ -226,10 +193,7 @@ class TEINERGroundtruthBuilder:
             with open(
                 os.path.join(
                     save_dev_folder,
-                    self.tng_gt_type_dev
-                    + "_"
-                    + build_config[self.tng_attr_name].replace(" ", "_")
-                    + ".json",
+                    self.tng_gt_type_dev + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
                 ),
                 "w+",
             ) as g2:
@@ -237,10 +201,7 @@ class TEINERGroundtruthBuilder:
             with open(
                 os.path.join(
                     save_train_folder,
-                    self.tng_gt_type_train
-                    + "_"
-                    + build_config[self.tng_attr_name].replace(" ", "_")
-                    + ".json",
+                    self.tng_gt_type_train + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
                 ),
                 "w+",
             ) as h:
@@ -253,32 +214,20 @@ class TEINERGroundtruthBuilder:
             "w+",
         ) as h2:
             json.dump(build_config, h2)
-        progressoutput.success(
-            f"Groundtruth {build_config[self.tng_attr_name]} succesfully builded."
-        )
+        progressoutput.success(f"Groundtruth {build_config[self.tng_attr_name]} succesfully builded.")
         st.write(f"Statistics for {build_config[self.tng_attr_name]}")
         self.show_statistics_to_saved_groundtruth(
             save_folder,
-            build_config[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][
-                self.ntd.ntd_attr_entitylist
-            ],
+            build_config[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],
         )
         self.refresh_tng_list()
 
-    def build_tng_stats_tablestring(
-        self, entity_list, train_stats, dev_stats, test_stats
-    ):
+    def build_tng_stats_tablestring(self, entity_list, train_stats, dev_stats, test_stats):
         tablestring = "Entity | \# All | \# Train | \# Test | \# Devel \n -----|-------|-------|-------|-------"
         for entity in entity_list:
-            train_num = (
-                train_stats["B-" + entity] if "B-" + entity in train_stats.keys() else 0
-            )
-            test_num = (
-                test_stats["B-" + entity] if "B-" + entity in test_stats.keys() else 0
-            )
-            dev_num = (
-                dev_stats["B-" + entity] if "B-" + entity in dev_stats.keys() else 0
-            )
+            train_num = train_stats["B-" + entity] if "B-" + entity in train_stats.keys() else 0
+            test_num = test_stats["B-" + entity] if "B-" + entity in test_stats.keys() else 0
+            dev_num = dev_stats["B-" + entity] if "B-" + entity in dev_stats.keys() else 0
             tablestring += (
                 "\n "
                 + entity
@@ -339,17 +288,13 @@ class TEINERGroundtruthBuilder:
         tng_dict = {}
         col1, col2 = st.beta_columns(2)
         with col1:
-            self.state.tng_name = st.text_input(
-                "Define a name for the groundtruth:", self.state.tng_name or ""
-            )
+            self.state.tng_name = st.text_input("Define a name for the groundtruth:", self.state.tng_name or "")
             if self.state.tng_name:
                 tng_dict[self.tng_attr_name] = self.state.tng_name
             self.state.tng_lang = st.selectbox(
                 "Select a language for the groundtruth (relevant for the split into sentences):",
                 list(self.lang_dict.keys()),
-                list(self.lang_dict.keys()).index(self.state.tng_lang)
-                if self.state.tng_lang
-                else 0,
+                list(self.lang_dict.keys()).index(self.state.tng_lang) if self.state.tng_lang else 0,
                 key="tng_lang",
             )
             if self.state.tng_lang:
@@ -358,9 +303,7 @@ class TEINERGroundtruthBuilder:
             self.state.tng_tr_name = st.selectbox(
                 "Select a TEI Reader Config for Building the groundtruth:",
                 list(self.tr.configdict.keys()),
-                list(self.tr.configdict.keys()).index(self.state.tng_tr_name)
-                if self.state.tng_tr_name
-                else 0,
+                list(self.tr.configdict.keys()).index(self.state.tng_tr_name) if self.state.tng_tr_name else 0,
                 key="tng_tr",
             )
             if self.state.tng_tr_name:
@@ -368,22 +311,16 @@ class TEINERGroundtruthBuilder:
             self.state.tng_tnm_name = st.selectbox(
                 "Select a TEI NER Entity Mapping for Building the groundtruth:",
                 list(self.tnm.mappingdict.keys()),
-                list(self.tnm.mappingdict.keys()).index(self.state.tng_tnm_name)
-                if self.state.tng_tnm_name
-                else 0,
+                list(self.tnm.mappingdict.keys()).index(self.state.tng_tnm_name) if self.state.tng_tnm_name else 0,
                 key="tng_tnm",
             )
             if self.state.tng_tnm_name:
-                tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[
-                    self.state.tng_tnm_name
-                ]
+                tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[self.state.tng_tnm_name]
 
         col3, col4 = st.beta_columns(2)
         col5, col6, col7 = st.beta_columns([0.25, 0.25, 0.5])
         with col3:
-            st.markdown(
-                "Define a ratio for the partition into train- development- and testset."
-            )
+            st.markdown("Define a ratio for the partition into train- development- and testset.")
         # with col4:
         # self.state.tng_shuffle_options = st.radio("Shuffle Options", tuple(self.shuffle_options_dict.keys()),
         #                                          tuple(self.shuffle_options_dict.keys()).index(
@@ -393,37 +330,21 @@ class TEINERGroundtruthBuilder:
             self.state.tng_test_percentage = st.number_input(
                 "Percentage for the test set",
                 min_value=0,
-                max_value=100
-                - (
-                    self.state.tng_dev_percentage
-                    if self.state.tng_dev_percentage
-                    else 10
-                ),
-                value=self.state.tng_test_percentage
-                if self.state.tng_test_percentage
-                else 10,
+                max_value=100 - (self.state.tng_dev_percentage if self.state.tng_dev_percentage else 10),
+                value=self.state.tng_test_percentage if self.state.tng_test_percentage else 10,
             )
         with col6:
             self.state.tng_dev_percentage = st.number_input(
                 "Percentage for the validation set",
                 min_value=0,
-                max_value=100
-                - (
-                    self.state.tng_test_percentage
-                    if self.state.tng_test_percentage
-                    else 10
-                ),
-                value=self.state.tng_dev_percentage
-                if self.state.tng_dev_percentage
-                else 10,
+                max_value=100 - (self.state.tng_test_percentage if self.state.tng_test_percentage else 10),
+                value=self.state.tng_dev_percentage if self.state.tng_dev_percentage else 10,
             )
         with col7:
             self.state.tng_shuffle_options = st.radio(
                 "Shuffle Options",
                 tuple(self.shuffle_options_dict.keys()),
-                tuple(self.shuffle_options_dict.keys()).index(
-                    self.state.tng_shuffle_options
-                )
+                tuple(self.shuffle_options_dict.keys()).index(self.state.tng_shuffle_options)
                 if self.state.tng_shuffle_options
                 else 0,
             )
@@ -445,33 +366,23 @@ class TEINERGroundtruthBuilder:
             key="tng_tei_file_folder",
         )
         tng_dict[self.tng_attr_ratio] = {
-            self.tng_gt_type_train: 100
-            - self.state.tng_dev_percentage
-            - self.state.tng_test_percentage,
+            self.tng_gt_type_train: 100 - self.state.tng_dev_percentage - self.state.tng_test_percentage,
             self.tng_gt_type_dev: self.state.tng_dev_percentage,
             self.tng_gt_type_test: self.state.tng_test_percentage,
         }
         if st.button("Build Groundtruth"):
-            if self.validate_build_configuration(
-                tng_dict, self.state.tng_teifile_folder
-            ):
+            if self.validate_build_configuration(tng_dict, self.state.tng_teifile_folder):
                 self.build_groundtruth(tng_dict, self.state.tng_teifile_folder)
 
     def delete_groundtruth(self, groundtruth):
         val = True
         if val:
-            shutil.rmtree(
-                os.path.join(
-                    self.tng_Folder, groundtruth[self.tng_attr_name].replace(" ", "_")
-                )
-            )
+            shutil.rmtree(os.path.join(self.tng_Folder, groundtruth[self.tng_attr_name].replace(" ", "_")))
             self.state.tng_selected_display_tng_name = None
             st.experimental_rerun()
 
     def show_del_environment(self):
-        selected_gt_name = st.selectbox(
-            "Select a groundtruth to delete!", list(self.tngdict.keys())
-        )
+        selected_gt_name = st.selectbox("Select a groundtruth to delete!", list(self.tngdict.keys()))
         if st.button("Delete Selected Groundtruth"):
             self.delete_groundtruth(self.tngdict[selected_gt_name])
 
@@ -509,24 +420,16 @@ class TEINERGroundtruthBuilder:
         if self.state.tng_selected_display_tng_name:
             cur_sel_tng = self.tngdict[self.state.tng_selected_display_tng_name]
             self.show_statistics_to_saved_groundtruth(
-                os.path.join(
-                    self.tng_Folder, cur_sel_tng[self.tng_attr_name].replace(" ", "_")
-                ),
-                cur_sel_tng[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][
-                    self.ntd.ntd_attr_entitylist
-                ],
+                os.path.join(self.tng_Folder, cur_sel_tng[self.tng_attr_name].replace(" ", "_")),
+                cur_sel_tng[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],
             )
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Groundtruth Builder}}")
-        tng_build_new = st.beta_expander(
-            "Build new TEI NER Groundtruth", expanded=False
-        )
+        tng_build_new = st.beta_expander("Build new TEI NER Groundtruth", expanded=False)
         with tng_build_new:
             self.show_build_gt_environment()
-        tng_delete = st.beta_expander(
-            "Delete existing TEI NER Groundtruth", expanded=False
-        )
+        tng_delete = st.beta_expander("Delete existing TEI NER Groundtruth", expanded=False)
         with tng_delete:
             self.show_del_environment()
         tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)

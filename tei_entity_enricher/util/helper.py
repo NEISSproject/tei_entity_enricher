@@ -1,12 +1,11 @@
 import os
+import logging
 
 import streamlit as st
 
 logger = logging.getLogger(__name__)
 module_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-local_save_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+local_save_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 state_ok = r"\huge\color{green}\checkmark"
 state_failed = r"\huge\color{red}X"

@@ -7,9 +7,7 @@ import os
 class EntityLibrary:
     def __init__(
         self,
-        data_file: Union[str, None] = os.path.join(
-            local_save_path, "config", "postprocessing", "entity_library.json"
-        ),
+        data_file: Union[str, None] = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json"),
         show_printmessages: bool = True,
     ) -> None:
         """is a memory of entities (saved properties are: name, furtherNames, type, gnd_id, wikidata_id),
@@ -30,14 +28,10 @@ class EntityLibrary:
 
         if self.data_file is not None:
             self.data: Union[dict, None, bool] = self.load_library()
-            print(
-                f"EntityLibrary loaded from {self.data_file}..."
-            ) if self.show_printmessages else None
+            print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
             self.data: Union[dict, None, bool] = None
-            print(
-                "EntityLibrary initialized without data..."
-            ) if self.show_printmessages else None
+            print("EntityLibrary initialized without data...") if self.show_printmessages else None
 
     def load_library(self) -> Union[dict, None, bool]:
         """used to load library data from a local json file with filepath saved in self.data_file,

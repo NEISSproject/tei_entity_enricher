@@ -52,9 +52,7 @@ class TestPostprocessingIo(unittest.TestCase):
     def test_FileReader_loadfile_json(self):
         for fr in self.get_FileReaders():
             if ".json" in fr.filepath:
-                self.assertNotEqual(
-                    fr.loadfile_json(), None, "loadfile_json() should not return None"
-                )
+                self.assertNotEqual(fr.loadfile_json(), None, "loadfile_json() should not return None")
 
     def test_FileReader_loadfile_beacon(self):
         for fr in self.get_FileReaders():
@@ -188,9 +186,7 @@ class TestPostprocessingIo(unittest.TestCase):
                 os.remove(os.path.join(module_path, "util", "testfile.json"))
             else:
                 self.skipTest("test_FileWriter_writefile_json(): Test skipped by User")
-        fw = FileWriter(
-            test_dict, os.path.join(module_path, "util", "testfile.json"), False
-        )
+        fw = FileWriter(test_dict, os.path.join(module_path, "util", "testfile.json"), False)
         self.assertTrue(
             fw.writefile_json(),
             "writefile_json() should return True, when writing a new file",
