@@ -2,6 +2,7 @@ import os
 import re
 import json
 import requests
+import csv
 from typing import Union, List, Tuple
 
 
@@ -118,10 +119,46 @@ class FileReader:
                 ) if self.show_printmessages else None
                 return None
 
-    def loadfile_csv(self) -> Union[str, None, bool]:
+    def loadfile_csv(self) -> Union[dict, None, bool]:
         """method to load csv files, locally or out of the web,
-        is used to add data to entity library"""
-        pass
+        is used to add data to entity library;
+        the csv file should contain the following key names
+        in the first row (order doesnt matter):
+        name, type, wikidata_id, gnd_id, furtherNames\0;
+        if two furtherNames are provided, the second should be saved in
+        a key field named furtherNames\1 and so on"""
+        if self.filepath == None:
+            print(
+                "FileReader loadfile_csv() internal error: FileReader.filepath not defined"
+            ) if self.show_printmessages else None
+            return False
+        if self.origin == None:
+            print(
+                "FileReader loadfile_csv() internal error: FileReader.origin not defined"
+            ) if self.show_printmessages else None
+            return False
+        if self.origin == "local":
+            try:
+                result = []
+                with open(self.filepath) as loaded_file:
+                    csv_reader = csv.DictReader(loaded_file)
+                    for row in csv_reader:
+                        new_row = {}
+                        new_furtherNames = []
+                        for key in list(row.keys()):
+                            if "furthernames" in key.lower():
+                                new_furtherNames.append(row[key])
+                                continue
+                            new_row[key.lower()] = row[key]
+                        new_row["furtherNames"] = new_furtherNames
+                        result.append(new_row)
+                    return result
+            except FileNotFoundError:
+                print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
+                return None
+        elif self.origin == "web":
+            # Hier weiter
+            pass
 
     def loadfile_tsv(self) -> Union[str, None, bool]:
         """method to load tsv files, locally or out of the web,
