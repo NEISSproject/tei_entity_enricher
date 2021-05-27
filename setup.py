@@ -25,7 +25,7 @@ this_dir = os.path.dirname(os.path.realpath(__file__))
 setup(
     name='tei_entity_enricher',
     version=__version__,
-    packages=find_packages(exclude=['test/*']),
+    packages=find_packages(),
     license='GPL-v3.0',
     long_description=open(os.path.join(this_dir, "README.md")).read(),
     long_description_content_type="text/markdown",

@@ -6,7 +6,10 @@ import shutil
 import streamlit as st
 
 from tei_entity_enricher.util import config_io
-from tei_entity_enricher.util.helper import module_path, state_ok, state_failed, state_uncertain
+from tei_entity_enricher.util.helper import module_path, state_ok, state_failed, state_uncertain, \
+    file_lists_entry_widget, numbers_lists_entry_widget, model_dir_entry_widget, text_entry_with_check, \
+    check_dir_ask_make
+from tei_entity_enricher.util.train_manager import get_manager
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,11 @@ class NERTrainer(object):
             st.error("Failed to run data_configuration")
             return
 
+        train_manager = get_manager()
+        if st.button("Set trainer params"):
+            train_manager.set_params(self.trainer_params_json)
+            logger.info("trainer params set!")
+
     def load_trainer_params(self):
         if not os.path.isfile("trainer_params.json"):
             logger.info("copy trainer_params.json from template")
@@ -34,36 +42,74 @@ class NERTrainer(object):
         return 0
 
     def data_configuration(self):
-        # print(json.dumps(self.trainer_params_json, indent=2))
-        train_lists_field, train_lists_state = st.beta_columns([10, 1])
-        train_lists_field = train_lists_field.text_input("train.lists",
-                                                         value=self.trainer_params_json["gen"]["train"]["lists"])
-        train_lists_str = str(train_lists_field)
-        if train_lists_field:
-            # print(train_lists_field, type(train_lists_field))
-            if train_lists_str.startswith("["):
-                train_lists_str = train_lists_str[1:]
-            if train_lists_str.endswith("]"):
-                train_lists_str = train_lists_str[:-1]
-            train_lists_list = [str(x).replace(" ", "") for x in train_lists_str.split(",")]
-            ok = True
-            for list_name in train_lists_list:
-                if not os.path.isfile(list_name):
-                    st.error(f"Can not find file: {list_name}")
-                    ok = False
+        check_list = []
+        train_lists = file_lists_entry_widget(self.trainer_params_json["gen"]["train"]["lists"],
+                                              name="train.lists",
+                                              help=", separated file names")
+        if train_lists:
+            self.trainer_params_json["gen"]["train"]["lists"] = train_lists
+            self.save_train_params()
+        else:
+            check_list.append("train.lists")
+        if len(train_lists) > 1 or len(self.trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
+            train_lists_ratio = numbers_lists_entry_widget(self.trainer_params_json["gen"]["train"]["list_ratios"],
+                                                           name="train.list_ratios", expect_amount=len(train_lists),
+                                                           help="e.g. '1.0, 2.0' must be same amount as file names")
+            if train_lists_ratio:
+                self.trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
+                self.save_train_params()
+            else:
+                check_list.append("train.list_ratios")
 
-            train_lists_state.latex(state_ok if ok else state_failed)
+        val_lists = file_lists_entry_widget(self.trainer_params_json["gen"]["val"]["lists"],
+                                            name="val.lists",
+                                            help=", separated file names")
+        if val_lists:
+            self.trainer_params_json["gen"]["val"]["lists"] = val_lists
+            self.save_train_params()
+        else:
+            check_list.append("val.lists")
+        if len(val_lists) > 1 or len(self.trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
+            val_lists_ratio = numbers_lists_entry_widget(self.trainer_params_json["gen"]["val"]["list_ratios"],
+                                                         name="val.list_ratios", expect_amount=len(val_lists),
+                                                         help="e.g. '1.0, 2.0' must be same amount as file names")
+            if val_lists_ratio:
+                self.trainer_params_json["gen"]["val"]["list_ratios"] = val_lists_ratio
+                self.save_train_params()
+            else:
+                check_list.append("val.list_ratios")
 
-        # state.input = st.text_input("Set input value.", state.input or "")
-        # st.write("Page state:", state.page)
-        # if st.button("Jump to Pred"):
-        #     state.page = "NER Prediction"
-        #     st.experimental_rerun()
+        pretrained_model = model_dir_entry_widget(self.trainer_params_json["scenario"]["model"]["pretrained_bert"],
+                                                  name="model.pretrained_bert", expect_saved_model=True)
+        if pretrained_model:
+            self.trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
+            self.save_train_params()
+        else:
+            check_list.append("model.pretrained_bert")
+        #
+        # output_dir = model_dir_entry_widget(self.trainer_params_json["output_dir"], name="output_dir")
+        # if output_dir:
+        #     self.trainer_params_json["output_dir"] = output_dir
+        #     self.save_train_params()
+        # else:
+        #     check_list.append("output_dir")
 
-        # uploaded_file = st.file_uploader("Load session config")
-        # if uploaded_file is not None:
-        #     config_content = uploaded_file.getvalue()
-        #     st.write(json.loads(config_content))
+        output_dir = text_entry_with_check(string=self.trainer_params_json["output_dir"],
+                                           name="output_dir",
+                                           check_fn=check_dir_ask_make)
+        if output_dir:
+            self.trainer_params_json["output_dir"] = output_dir
+            self.save_train_params()
+        else:
+            check_list.append("output_dir")
+
+        if check_list:
+            st.error(f"Fix {check_list} to continue!")
+            logger.error(f"Fix {check_list} to continue!")
+            return -1
+        else:
+            logger.info("data configuration successful")
+            return 0
 
     def workdir(self):
         start_config_path = os.path.join(module_path, "templates", "trainer", "start_config.state")
@@ -92,3 +138,7 @@ class NERTrainer(object):
                 wdp_status = wdp_status.latex(state_failed)
                 return -1
         return 0
+
+    def save_train_params(self):
+        with open(os.path.join(self._workdir_path, "trainer_params.json"), "w") as fp:
+            json.dump(self.trainer_params_json, fp, indent=2)
