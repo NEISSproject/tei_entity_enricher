@@ -119,14 +119,15 @@ class FileReader:
                 ) if self.show_printmessages else None
                 return None
 
-    def loadfile_csv(self) -> Union[dict, None, bool]:
+    def loadfile_csv(self, delimiting_character: str = ",") -> Union[dict, None, bool]:
         """method to load csv files, locally or out of the web,
-        is used to add data to entity library;
+        is specialized to be used to add data to entity library;
         the csv file should contain the following key names
-        in the first row (order doesnt matter):
+        in the first row (order and upper- or lowercase doesnt matter):
         name, type, wikidata_id, gnd_id, furtherNames\0;
         if two furtherNames are provided, the second should be saved in
-        a key field named furtherNames\1 and so on"""
+        a key field named furtherNames\1 and so on;
+        delimiter: define character, which delimits the fields in the csv file"""
         if self.filepath == None:
             print(
                 "FileReader loadfile_csv() internal error: FileReader.filepath not defined"
@@ -157,8 +158,28 @@ class FileReader:
                 print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
                 return None
         elif self.origin == "web":
-            # Hier weiter
-            pass
+            try:
+                result = []
+                response = requests.get(self.filepath)
+                loaded_file = response.content.decode("utf-8")
+                csv_reader = csv.DictReader(loaded_file.splitlines(), delimiter=delimiting_character)
+                for row in csv_reader:
+                    new_row = {}
+                    new_furtherNames = []
+                    for key in list(row.keys()):
+                        if "furthernames" in key.lower():
+                            new_furtherNames.append(row[key])
+                            continue
+                        new_row[key.lower().strip()] = row[key]
+                    new_row["furtherNames"] = new_furtherNames
+                    result.append(new_row)
+                response.close()
+                return result
+            except:
+                print(
+                    "FileReader loadfile_csv() error: couldn't get data due to connection or filepath issue"
+                ) if self.show_printmessages else None
+                return None
 
     def loadfile_tsv(self) -> Union[str, None, bool]:
         """method to load tsv files, locally or out of the web,

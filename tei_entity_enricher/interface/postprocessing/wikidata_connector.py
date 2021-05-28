@@ -108,7 +108,7 @@ class WikidataConnector:
             ) if self.show_printmessages else None
 
     def connectivity_check(self) -> int:
-        """checking wikidata web api (preset query string: 'Berlin') and wikidata sparql endpoint (preset query input: ('Berlin', 'place')).
+        """checking wikidata web api (preset query string: 'Berlin', hit limit: '1') and wikidata sparql endpoint (preset query input: ('Q64 (Berlin)', 'place')).
         returns 0 or -1 for unittest purposes"""
 
         def check_wikidata_web_api() -> bool:
@@ -117,7 +117,7 @@ class WikidataConnector:
                     self.wikidata_web_api_baseUrl.format(
                         "Berlin",
                         self.wikidata_web_api_language,
-                        self.wikidata_web_api_limit,
+                        "1",
                     ),
                     "web",
                     True,
@@ -170,7 +170,8 @@ class WikidataConnector:
         which consists of the number of search hits and the returned data object,
         filter_for_precise_spelling variable determines wheather only exact matches
         between the search string and the label value in the search list returned by
-        api are returned,
+        api are returned (filtering is executed only if there are more than 5 search hits,
+        otherwise is not executed although filter_for_precise_spelling is True),
         filter_for_correct_type variable determines wheather the entities returned by api
         will be checked semantically with sparql queries in correspondance with the delivered
         type strings in self.input; only entities of a correct type will be returned"""
@@ -207,16 +208,17 @@ class WikidataConnector:
             if filter_for_precise_spelling == True:
                 precise_spelling = []
                 entry_amount = len(filereader_result["search"])
-                percent = 100 / entry_amount if entry_amount > 0 else 100
-                progressbar = 0
-                for search_list_element in filereader_result["search"]:
-                    progressbar += percent
-                    print(
-                        f"spell filtering in {string_tuple} result: {math.floor(progressbar * 10 ** 2) / 10 ** 2}"
-                    ) if self.show_printmessages == True else None
-                    if search_list_element["label"] == string_tuple[0]:
-                        precise_spelling.append(search_list_element)
-                filereader_result["search"] = precise_spelling
+                if entry_amount > 5:
+                    percent = 100 / entry_amount if entry_amount > 0 else 100
+                    progressbar = 0
+                    for search_list_element in filereader_result["search"]:
+                        progressbar += percent
+                        print(
+                            f"spell filtering in {string_tuple}-query results: {math.floor(progressbar * 10 ** 2) / 10 ** 2}"
+                        ) if self.show_printmessages == True else None
+                        if search_list_element["label"] == string_tuple[0]:
+                            precise_spelling.append(search_list_element)
+                    filereader_result["search"] = precise_spelling
             if filter_for_correct_type == True:
                 correct_type = []
                 entry_amount = len(filereader_result["search"])

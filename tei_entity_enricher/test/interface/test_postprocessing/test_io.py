@@ -38,6 +38,18 @@ class TestPostprocessingIo(unittest.TestCase):
                 False,
                 False,
             ),
+            FileReader(
+                "https://support.staffbase.com/hc/en-us/article_attachments/360009197031/username.csv",
+                "web",
+                False,
+                False,
+            ),
+            FileReader(
+                os.path.join(module_path, "util", "csv_file_for_tests.csv"),
+                "local",
+                False,
+                False,
+            ),
         ]
 
     # tests
@@ -61,6 +73,15 @@ class TestPostprocessingIo(unittest.TestCase):
                     fr.loadfile_beacon(),
                     None,
                     "loadfile_beacon() should not return None",
+                )
+
+    def test_FileReader_loadfile_csv(self):
+        for fr in self.get_FileReaders():
+            if ".csv" in fr.filepath:
+                self.assertNotEqual(
+                    fr.loadfile_csv(),
+                    None,
+                    "loadfile_csv() should not return None",
                 )
 
     def test_Cache_init(self):
