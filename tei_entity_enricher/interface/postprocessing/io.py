@@ -119,7 +119,9 @@ class FileReader:
                 ) if self.show_printmessages else None
                 return None
 
-    def loadfile_csv(self, delimiting_character: str = ",") -> Union[dict, None, bool]:
+    def loadfile_csv(
+        self, delimiting_character: str = ",", transform_for_entity_library_import: bool = True
+    ) -> Union[dict, None, bool]:
         """method to load csv files, locally or out of the web,
         is specialized to be used to add data to entity library;
         the csv file should contain the following key names
@@ -127,7 +129,9 @@ class FileReader:
         name, type, wikidata_id, gnd_id, furtherNames\0;
         if two furtherNames are provided, the second should be saved in
         a key field named furtherNames\1 and so on;
-        delimiter: define character, which delimits the fields in the csv file"""
+        delimiter: define character, which delimits the fields in the csv file
+        transform_for_entity_library_import: activate data transformation for usecase of importing
+        entity data into entity library"""
         if self.filepath == None:
             print(
                 "FileReader loadfile_csv() internal error: FileReader.filepath not defined"
@@ -140,9 +144,31 @@ class FileReader:
             return False
         if self.origin == "local":
             try:
-                result = []
-                with open(self.filepath) as loaded_file:
-                    csv_reader = csv.DictReader(loaded_file)
+                if transform_for_entity_library_import == True:
+                    result = []
+                    with open(self.filepath) as loaded_file:
+                        csv_reader = csv.DictReader(loaded_file)
+                        for row in csv_reader:
+                            new_row = {}
+                            new_furtherNames = []
+                            for key in list(row.keys()):
+                                if "furthernames" in key.lower():
+                                    new_furtherNames.append(row[key])
+                                    continue
+                                new_row[key.lower()] = row[key]
+                            new_row["furtherNames"] = new_furtherNames
+                            result.append(new_row)
+                        return result
+            except FileNotFoundError:
+                print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
+                return None
+        elif self.origin == "web":
+            try:
+                if transform_for_entity_library_import == True:
+                    result = []
+                    response = requests.get(self.filepath)
+                    loaded_file = response.content.decode("utf-8")
+                    csv_reader = csv.DictReader(loaded_file.splitlines(), delimiter=delimiting_character)
                     for row in csv_reader:
                         new_row = {}
                         new_furtherNames = []
@@ -150,31 +176,11 @@ class FileReader:
                             if "furthernames" in key.lower():
                                 new_furtherNames.append(row[key])
                                 continue
-                            new_row[key.lower()] = row[key]
+                            new_row[key.lower().strip()] = row[key]
                         new_row["furtherNames"] = new_furtherNames
                         result.append(new_row)
+                    response.close()
                     return result
-            except FileNotFoundError:
-                print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
-                return None
-        elif self.origin == "web":
-            try:
-                result = []
-                response = requests.get(self.filepath)
-                loaded_file = response.content.decode("utf-8")
-                csv_reader = csv.DictReader(loaded_file.splitlines(), delimiter=delimiting_character)
-                for row in csv_reader:
-                    new_row = {}
-                    new_furtherNames = []
-                    for key in list(row.keys()):
-                        if "furthernames" in key.lower():
-                            new_furtherNames.append(row[key])
-                            continue
-                        new_row[key.lower().strip()] = row[key]
-                    new_row["furtherNames"] = new_furtherNames
-                    result.append(new_row)
-                response.close()
-                return result
             except:
                 print(
                     "FileReader loadfile_csv() error: couldn't get data due to connection or filepath issue"
@@ -202,9 +208,15 @@ class Cache:
         return 0
 
     def check_for_redundancy(
-        self, gnd_id: str, category: str, value: Union[str, dict, list, bool, None]
-    ) -> Tuple[bool, bool]:
-        """checks a dict in self.data for an existing gnd id number and value,
+        self,
+        usecase: str = None,
+        wikidata_id: str = None,
+        gnd_id: str = None,
+        category: str = None,
+        value: Union[str, dict, list, bool, None] = None,
+    ) -> Union[Tuple[bool, bool], None]:
+        """usecase: GndConnector:
+        checks a dict in self.data for an existing gnd id number and value,
         a specific dict structure is presupposed:
         {'gnd_id1':
             {'gnd_id1_key1': 'gnd_id1_val1',
@@ -213,21 +225,50 @@ class Cache:
             {'gnd_id2_key1': 'gnd_id2_val1',
             'gnd_id2_key2': 'gnd_id2_val2'}
         }
+        usecase: EntityLibrary:
+        checks a dict in self.data for an existing wikidata_id and gnd_id,
+        a specific dict structure is presupposed:
+        [
+            {
+                'name': 'entityName1',
+                'furtherNames': [],
+                'type': 'entityType',
+                'wikidata_id': 'Q1234',
+                'gnd_id': '12345678'
+            },
+            {
+                'name': 'entityName2',
+                'furtherNames': [],
+                'type': 'entityType',
+                'wikidata_id': 'Q12345',
+                'gnd_id': '123456789'
+            }
+        ]
         this check is used in FileWriter class as part
-        of a merging process of an existing json file and new json data,
+        of a merging process of an existing json file and new json data
+        (in the usecases of GndConnector or EntityLibrary),
         which should be added to the file:
-        but if a specific gnd id number and a specific value is already present in the file,
+        but if a specific gnd id number and a specific value (usecase GndConnector)
+        or a specific entity (EntityLibrary) is already present in the file,
         the merging process will be canceled (see FileWriter class)"""
-        gnd_id_is_redundant = False
-        value_is_redundant = False
-        for key in self.data:
-            if key == gnd_id:
-                gnd_id_is_redundant = True
-            if self.data[key][category] == value:
-                value_is_redundant = True
-        return gnd_id_is_redundant, value_is_redundant
+        if usecase == "GndConnector":
+            gnd_id_is_redundant = False
+            value_is_redundant = False
+            for key in self.data:
+                if key == gnd_id:
+                    gnd_id_is_redundant = True
+                if self.data[key][category] == value:
+                    value_is_redundant = True
+            return gnd_id_is_redundant, value_is_redundant
+        elif usecase == "EntityLibrary":
+            pass
+        else:
+            print(
+                "Cache check_for_redundancy() internal error: No valid usecase value has been passed to function"
+            ) if self.show_printmessages else None
+            return None
 
-    def check_json_structure(self) -> bool:
+    def check_json_structure(self, usecase: str = "GndConnector") -> Union[bool, None]:
         """check json file structure in case of merging self.data
         with an already existing json file in FileWriter class,
         a specific dict structure is presupposed:
@@ -237,16 +278,24 @@ class Cache:
          'gnd_id2':
             {'gnd_id2_key1': 'gnd_id2_val1',
             'gnd_id2_key2': 'gnd_id2_val2'}
-        }"""
-        if type(self.data) == dict:
-            for key in self.data:
-                if type(self.data[key]) == dict:
-                    pass
-                else:
-                    return False
-            return True
+        }
+        usecase: 'GndConnector' or 'EntityLibrary'"""
+        if usecase == "GndConnector":
+            if type(self.data) == dict:
+                for key in self.data:
+                    if type(self.data[key]) != dict:
+                        return False
+                return True
+            else:
+                return False
+        elif usecase == "EntityLibrary":
+            pass
+            # HIER WEITER
         else:
-            return False
+            print(
+                "Cache check_json_structure() internal error: No valid usecase value passed to function"
+            ) if self.show_printmessages else None
+            return None
 
     def check_beacon_prefix_statement(self) -> bool:
         """method to check an imported beacon file, if the listed entities are defined by gnd norm data ids"""
@@ -327,11 +376,12 @@ class FileWriter:
         self.show_printmessages: bool = show_printmessages
         self.writefile_types: dict = {".json": "writefile_json"}
 
-    def writefile_json(self, do_if_file_exists: str = "cancel") -> bool:
+    def writefile_json(self, do_if_file_exists: str = "cancel", usecase: str = "GndConnector") -> bool:
         """method to write a new or enrich an existing json file,
         do_if_file_exists parameter controls behavior in case a file in self.filepath already exists,
         there are 3 submethods defined for a sort of switch statement, differentiating the 3 cases
-        'cancel', 'replace' and 'merge'"""
+        'cancel', 'replace' and 'merge'
+        usecase: can be 'GndConnector' 'or 'EntityLibrary'"""
 
         def do_if_file_exists_cancel() -> bool:
             print(
@@ -348,28 +398,36 @@ class FileWriter:
             return True
 
         def do_if_file_exists_merge() -> bool:
-            if already_existing_file_cache.check_json_structure() == False:
+            if already_existing_file_cache.check_json_structure(usecase) == False:
                 print(
                     "FileWriter writefile_json(): file already exists, couldn't merge files due to incompatibility issue"
                 ) if self.show_printmessages else None
                 return False
             else:
-                for key in self.data:
-                    redundancy_check_result = already_existing_file_cache.check_for_redundancy(
-                        key, "name", self.data[key]["name"]
-                    )
-                    if any(redundancy_check_result):
-                        print(
-                            "FileWriter writefile_json(): file already exists, couldn't merge files due to redundancy issue"
-                        ) if self.show_printmessages else None
-                        return False
-                already_existing_file_cache.data.update(self.data)
-                with open(self.filepath, "w") as file:
-                    json.dump(already_existing_file_cache.data, file, indent="\t")
-                print(
-                    "FileWriter writefile_json(): file already exists, files successfully merged"
-                ) if self.show_printmessages else None
-                return True
+                if usecase == "GndConnector":
+                    for key in self.data:
+                        redundancy_check_result = already_existing_file_cache.check_for_redundancy(
+                            "GndConnector", None, key, "name", self.data[key]["name"]
+                        )
+                        if any(redundancy_check_result):
+                            print(
+                                "FileWriter writefile_json(): file already exists, couldn't merge files due to redundancy issue"
+                            ) if self.show_printmessages else None
+                            return False
+                    already_existing_file_cache.data.update(self.data)
+                    with open(self.filepath, "w") as file:
+                        json.dump(already_existing_file_cache.data, file, indent="\t")
+                    print(
+                        "FileWriter writefile_json(): file already exists, files successfully merged"
+                    ) if self.show_printmessages else None
+                    return True
+                elif usecase == "EntityLibrary":
+                    pass
+                    # HIER WEITER
+                else:
+                    print(
+                        "FileWriter writefile_json() internal error: No valid usecase value has been passed to function"
+                    ) if self.show_printmessages else None
 
         do_if_file_exists_switch = {
             "cancel": do_if_file_exists_cancel,

@@ -34,19 +34,33 @@ class EntityLibrary:
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
 
     def load_library(self) -> Union[dict, None, bool]:
-        """used to load library data from a local json file with filepath saved in self.data_file,
-        depending on file extension of self.data_file the correct method of FileReader is choosen
-        by getting the attribute via loadfile_types dict of FileReader class"""
+        """used to load existing library data from a local json file with filepath saved in self.data_file"""
         if self.data_file is None:
             print("EntityLibrary load_library() Error: data_file parameter not defined")
             return False
         fr = FileReader(self.data_file, "local", True, self.show_printmessages)
-        _, file_extension = os.path.splitext(self.data_file)
-        result = getattr(fr, fr.loadfile_types.get(file_extension))()
+        result = fr.loadfile_json()
         return result
 
         # file found, but no valid data: FileReader returns None
         # file not found: FileReader returns None
+
+    def import_data_to_library(
+        self, source_path: str = None, origin: str = None, source_type: str = None, mode="merge"
+    ) -> Union[None, int]:
+        """used to add data from source (json or csv format) into the loaded entity library
+
+        source_path: uri or filepath in local system
+        origin: 'web' or 'local'
+        source_type: should be None; only when source_path doesnt deliver a correct file extension,
+        then source_type should be '.json' or '.csv'
+        mode: can be 'cancel', 'replace' or 'merge' (categories correspond to modi of FileWriter`s writefile_json())
+        """
+        file_extension = None
+        if source_type is None:
+            _, file_extension = os.path.splitext(source_path)
+        fr = FileReader(source_path, origin, True, self.show_printmessages)
+        result = getattr(fr, fr.loadfile_types.get(source_type or file_extension))()
 
     def save_library(self) -> bool:
         """used to save library data to a local json file with filepath saved in self.data_file"""

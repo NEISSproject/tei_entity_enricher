@@ -100,15 +100,15 @@ class TestPostprocessingIo(unittest.TestCase):
         }
         c = Cache(test_dict, False)
         self.assertTrue(
-            any(c.check_for_redundancy("123", "name", "Maxine Mustermann")),
+            any(c.check_for_redundancy("GndConnector", None, "123", "name", "Maxine Mustermann")),
             "any(check_for_redundancy()) should return True",
         )
         self.assertTrue(
-            any(c.check_for_redundancy("789", "name", "Maxine Musterfrau")),
+            any(c.check_for_redundancy("GndConnector", None, "789", "name", "Maxine Musterfrau")),
             "any(check_for_redundancy()) should return True",
         )
         self.assertFalse(
-            any(c.check_for_redundancy("789", "name", "Maxine Mustermann")),
+            any(c.check_for_redundancy("GndConnector", None, "789", "name", "Maxine Mustermann")),
             "any(check_for_redundancy()) should return False",
         )
 
@@ -123,15 +123,15 @@ class TestPostprocessingIo(unittest.TestCase):
             "456": {"name": "Maxine Musterfrau"},
         }
         self.assertTrue(
-            Cache(test_dict_true, False).check_json_structure(),
+            Cache(test_dict_true, False).check_json_structure("GndConnector"),
             "check_json_structure() should return True",
         )
         self.assertFalse(
-            Cache(test_dict_false_object, False).check_json_structure(),
+            Cache(test_dict_false_object, False).check_json_structure("GndConnector"),
             "check_json_structure() should return False",
         )
         self.assertFalse(
-            Cache(test_dict_false_value, False).check_json_structure(),
+            Cache(test_dict_false_value, False).check_json_structure("GndConnector"),
             "check_json_structure() should return False",
         )
 
@@ -198,6 +198,7 @@ class TestPostprocessingIo(unittest.TestCase):
             "456": {"name": "456", "type": "b"},
             "789": {"name": "789", "type": "a"},
         }
+        # todo: change dir to local_save_path
         if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
             print(
                 "test_FileWriter_writefile_json(): testfile.json already exists. Delete and continue test? (Y or skip with everything else)"
@@ -207,17 +208,18 @@ class TestPostprocessingIo(unittest.TestCase):
                 os.remove(os.path.join(module_path, "util", "testfile.json"))
             else:
                 self.skipTest("test_FileWriter_writefile_json(): Test skipped by User")
+        # todo: change dir to local_save_path
         fw = FileWriter(test_dict, os.path.join(module_path, "util", "testfile.json"), False)
         self.assertTrue(
-            fw.writefile_json(),
+            fw.writefile_json("cancel", "GndConnector"),
             "writefile_json() should return True, when writing a new file",
         )
         self.assertFalse(
-            fw.writefile_json(),
+            fw.writefile_json("cancel", "GndConnector"),
             "writefile_json() should return False, when a file with filepath already exists and writefile_json()s parameter 'do_if_file_exists' is 'cancel'",
         )
         self.assertTrue(
-            fw.writefile_json("replace"),
+            fw.writefile_json("replace", "GndConnector"),
             "writefile_json() should return True, when replacing an existing file and writefile_json()s parameter 'do_if_file_exists' is 'replace'",
         )
         fw.data = {
@@ -226,9 +228,10 @@ class TestPostprocessingIo(unittest.TestCase):
             "7890": {"name": "7890", "type": "a"},
         }
         self.assertTrue(
-            fw.writefile_json("merge"),
+            fw.writefile_json("merge", "GndConnector"),
             "writefile_json() should return True, when merging data with an existing file and writefile_json()s parameter 'do_if_file_exists' is 'merge'",
         )
+        # todo: change dir to local_save_path
         if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
             os.remove(os.path.join(module_path, "util", "testfile.json"))
 
