@@ -154,7 +154,7 @@ class WikidataConnector:
             self.check_connectivity == True
         if all((check_wikidata_web_api(), check_wikidata_sparql_endpoint())):
             print(
-                "WikidataConnector connectivity_check() passed: Connection to wikidata web api and wikidata sparql endpoint could be established."
+                "WikidataConnector connectivity_check() passed: Wikidata web api and wikidata sparql endpoint are responding as expected."
             ) if self.show_printmessages else None
             self.connection_established = True
             return 0
@@ -171,13 +171,13 @@ class WikidataConnector:
         filter_for_precise_spelling variable determines wheather only exact matches
         between the search string and the label value in the search list returned by
         api are returned (filtering is executed only if there are more than 5 search hits,
-        otherwise is not executed although filter_for_precise_spelling is True),
+        otherwise it is not executed although filter_for_precise_spelling is True),
         filter_for_correct_type variable determines wheather the entities returned by api
         will be checked semantically with sparql queries in correspondance with the delivered
         type strings in self.input; only entities of a correct type will be returned"""
         if self.input == None:
             print(
-                "WikidataConnector get_wikidata_search_results() Error: WikidataConnector has no input data."
+                "WikidataConnector get_wikidata_search_results() internal error: WikidataConnector has no input data."
             ) if self.show_printmessages == True else None
             return False
         if (
@@ -187,7 +187,7 @@ class WikidataConnector:
             or (type(self.input[0][0]) != str)
         ):
             print(
-                "WikidataConnector get_wikidata_search_results() Error: WikidataConnector input data is in a wrong format."
+                "WikidataConnector get_wikidata_search_results() internal error: WikidataConnector input data is in a wrong format."
             ) if self.show_printmessages == True else None
             return False
         result_dict = {}
@@ -203,7 +203,7 @@ class WikidataConnector:
                 self.show_printmessages,
             )
             filereader_result = filereader.loadfile_json()
-            if not all((filter_for_precise_spelling, filter_for_correct_type)):
+            if all(x == False for x in [filter_for_precise_spelling, filter_for_correct_type]):
                 print(f"no filtering in {string_tuple} result") if self.show_printmessages == True else None
             if filter_for_precise_spelling == True:
                 precise_spelling = []

@@ -23,7 +23,7 @@ class FileReader:
         internal_call: if FileReader is used internally in Connector or FileWriter class, some error messages will not be printed
         show_printmessages: show class internal printmessages on runtime or not
 
-        loadfile_types: dict refering file extensions to loading methods, can be used from outside to execute the right loading function"""
+        loadfile_types: dict mapping file extensions to loading methods, can be used from outside to execute the right loading function"""
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
@@ -195,7 +195,8 @@ class FileReader:
 
 class Cache:
     def __init__(self, data: Union[str, None] = None, show_printmessages: bool = True) -> None:
-        """saves data for manipulation processes used in a beacon file processing pipeline,
+        """saves data for manipulation processes, offers methods for diverse purposes, used in a beacon file processing pipeline and
+        EntityLibrary saving process,
 
         data: contains data of beacon or json files as a string, delivered by FileReader class
         show_printmessages: show class internal printmessages on runtime or not
@@ -261,6 +262,7 @@ class Cache:
                     value_is_redundant = True
             return gnd_id_is_redundant, value_is_redundant
         elif usecase == "EntityLibrary":
+            # todo: write it
             pass
         else:
             print(
@@ -290,7 +292,7 @@ class Cache:
                 return False
         elif usecase == "EntityLibrary":
             pass
-            # HIER WEITER
+            # todo: write
         else:
             print(
                 "Cache check_json_structure() internal error: No valid usecase value passed to function"
@@ -352,7 +354,7 @@ class Cache:
             return result
         else:
             print(
-                "Cache get_items_with_specific_value_in_a_category() error: no valid mode parameter has been passed to function"
+                "Cache get_items_with_specific_value_in_a_category() internal error: no valid mode parameter has been passed to function"
             ) if self.show_printmessages else None
             return False
 
@@ -370,7 +372,7 @@ class FileWriter:
         filepath: path to file to write
         show_printmessages: show class internal printmessages on runtime or not
 
-        writefile_types: dict refering file extensions to writing methods, can be used from outside to execute the right writing function"""
+        writefile_types: dict mapping file extensions to writing methods, can be used from outside to execute the right writing function"""
         self.data: Union[str, None] = data
         self.filepath: Union[str, None] = filepath
         self.show_printmessages: bool = show_printmessages
@@ -423,11 +425,12 @@ class FileWriter:
                     return True
                 elif usecase == "EntityLibrary":
                     pass
-                    # HIER WEITER
+                    # todo: write
                 else:
                     print(
                         "FileWriter writefile_json() internal error: No valid usecase value has been passed to function"
                     ) if self.show_printmessages else None
+                    return False
 
         do_if_file_exists_switch = {
             "cancel": do_if_file_exists_cancel,

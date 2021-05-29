@@ -32,11 +32,13 @@ class Identifier:
 
         filter_for_precise_spelling variable determines wheather only exact matches
         between the search string and the label value in the search list returned by
-        api are returned,
+        api are returned (filtering is executed only if there are more than 5 search hits,
+        otherwise it is not executed although filter_for_precise_spelling is True),
         filter_for_correct_type variable determines wheather the entities returned by api
         will be checked semantically with sparql queries in correspondance with the delivered
         type strings in self.input; only entities of a correct type will be returned
-        check_connectivity: execute connectivity check in called WikidataConnector instance or not"""
+        check_connectivity: execute connectivity check in called WikidataConnector instance or not
+        """
         c = WikidataConnector(
             self.input,
             check_connectivity,
@@ -52,7 +54,7 @@ class Identifier:
         """prints found entities (entity name and description) to all tuples in self.input list,
         to deliver a human readable overview over self.current_result_data"""
         for key in self.current_result_data:
-            print("{}: {}".format(key, self.current_result_data[key][0]))
+            print(f"{key}: {self.current_result_data[key][0]}")
             for hit in self.current_result_data[key][1]["search"]:
                 wikidataId = hit.get("id", "No wikidata id delivered")
                 descr = hit.get("description", "No description delivered")

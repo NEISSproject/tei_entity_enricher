@@ -168,7 +168,7 @@ class GndConnector:
             return 0
         else:
             print(
-                "GndConnector error in print_complete_url(): no gnd id number has been passed to connector object yet."
+                "GndConnector print_complete_url() internal error: no gnd id number has been passed to connector object yet."
             ) if self.show_printmessages else None
             return -1
 
@@ -187,7 +187,7 @@ class GndConnector:
                 return self.apilist[self.apiindex]["baseUrl"].format(self.gnd_id[index])
         else:
             print(
-                "GndConnector error in return_complete_url(): no gnd id number has been passed to connector object yet."
+                "GndConnector return_complete_url() internal error: no gnd id number has been passed to connector object yet."
             ) if self.show_printmessages else None
             return None
 
