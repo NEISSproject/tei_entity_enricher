@@ -80,7 +80,8 @@ class EntityLibrary:
         supports .json and .csv file format
 
         file_type: selects file format to export to
-        export_path: file path to export data to"""
+        export_path: file path to export data to
+        mode: defines mode of FileWriter`s writefile function"""
         if file_type != ".csv" and file_type != ".json":
             print("EntityLibrary export_library() internal error: file_type parameter not defined")
             return False
@@ -95,4 +96,5 @@ class EntityLibrary:
             pass
             # todo: write transformation
         fw = FileWriter(export_data, export_path, self.show_printmessages)
+        # todo: decision to give possibilty to merge files
         return fw.writefile_json(mode)

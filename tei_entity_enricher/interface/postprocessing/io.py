@@ -159,6 +159,13 @@ class FileReader:
                             new_row["furtherNames"] = new_furtherNames
                             result.append(new_row)
                         return result
+                else:
+                    result = []
+                    with open(self.filepath) as loaded_file:
+                        csv_reader = csv.reader(loaded_file)
+                        for row in csv_reader:
+                            result.append(row)
+                        return result
             except FileNotFoundError:
                 print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
                 return None
@@ -181,6 +188,15 @@ class FileReader:
                         result.append(new_row)
                     response.close()
                     return result
+                else:
+                    result = []
+                    response = requests.get(self.filepath)
+                    loaded_file = response.content.decode("utf-8")
+                    csv_reader = csv.reader(loaded_file)
+                    for row in csv_reader:
+                        result.append(row)
+                    response.close()
+                    return result
             except:
                 print(
                     "FileReader loadfile_csv() error: couldn't get data due to connection or filepath issue"
@@ -194,14 +210,14 @@ class FileReader:
 
 
 class Cache:
-    def __init__(self, data: Union[str, None] = None, show_printmessages: bool = True) -> None:
+    def __init__(self, data: Union[str, dict, list, None] = None, show_printmessages: bool = True) -> None:
         """saves data for manipulation processes, offers methods for diverse purposes, used in a beacon file processing pipeline and
         EntityLibrary saving process,
 
         data: contains data of beacon or json files as a string, delivered by FileReader class
         show_printmessages: show class internal printmessages on runtime or not
         """
-        self.data: Union[str, None] = data
+        self.data: Union[str, dict, list, None] = data
         self.show_printmessages: bool = show_printmessages
 
     def print_cache(self) -> int:
@@ -262,8 +278,14 @@ class Cache:
                     value_is_redundant = True
             return gnd_id_is_redundant, value_is_redundant
         elif usecase == "EntityLibrary":
-            # todo: write it
-            pass
+            gnd_id_is_redundant = False
+            wikidata_id_is_redundant = False
+            for entity in self.data:
+                if entity["wikidata_id"] == wikidata_id:
+                    wikidata_id_is_redundant = True
+                if entity["gnd_id"] == gnd_id:
+                    gnd_id_is_redundant = True
+            return wikidata_id_is_redundant, gnd_id_is_redundant
         else:
             print(
                 "Cache check_for_redundancy() internal error: No valid usecase value has been passed to function"
@@ -291,8 +313,22 @@ class Cache:
             else:
                 return False
         elif usecase == "EntityLibrary":
-            pass
-            # todo: write
+            if type(self.data) == list:
+                for entity in self.data:
+                    if type(entity) != dict:
+                        return False
+                    compulsory_keys = ["name", "type", "wikidata_id", "gnd_id", "furtherNames"]
+                    for key in list(entity.keys()):
+                        if key not in compulsory_keys:
+                            return False
+                    if type(entity[compulsory_keys[4]]) != list:
+                        return False
+                    for key in compulsory_keys[:-1]:
+                        if type(key) != str:
+                            return False
+                return True
+            else:
+                return False
         else:
             print(
                 "Cache check_json_structure() internal error: No valid usecase value passed to function"
@@ -362,7 +398,7 @@ class Cache:
 class FileWriter:
     def __init__(
         self,
-        data: Union[str, None] = None,
+        data: Union[str, dict, list, None] = None,
         filepath: Union[str, None] = None,
         show_printmessages: bool = True,
     ) -> None:
@@ -373,7 +409,7 @@ class FileWriter:
         show_printmessages: show class internal printmessages on runtime or not
 
         writefile_types: dict mapping file extensions to writing methods, can be used from outside to execute the right writing function"""
-        self.data: Union[str, None] = data
+        self.data: Union[str, dict, list, None] = data
         self.filepath: Union[str, None] = filepath
         self.show_printmessages: bool = show_printmessages
         self.writefile_types: dict = {".json": "writefile_json"}
@@ -409,7 +445,7 @@ class FileWriter:
                 if usecase == "GndConnector":
                     for key in self.data:
                         redundancy_check_result = already_existing_file_cache.check_for_redundancy(
-                            "GndConnector", None, key, "name", self.data[key]["name"]
+                            usecase, None, key, "name", self.data[key]["name"]
                         )
                         if any(redundancy_check_result):
                             print(
@@ -424,8 +460,22 @@ class FileWriter:
                     ) if self.show_printmessages else None
                     return True
                 elif usecase == "EntityLibrary":
-                    pass
-                    # todo: write
+                    for entity in self.data:
+                        redundancy_check_result = already_existing_file_cache.check_for_redundancy(
+                            usecase, entity["wikidata_id"], entity["gnd_id"]
+                        )
+                        if any(redundancy_check_result):
+                            print(
+                                "FileWriter writefile_json(): file already exists, couldn't merge files due to redundancy issue"
+                            ) if self.show_printmessages else None
+                            return False
+                    already_existing_file_cache.data.extend(self.data)
+                    with open(self.filepath, "w") as file:
+                        json.dump(already_existing_file_cache.data, file, indent="\t")
+                    print(
+                        "FileWriter writefile_json(): file already exists, files successfully merged"
+                    ) if self.show_printmessages else None
+                    return True
                 else:
                     print(
                         "FileWriter writefile_json() internal error: No valid usecase value has been passed to function"
