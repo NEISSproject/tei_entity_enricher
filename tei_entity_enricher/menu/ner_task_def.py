@@ -87,7 +87,7 @@ class NERTaskDef:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
                 st.error(
-                    f"To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
+                    f"To edit the NER task {definition[self.ntd_attr_name]} is not allowed because it is already used in the TEI Read NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
                 )
 
         if val:
@@ -109,7 +109,7 @@ class NERTaskDef:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
                 st.error(
-                    f"Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
+                    f"Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI Read NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
                 )
         if val:
             os.remove(

@@ -182,7 +182,7 @@ class TEINERMap:
     def show_editable_mapping_content(self, mode):
         if mode == self.tnm_mode_edit and len(self.editable_mapping_names) < 1:
             st.info(
-                "There are no self-defined TEI NER Entity Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
+                "There are no self-defined TEI Read NER Entity Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
             if self.state.tnm_mode != mode:
@@ -209,7 +209,7 @@ class TEINERMap:
                 tnm_mapping_dict[self.tnm_attr_ntd] = {}
                 tnm_mapping_dict[self.tnm_attr_entity_dict] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
-                self.state.tnm_name = st.text_input("New TEI NER Entity Mapping Name:", self.state.tnm_name or "")
+                self.state.tnm_name = st.text_input("New TEI Read NER Entity Mapping Name:", self.state.tnm_name or "")
                 if self.state.tnm_name:
                     tnm_mapping_dict[self.tnm_attr_name] = self.state.tnm_name
 
@@ -235,7 +235,7 @@ class TEINERMap:
                         self.state.tnm_entity_dict if self.state.tnm_entity_dict else init_tnm_entity_dict,
                     )
 
-            if st.button("Save TEI NER Entity Mapping", key=mode):
+            if st.button("Save TEI Read NER Entity Mapping", key=mode):
                 tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.state.tnm_ntd_name]
                 tnm_mapping_dict[self.tnm_attr_entity_dict] = self.state.tnm_entity_dict.copy()
                 self.validate_and_saving_mapping(tnm_mapping_dict, mode)
@@ -274,13 +274,13 @@ class TEINERMap:
             self.validate_and_delete_mapping(self.mappingdict[selected_mapping_name])
 
     def show_edit_environment(self):
-        tnm_definer = st.beta_expander("Add or edit existing TEI NER Entity Mapping", expanded=False)
+        tnm_definer = st.beta_expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
         with tnm_definer:
             options = {
-                "Add TEI NER Entity Mapping": self.tei_ner_map_add,
-                "Duplicate TEI NER Entity Mapping": self.tei_ner_map_dupl,
-                "Edit TEI NER Entity Mapping": self.tei_ner_map_edit,
-                "Delete TEI NER Entity Mapping": self.tei_ner_map_del,
+                "Add TEI Read NER Entity Mapping": self.tei_ner_map_add,
+                "Duplicate TEI Read NER Entity Mapping": self.tei_ner_map_dupl,
+                "Edit TEI Read NER Entity Mapping": self.tei_ner_map_edit,
+                "Delete TEI Read NER Entity Mapping": self.tei_ner_map_del,
             }
             self.state.tnm_edit_options = st.radio(
                 "Edit Options",
@@ -329,7 +329,7 @@ class TEINERMap:
         return newtext
 
     def show_test_environment(self):
-        tnm_test_expander = st.beta_expander("Test TEI NER Entity Mapping", expanded=False)
+        tnm_test_expander = st.beta_expander("Test TEI Read NER Entity Mapping", expanded=False)
         with tnm_test_expander:
             self.state.tnm_test_selected_config_name = st.selectbox(
                 "Select a TEI Reader Config for the mapping test!",
@@ -341,7 +341,7 @@ class TEINERMap:
             )
             config = self.tr.configdict[self.state.tnm_test_selected_config_name]
             self.state.tnm_test_selected_mapping_name = st.selectbox(
-                "Select a TEI NER Entity Mapping to test!",
+                "Select a TEI Read NER Entity Mapping to test!",
                 list(self.mappingdict.keys()),
                 index=list(self.mappingdict.keys()).index(self.state.tnm_test_selected_mapping_name)
                 if self.state.tnm_test_selected_mapping_name
@@ -489,7 +489,7 @@ class TEINERMap:
         return tablestring
 
     def show_tnms(self):
-        tnm_show = st.beta_expander("Existing TEI NER Entity Mappings", expanded=True)
+        tnm_show = st.beta_expander("Existing TEI Read NER Entity Mappings", expanded=True)
         with tnm_show:
             st.markdown(self.build_tnm_tablestring())
             self.state.tnm_selected_display_tnm_name = st.selectbox(
@@ -511,7 +511,7 @@ class TEINERMap:
                     )
 
     def show(self):
-        st.latex("\\text{\Huge{TEI NER Entity Mapping}}")
+        st.latex("\\text{\Huge{TEI Read NER Entity Mapping}}")
         col1, col2 = st.beta_columns(2)
         with col1:
             self.show_tnms()
