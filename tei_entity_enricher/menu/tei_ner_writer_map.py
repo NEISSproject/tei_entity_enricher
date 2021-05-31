@@ -87,11 +87,20 @@ class TEINERPredWriteMap:
                     if (
                         (attribute is None or attribute == "")
                         and mapping[self.tnw_attr_entity_dict][entity][1][attribute] is not None
-                        and mapping[self.tnw_attr_entity_dict][entity][attribute] != ""
+                        and mapping[self.tnw_attr_entity_dict][entity][1][attribute] != ""
                     ):
                         val = False
                         st.error(
                             f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute value {mapping[self.tnw_attr_entity_dict][entity][1][attribute]} without a corresponding attribute name. This is not allowed."
+                        )
+                    elif (
+                        attribute is not None and attribute != ""
+                        and (mapping[self.tnw_attr_entity_dict][entity][1][attribute] is None
+                        or mapping[self.tnw_attr_entity_dict][entity][1][attribute] == "")
+                    ):
+                        val = False
+                        st.error(
+                            f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
                         )
                     elif " " in attribute:
                         val = False
@@ -153,6 +162,8 @@ class TEINERPredWriteMap:
         answer = editable_multi_column_table(entry_dict, "tnw_attr_value" + name, openentrys=20)
         returndict = {}
         for i in range(len(answer["Attributes"])):
+            if answer["Attributes"][i] in returndict.keys():
+                st.warning(f'Multiple definitions of the attribute {answer["Attributes"][i]} are not supported.')
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
@@ -222,16 +233,14 @@ class TEINERPredWriteMap:
     def edit_entity(self, mode, tnw_edit_entity, cur_entity_dict):
         if tnw_edit_entity not in cur_entity_dict.keys():
             cur_entity_dict[tnw_edit_entity] = [None, {}]
-        mapping_entry=cur_entity_dict[tnw_edit_entity]
+        mapping_entry = cur_entity_dict[tnw_edit_entity]
         mapping_entry[0] = st.text_input(
             "Tag",
             mapping_entry[0] or "",
             key="tnw" + self.state.tnw_ntd_name + tnw_edit_entity + mode,
         )
         if mapping_entry[0]:
-            mapping_entry[1] = self.show_editable_attr_value_def(
-                mapping_entry[1], tnw_edit_entity + mode
-            )
+            mapping_entry[1] = self.show_editable_attr_value_def(mapping_entry[1], tnw_edit_entity + mode)
         return cur_entity_dict
 
     def tei_ner_map_add(self):

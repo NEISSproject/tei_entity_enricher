@@ -100,6 +100,15 @@ class TEINERMap:
                             st.error(
                                 f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute value {assingned_tag_list[index][1][attribute]} without a corresponding attribute name. This is not allowed."
                             )
+                        elif (
+                            attribute is not None and attribute != ""
+                            and (assingned_tag_list[index][1][attribute] is None
+                            or assingned_tag_list[index][1][attribute] == "")
+                        ):
+                            val = False
+                            st.error(
+                                f"For the entity {entity} and tag {mapping[self.tnm_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
+                            )
                         elif " " in attribute:
                             val = False
                             st.error(
@@ -176,6 +185,8 @@ class TEINERMap:
         answer = editable_multi_column_table(entry_dict, "tnm_attr_value" + name, openentrys=20)
         returndict = {}
         for i in range(len(answer["Attributes"])):
+            if answer["Attributes"][i] in returndict.keys():
+                st.warning(f'Multiple definitions of the attribute {answer["Attributes"][i]} are not supported.')
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
