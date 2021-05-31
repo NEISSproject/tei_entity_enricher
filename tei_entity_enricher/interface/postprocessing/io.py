@@ -249,9 +249,9 @@ class Cache:
             gnd_id_is_redundant = False
             wikidata_id_is_redundant = False
             for entity in self.data:
-                if entity["wikidata_id"] == wikidata_id:
+                if (entity["wikidata_id"] == wikidata_id) and (wikidata_id != ""):
                     wikidata_id_is_redundant = True
-                if entity["gnd_id"] == gnd_id:
+                if (entity["gnd_id"] == gnd_id) and (gnd_id != ""):
                     gnd_id_is_redundant = True
             return wikidata_id_is_redundant, gnd_id_is_redundant
         else:
@@ -286,10 +286,13 @@ class Cache:
                     for key in list(entity.keys()):
                         if key not in compulsory_keys:
                             return False
+                    for key in compulsory_keys:
+                        if key not in list(entity.keys()):
+                            return False
                     if type(entity[compulsory_keys[4]]) != list:
                         return False
                     for key in compulsory_keys[:-1]:
-                        if type(key) != str:
+                        if type(entity[key]) != str:
                             return False
                 return True
             else:

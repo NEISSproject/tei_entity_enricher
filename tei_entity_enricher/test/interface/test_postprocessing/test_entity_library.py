@@ -27,7 +27,4 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
 
     def test_EntityLibrary_load_library(self):
         for el in self.get_entity_library():
-            self.assertEqual(type(el.load_library()), list, "type of loaded library data should be list")
-            self.assertEqual(
-                type(el.load_library()[0]), dict, "type of loaded library data should be list with dict elements in it"
-            )
+            self.assertEqual(type(el.load_library()), bool, "type of loaded library data should be list")

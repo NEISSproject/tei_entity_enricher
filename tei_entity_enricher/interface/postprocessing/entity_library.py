@@ -1,5 +1,5 @@
-from typing import Union
-from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from typing import Union, List
+from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.exceptions import MissingDefinition, FileNotFound, FileNotFoundOrBadFormat, BadFormat
 import os
@@ -23,15 +23,14 @@ class EntityLibrary:
         """
         self.data_file: Union[str, None] = data_file
         self.show_printmessages: bool = show_printmessages
+        self.data: Union[list, None] = None
         if self.data_file is not None:
-            self.data: Union[dict, None, bool] = self.load_library()
-            if self.data != False:
+            if self.load_library() == True:
                 print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
-            self.data: Union[dict, None, bool] = None
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
 
-    def load_library(self) -> Union[list, bool]:
+    def load_library(self) -> bool:
         """used to load existing library data from a local json file with filepath saved in self.data_file"""
         # todo: define custom exceptions and implement them in io.py and here, to handle specific exceptions
         # if loadfile_json() fails because of file not found exception, create default entity_library.json
@@ -44,24 +43,34 @@ class EntityLibrary:
             result = fr.loadfile_json()
         except FileNotFound:
             print(
-                f"EntityLibrary load_library(): could not load library from {self.data_file}, because file was not found. creating default library file..."
+                f"EntityLibrary load_library(): could not load library from {self.data_file}, file not found. creating default library file..."
             ) if self.show_printmessages else None
             try:
                 makedir_if_necessary(os.path.dirname(self.data_file))
-                FileWriter([{}], self.data_file).writefile_json()
+                FileWriter(
+                    [{"name": "", "furtherNames": [], "type": "", "wikidata_id": "", "gnd_id": ""}], self.data_file
+                ).writefile_json()
             except:
                 print(
                     f"EntityLibrary __init__(): could not create default entity_library.json in config folder."
                 ) if self.show_printmessages == True else None
                 return False
+            result = fr.loadfile_json()
         except (BadFormat, FileNotFoundOrBadFormat):
             print(
-                f"EntityLibrary load_library(): could not load library from {self.data_file}, because file was not found or has bad format."
+                f"EntityLibrary load_library(): could not load library from {self.data_file}, file not found or bad format."
             ) if self.show_printmessages else None
             return False
-        return result
+        structure_check_cache = Cache(result)
+        if structure_check_cache.check_json_structure("EntityLibrary") == False:
+            print(
+                f"EntityLibrary load_library(): could not load library from {self.data_file}, file does not fulfill the structure requirements for an entity library"
+            ) if self.show_printmessages else None
+            return False
+        self.data = result
+        return True
 
-    def import_data_to_library(
+    def add_entities_from_file(
         self, source_path: str = None, origin: str = None, source_type: str = None, mode="merge"
     ) -> Union[None, int]:
         """used to add data from source (json or csv format) into the already loaded entity library
@@ -80,13 +89,63 @@ class EntityLibrary:
         file_load_method = fr.loadfile_types.get(source_type or file_extension)
         try:
             result = getattr(fr, file_load_method)()
-        except (FileNotFound, BadFormat, FileNotFoundOrBadFormat, MissingDefinition):
+        except FileNotFound:
             print(
-                f"EntityLibrary import_data_to_library() error: could not import new data from {source_path}to entity library"
+                f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, file not found"
             ) if self.show_printmessages == True else None
             return None
+        except (BadFormat, FileNotFoundOrBadFormat):
+            print(
+                f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, bad format or file not found"
+            ) if self.show_printmessages == True else None
+            return None
+        except MissingDefinition:
+            print(
+                f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, missing input parameter"
+            ) if self.show_printmessages == True else None
+            return None
+        self.add_entities(result)
 
-        # todo: merge result in self.data
+    def add_entities(
+        self,
+        data: List[dict] = None,
+    ) -> Union[None, int]:
+        """method to add entities to library, which has been passed to function via data parameter
+        structure of data has to match the structure of self.data entities"""
+        data_amount_before_filtering = len(data)
+        # check of data structure
+        structure_check_cache = Cache(data)
+        if structure_check_cache.check_json_structure("EntityLibrary") == False:
+            print(
+                f"EntityLibrary add_entities(): could not add entities to entity library, data does not fulfill the structure requirements for an entity library"
+            ) if self.show_printmessages else None
+            return -1
+        # check for redundancy
+        from_data_removed_entities = []
+        for index, entity in enumerate(self.data):
+            redundancy_check_cache = Cache(data)
+            redundancy_check_result = redundancy_check_cache.check_for_redundancy(
+                "EntityLibrary", entity["wikidata_id"], entity["gnd_id"]
+            )
+            if any(redundancy_check_result):
+                from_data_removed_entities.append(entity)
+                data.remove(self.data[index])
+        from_data_removed_entities_amount = len(from_data_removed_entities)
+        if from_data_removed_entities_amount > 0:
+            print(
+                f"{from_data_removed_entities_amount} entity/ies (from {data_amount_before_filtering}) could not be added to entity library due to redundancy issues:"
+            ) if self.show_printmessages == True else None
+            print(from_data_removed_entities) if self.show_printmessages == True else None
+        data_amount_after_filtering = len(data)
+        if data_amount_after_filtering > 0:
+            self.data.extend(data)
+            print(
+                f"{data_amount_after_filtering} entity/ies has/have been added to entity library"
+            ) if self.show_printmessages == True else None
+            return 0
+        else:
+            print(f"No entities have been added to entity library") if self.show_printmessages == True else None
+            return -1
 
     def save_library(self) -> bool:
         """used to save library data to a local json file with filepath self.data_file"""
