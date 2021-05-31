@@ -10,6 +10,7 @@ import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
 import tei_entity_enricher.menu.tei_ner_gb as tng
+import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 from tei_entity_enricher.util.helper import module_path
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,9 @@ class Main:
         pages = {
             "TEI Reader Config": self.tei_reader,
             "NER Task Entity Definition": self.ner_task_def,
-            "TEI NER Entity Mapping": self.tei_ner_map,
+            "TEI Read NER Entity Mapping": self.tei_ner_map,
             "TEI NER Groundtruth Builder": self.gt_builder,
-            "TEI NER Writer Config": self.tei_ner_writer,
+            "TEI NER Prediction Writer Mapping": self.tei_ner_writer,
             "NER Trainer": self.ner_trainer,
             "NER Prediction": self.ner_prediction,
         }
@@ -70,8 +71,7 @@ class Main:
         tng.TEINERGroundtruthBuilder(self.state)
 
     def tei_ner_writer(self):
-        st.latex("\\text{\Huge{TEI NER Writer Config}}")
-        logger.info(self.state)
+        tnw.TEINERPredWriteMap(self.state)
 
     def ner_trainer(self):
         NERTrainer(self.state)

@@ -309,7 +309,7 @@ class TEINERGroundtruthBuilder:
             if self.state.tng_tr_name:
                 tng_dict[self.tng_attr_tr] = self.tr.configdict[self.state.tng_tr_name]
             self.state.tng_tnm_name = st.selectbox(
-                "Select a TEI NER Entity Mapping for Building the groundtruth:",
+                "Select a TEI Read NER Entity Mapping for Building the groundtruth:",
                 list(self.tnm.mappingdict.keys()),
                 list(self.tnm.mappingdict.keys()).index(self.state.tng_tnm_name) if self.state.tng_tnm_name else 0,
                 key="tng_tnm",
@@ -387,7 +387,7 @@ class TEINERGroundtruthBuilder:
             self.delete_groundtruth(self.tngdict[selected_gt_name])
 
     def build_tng_tablestring(self):
-        tablestring = "Name | TEI Reader Config | TEI NER Entity Mapping | Language | Shuffle Type | Partition Ratio \n -----|-------|-------|-------|-------|-------"
+        tablestring = "Name | TEI Reader Config | TEI Read NER Entity Mapping | Language | Shuffle Type | Partition Ratio \n -----|-------|-------|-------|-------|-------"
         for tng in self.tnglist:
             if self.shuffle_options_dict[tng[self.tng_attr_shuffle_type]]:
                 shuffle_type = "by file"
