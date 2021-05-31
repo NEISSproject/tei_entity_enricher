@@ -1,6 +1,7 @@
 from typing import Union, List, Tuple, Dict
 from SPARQLWrapper import SPARQLWrapper, JSON
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.exceptions import FileNotFound
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher import __version__
 import math
@@ -39,10 +40,11 @@ class WikidataConnector:
         self.wikidata_sparql_queries_filepath: str = os.path.join(
             local_save_path, "config", "postprocessing", "sparql_queries.json"
         )
-        self.wikidata_sparql_queries: Union[dict, None] = FileReader(
-            self.wikidata_sparql_queries_filepath, "local", True
-        ).loadfile_json()
-        if self.wikidata_sparql_queries is None:
+        try:
+            self.wikidata_sparql_queries: Union[dict, None] = FileReader(
+                self.wikidata_sparql_queries_filepath, "local", True
+            ).loadfile_json()
+        except FileNotFound:
             print(
                 "WikidataConnector: could not find sparql_queries.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
@@ -97,8 +99,13 @@ class WikidataConnector:
                     """,
                 ],
             }
-            makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
-            FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
+            try:
+                makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
+                FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
+            except:
+                print(
+                    f"WikidataConnector __init__(): could not create default sparql_queries.json in config folder."
+                ) if self.show_printmessages == True else None
         self.connection_established: bool = False
         if self.check_connectivity == True:
             self.connectivity_check()
@@ -122,17 +129,14 @@ class WikidataConnector:
                     "web",
                     True,
                     self.show_printmessages,
-                )
+                ).loadfile_json()
             except:
                 print(
-                    "WikidataConnector connectivity_check() error: internal failure in check_wikidata_web_api() trying to initiate FileReader instance"
+                    "WikidataConnector connectivity_check() error: no connection to wikidata web api"
                 ) if self.show_printmessages else None
                 return False
-            if result != None and result != False:
+            if type(result) == dict:
                 return True
-            print(
-                "WikidataConnector connectivity_check() error: no connection to wikidata web api"
-            ) if self.show_printmessages else None
             return False
 
         def check_wikidata_sparql_endpoint() -> bool:
@@ -202,7 +206,11 @@ class WikidataConnector:
                 True,
                 self.show_printmessages,
             )
-            filereader_result = filereader.loadfile_json()
+            try:
+                filereader_result = filereader.loadfile_json()
+            except:
+                print("WikidataConnector get_wikidata_search_results() error: internal failure")
+                return False
             if all(x == False for x in [filter_for_precise_spelling, filter_for_correct_type]):
                 print(f"no filtering in {string_tuple} result") if self.show_printmessages == True else None
             if filter_for_precise_spelling == True:

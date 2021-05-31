@@ -4,6 +4,7 @@ import json
 import requests
 import csv
 from typing import Union, List, Tuple
+from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound, FileNotFoundOrBadFormat
 
 
 class FileReader:
@@ -35,7 +36,7 @@ class FileReader:
             ".txt": "loadfile_beacon",
         }
 
-    def loadfile_json(self) -> Union[dict, str, None, bool]:
+    def loadfile_json(self) -> Union[dict, str]:
         """method to load json files, locally or out of the web,
         it returns:
             a json object,
@@ -43,15 +44,9 @@ class FileReader:
             None (in case of preceding definition errors)
             or False (in case of file not found error or bad format error)"""
         if self.filepath == None:
-            print(
-                "FileReader loadfile_json() internal error: FileReader.filepath not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("filepath", "FileReader", "loadfile_json()")
         if self.origin == None:
-            print(
-                "FileReader loadfile_json() internal error: FileReader.origin not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("origin", "FileReader", "loadfile_json()")
         elif self.origin == "local":
             try:
                 with open(self.filepath) as loaded_file:
@@ -61,24 +56,17 @@ class FileReader:
                         imported_data = json.load(loaded_file)
                 return imported_data
             except FileNotFoundError:
-                if self.internal_call == False:
-                    print("FileReader loadfile_json() error: file not found") if self.show_printmessages else None
-                return None
+                raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
             except json.decoder.JSONDecodeError:
-                if self.internal_call == False:
-                    print("FileReader loadfile_json() error: bad format") if self.show_printmessages else None
-                return None
+                raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
         elif self.origin == "web":
             try:
                 response = requests.get(self.filepath)
                 imported_data = response.json()
                 response.close()
                 return imported_data
-            except ValueError:
-                print(
-                    "FileReader loadfile_json() error: file not found or bad format"
-                ) if self.show_printmessages else None
-                return None
+            except:
+                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_json()")
 
     def loadfile_beacon(self) -> Union[str, None, bool]:
         """method to load beacon files, locally or out of the web,
@@ -91,22 +79,15 @@ class FileReader:
             None (in case of preceding definition errors)
             or False (in case of file not found error or bad format error)"""
         if self.filepath == None:
-            print(
-                "FileReader loadfile_beacon() internal error: FileReader.filepath not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("filepath", "FileReader", "loadfile_beacon()")
         if self.origin == None:
-            print(
-                "FileReader loadfile_beacon() internal error: FileReader.origin not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("origin", "FileReader", "loadfile_beacon()")
         if self.origin == "local":
             try:
                 with open(self.filepath) as loaded_file:
                     return loaded_file.read()
             except FileNotFoundError:
-                print("FileReader loadfile_beacon() error: file not found") if self.show_printmessages else None
-                return None
+                raise FileNotFound(self.filepath, "FileReader", "loadfile_beacon()")
         elif self.origin == "web":
             try:
                 response = requests.get(self.filepath)
@@ -114,10 +95,7 @@ class FileReader:
                 response.close()
                 return loaded_file
             except:
-                print(
-                    "FileReader loadfile_beacon() error: couldn't get data due to connection or filepath issue"
-                ) if self.show_printmessages else None
-                return None
+                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_beacon()")
 
     def loadfile_csv(
         self, delimiting_character: str = ",", transform_for_entity_library_import: bool = True
@@ -133,15 +111,9 @@ class FileReader:
         transform_for_entity_library_import: activate data transformation for usecase of importing
         entity data into entity library"""
         if self.filepath == None:
-            print(
-                "FileReader loadfile_csv() internal error: FileReader.filepath not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("filepath", "FileReader", "loadfile_csv()")
         if self.origin == None:
-            print(
-                "FileReader loadfile_csv() internal error: FileReader.origin not defined"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("origin", "FileReader", "loadfile_csv()")
         if self.origin == "local":
             try:
                 if transform_for_entity_library_import == True:
@@ -167,8 +139,7 @@ class FileReader:
                             result.append(row)
                         return result
             except FileNotFoundError:
-                print("FileReader loadfile_csv() error: file not found") if self.show_printmessages else None
-                return None
+                raise FileNotFound(self.filepath, "FileReader", "loadfile_csv()")
         elif self.origin == "web":
             try:
                 if transform_for_entity_library_import == True:
@@ -198,10 +169,7 @@ class FileReader:
                     response.close()
                     return result
             except:
-                print(
-                    "FileReader loadfile_csv() error: couldn't get data due to connection or filepath issue"
-                ) if self.show_printmessages else None
-                return None
+                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_csv()")
 
     def loadfile_tsv(self) -> Union[str, None, bool]:
         """method to load tsv files, locally or out of the web,
@@ -287,10 +255,7 @@ class Cache:
                     gnd_id_is_redundant = True
             return wikidata_id_is_redundant, gnd_id_is_redundant
         else:
-            print(
-                "Cache check_for_redundancy() internal error: No valid usecase value has been passed to function"
-            ) if self.show_printmessages else None
-            return None
+            raise MissingDefinition("usecase", "Cache", "check_for_redundancy()")
 
     def check_json_structure(self, usecase: str = "GndConnector") -> Union[bool, None]:
         """check json file structure in case of merging self.data
@@ -330,10 +295,7 @@ class Cache:
             else:
                 return False
         else:
-            print(
-                "Cache check_json_structure() internal error: No valid usecase value passed to function"
-            ) if self.show_printmessages else None
-            return None
+            raise MissingDefinition("usecase", "Cache", "check_json_structure()")
 
     def check_beacon_prefix_statement(self) -> bool:
         """method to check an imported beacon file, if the listed entities are defined by gnd norm data ids"""
@@ -365,10 +327,12 @@ class Cache:
             ) if self.show_printmessages else None
             return result_list
         else:
-            print(
-                "Cache get_gnd_ids_of_beacon_file() error: loaded beacon-file doesn't refer to gnd data or is corrupted"
-            ) if self.show_printmessages else None
-            return None
+            raise BadFormat(
+                "Cache data",
+                "Cache",
+                "get_gnd_ids_of_beacon_file()",
+                "{} {}: loaded beacon-file from {} doesn't refer to gnd data or is corrupted",
+            )
 
     def get_items_with_specific_value_in_a_category(
         self, category: str, value: str, mode: str = "dict"
@@ -389,10 +353,7 @@ class Cache:
                     result.append(self.data[gnd_id])
             return result
         else:
-            print(
-                "Cache get_items_with_specific_value_in_a_category() internal error: no valid mode parameter has been passed to function"
-            ) if self.show_printmessages else None
-            return False
+            raise MissingDefinition("mode", "Cache", "get_items_with_specific_value_in_a_category()")
 
 
 class FileWriter:
@@ -477,37 +438,34 @@ class FileWriter:
                     ) if self.show_printmessages else None
                     return True
                 else:
-                    print(
-                        "FileWriter writefile_json() internal error: No valid usecase value has been passed to function"
-                    ) if self.show_printmessages else None
-                    return False
+                    raise MissingDefinition("usecase", "Cache", "writefile_json() > do_if_file_exists_merge()")
 
         do_if_file_exists_switch = {
             "cancel": do_if_file_exists_cancel,
             "replace": do_if_file_exists_replace,
             "merge": do_if_file_exists_merge,
         }
-        already_existing_file = FileReader(self.filepath, "local", True)
-        already_existing_file_cache = Cache(already_existing_file.loadfile_json())
-        if already_existing_file_cache.data == None:
+        try:
+            already_existing_file = FileReader(self.filepath, "local", True)
+            already_existing_file_cache = Cache(already_existing_file.loadfile_json())
+        except FileNotFound:
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print(
                 f"FileWriter writefile_json(): new file {self.filepath} successfully created"
             ) if self.show_printmessages else None
             return True
-        elif already_existing_file_cache.data == "empty":
+        except (MissingDefinition, BadFormat, FileNotFoundOrBadFormat):
+            print(
+                "FileWriter writefile_json() internal error: cancel writing process"
+            ) if self.show_printmessages else None
+            return False
+        if already_existing_file_cache.data == "empty":
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")
             print(
                 "FileWriter writefile_json(): file already exists but was empty, file successfully written"
             ) if self.show_printmessages else None
             return True
-        elif already_existing_file_cache.data == False:
-            print(
-                "FileWriter writefile_json() internal error: cancel writing process"
-            ) if self.show_printmessages else None
-            return False
-        else:
-            returnvalue = do_if_file_exists_switch.get(do_if_file_exists)()
-            return returnvalue
+        returnvalue = do_if_file_exists_switch.get(do_if_file_exists)()
+        return returnvalue

@@ -2,6 +2,7 @@ import os
 from typing import Union, List
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
+from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound, FileNotFoundOrBadFormat
 
 
 class GndConnector:
@@ -29,8 +30,9 @@ class GndConnector:
         self.gnd_id: Union[str, List[str]] = gnd_id
         self.apiindex: int = apiindex
         self.apilist_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "gnd_apilist.json")
-        self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
-        if self.apilist is None:
+        try:
+            self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
+        except FileNotFound:
             print(
                 "GndConnector: could not find gnd_apilist.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
@@ -91,8 +93,13 @@ class GndConnector:
                 },
             ]
             self.apiindex: int = 0
-            makedir_if_necessary(os.path.dirname(self.apilist_filepath))
-            FileWriter(self.apilist, self.apilist_filepath).writefile_json()
+            try:
+                makedir_if_necessary(os.path.dirname(self.apilist_filepath))
+                FileWriter(self.apilist, self.apilist_filepath).writefile_json()
+            except:
+                print(
+                    f"GndConnector __init__(): could not create default gnd_apilist.json in config folder."
+                ) if self.show_printmessages == True else None
         self.check_connectivity: bool = check_connectivity
         self.connection_established: bool = False
         self.remaining_apis_to_check: list = [i for i, _ in enumerate(self.apilist)]
@@ -113,10 +120,10 @@ class GndConnector:
                 "web",
                 True,
                 self.show_printmessages,
-            )
+            ).loadfile_json()
         except:
             return False
-        if result != None and result != False:
+        if type(result) == dict:
             return True
         return False
 
@@ -233,18 +240,12 @@ class GndConnector:
                     _temp_data = filereader.loadfile_json()
                 except:
                     print(
-                        "GndConnector connectivity error in get_gnd_data() method: could not load resource from api as expected."
-                    ) if self.show_printmessages else None
-                    return None
-                if _temp_data != None and _temp_data != False:
-                    result[gnd] = _temp_data
-                    print(
-                        f"GndConnector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed"
-                    ) if self.show_printmessages else None
-                else:
-                    print(
                         f"GndConnector get_gnd_data() status: for gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} no data could be delivered by api"
                     ) if self.show_printmessages else None
+                result[gnd] = _temp_data
+                print(
+                    f"GndConnector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed"
+                ) if self.show_printmessages else None
             self.connection_established = True
         # filtering: build new dict with selected values, which should be returned (base mode = all base aliases from apilist definition. list mode = select specific aliases from base set)
         # defining sub method for filtering

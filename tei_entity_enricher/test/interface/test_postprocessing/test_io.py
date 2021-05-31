@@ -6,7 +6,7 @@ from tei_entity_enricher.interface.postprocessing.io import (
     FileWriter,
     Cache,
 )
-from tei_entity_enricher.util.helper import module_path
+from tei_entity_enricher.util.helper import module_path, local_save_path
 
 
 class TestPostprocessingIo(unittest.TestCase):
@@ -199,17 +199,17 @@ class TestPostprocessingIo(unittest.TestCase):
             "789": {"name": "789", "type": "a"},
         }
         # todo: change dir to local_save_path
-        if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
+        if os.path.exists(os.path.join(local_save_path, "testfile.json")):
             print(
                 "test_FileWriter_writefile_json(): testfile.json already exists. Delete and continue test? (Y or skip with everything else)"
             )
             answer = input()
             if answer == "Y":
-                os.remove(os.path.join(module_path, "util", "testfile.json"))
+                os.remove(os.path.join(local_save_path, "testfile.json"))
             else:
                 self.skipTest("test_FileWriter_writefile_json(): Test skipped by User")
         # todo: change dir to local_save_path
-        fw = FileWriter(test_dict, os.path.join(module_path, "util", "testfile.json"), False)
+        fw = FileWriter(test_dict, os.path.join(local_save_path, "testfile.json"), False)
         self.assertTrue(
             fw.writefile_json("cancel", "GndConnector"),
             "writefile_json() should return True, when writing a new file",
@@ -231,9 +231,8 @@ class TestPostprocessingIo(unittest.TestCase):
             fw.writefile_json("merge", "GndConnector"),
             "writefile_json() should return True, when merging data with an existing file and writefile_json()s parameter 'do_if_file_exists' is 'merge'",
         )
-        # todo: change dir to local_save_path
-        if os.path.exists(os.path.join(module_path, "util", "testfile.json")):
-            os.remove(os.path.join(module_path, "util", "testfile.json"))
+        if os.path.exists(os.path.join(local_save_path, "testfile.json")):
+            os.remove(os.path.join(local_save_path, "testfile.json"))
 
 
 if __name__ == "__main__":
