@@ -2,7 +2,6 @@ from typing import Union, List, Tuple, Dict
 from tei_entity_enricher.interface.postprocessing.wikidata_connector import (
     WikidataConnector,
 )
-from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound, FileNotFoundOrBadFormat
 
 
 class Identifier:

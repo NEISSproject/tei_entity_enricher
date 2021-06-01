@@ -4,7 +4,7 @@ import json
 import requests
 import csv
 from typing import Union, List, Tuple
-from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound, FileNotFoundOrBadFormat
+from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound
 
 
 class FileReader:
@@ -16,15 +16,14 @@ class FileReader:
         show_printmessages: bool = True,
     ) -> None:
         """loads json, beacon, csv and tsv files from local file system or web source,
-        used internally in Connector and FileWriter classes and on its own in a beacon file processing pipeline,
-        in which gnd id numbers are extracted out of a beacon file, enriched with related information and saved in a json file
+        used in GndConnector, WikidataConnector, FileWriter and EntityLibrary classes
 
         filepath: path to file to read
         origin: values can be 'web' or 'local', to determine, whether self.filepath contains an url or a local file path
-        internal_call: if FileReader is used internally in Connector or FileWriter class, some error messages will not be printed
+        internal_call: if FileReader is used in instances of other classes, some error messages can be surpressed
         show_printmessages: show class internal printmessages on runtime or not
 
-        loadfile_types: dict mapping file extensions to loading methods, can be used from outside to execute the right loading function"""
+        loadfile_types: dict to map file extensions to loading methods, can be used from outside to execute the required loading function"""
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
@@ -38,11 +37,7 @@ class FileReader:
 
     def loadfile_json(self) -> Union[dict, str]:
         """method to load json files, locally or out of the web,
-        it returns:
-            a json object,
-            a string 'empty' (in case a file in self.filepath was found, but is empty),
-            None (in case of preceding definition errors)
-            or False (in case of file not found error or bad format error)"""
+        it can return a json object or a string 'empty' (in case a file in self.filepath was found, but is empty)"""
         if self.filepath == None:
             raise MissingDefinition("filepath", "FileReader", "loadfile_json()")
         if self.origin == None:
@@ -60,24 +55,24 @@ class FileReader:
             except json.decoder.JSONDecodeError:
                 raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
         elif self.origin == "web":
-            try:
-                response = requests.get(self.filepath)
-                imported_data = response.json()
+            response = requests.get(self.filepath)
+            if response.status_code == 404:
                 response.close()
-                return imported_data
+                raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
+            try:
+                imported_data = response.json()
             except:
-                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_json()")
+                response.close()
+                raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
+            response.close()
+            return imported_data
 
-    def loadfile_beacon(self) -> Union[str, None, bool]:
+    def loadfile_beacon(self) -> Union[dict, str]:
         """method to load beacon files, locally or out of the web,
         beacon is a file format to list norm data, often used in digital editions
         to offer a list of all entities, which can be found in the edition,
         those beacon file mostly contain only gnd numbers, but no further informations about the listed entities,
-        the method can return:
-            a json object,
-            a string 'empty' (in case a file in self.filepath was found, but is empty),
-            None (in case of preceding definition errors)
-            or False (in case of file not found error or bad format error)"""
+        the method returns a string of file content or a string value 'empty', if file in self.filepath exists, but is empty"""
         if self.filepath == None:
             raise MissingDefinition("filepath", "FileReader", "loadfile_beacon()")
         if self.origin == None:
@@ -85,23 +80,29 @@ class FileReader:
         if self.origin == "local":
             try:
                 with open(self.filepath) as loaded_file:
-                    return loaded_file.read()
+                    if os.stat(self.filepath).st_size == 0:
+                        imported_data = "empty"
+                    else:
+                        imported_data = loaded_file.read()
+                return imported_data
             except FileNotFoundError:
                 raise FileNotFound(self.filepath, "FileReader", "loadfile_beacon()")
         elif self.origin == "web":
-            try:
-                response = requests.get(self.filepath)
-                loaded_file = response.text
+            response = requests.get(self.filepath)
+            if response.status_code == 404:
                 response.close()
-                return loaded_file
+                raise FileNotFound(self.filepath, "FileReader", "loadfile_beacon()")
+            try:
+                loaded_file = response.text
             except:
-                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_beacon()")
+                response.close()
+                raise BadFormat(self.filepath, "FileReader", "loadfile_beacon()")
+            response.close()
+            return loaded_file
 
-    def loadfile_csv(
-        self, delimiting_character: str = ",", transform_for_entity_library_import: bool = True
-    ) -> Union[dict, None, bool]:
+    def loadfile_csv(self, delimiting_character: str = ",", transform_for_entity_library_import: bool = True) -> dict:
         """method to load csv files, locally or out of the web,
-        is specialized to be used to add data to entity library;
+        used to add data to entity library;
         the csv file should contain the following key names
         in the first row (order and upper- or lowercase doesnt matter):
         name, type, wikidata_id, gnd_id, furtherNames\0;
@@ -141,10 +142,13 @@ class FileReader:
             except FileNotFoundError:
                 raise FileNotFound(self.filepath, "FileReader", "loadfile_csv()")
         elif self.origin == "web":
-            try:
-                if transform_for_entity_library_import == True:
-                    result = []
-                    response = requests.get(self.filepath)
+            if transform_for_entity_library_import == True:
+                result = []
+                response = requests.get(self.filepath)
+                if response.status_code == 404:
+                    response.close()
+                    raise FileNotFound(self.filepath, "FileReader", "loadfile_csv()")
+                try:
                     loaded_file = response.content.decode("utf-8")
                     csv_reader = csv.DictReader(loaded_file.splitlines(), delimiter=delimiting_character)
                     for row in csv_reader:
@@ -157,19 +161,27 @@ class FileReader:
                             new_row[key.lower().strip()] = row[key]
                         new_row["furtherNames"] = new_furtherNames
                         result.append(new_row)
+                except:
                     response.close()
-                    return result
-                else:
-                    result = []
-                    response = requests.get(self.filepath)
+                    raise BadFormat(self.filepath, "FileReader", "loadfile_csv()")
+                response.close()
+                return result
+            else:
+                result = []
+                response = requests.get(self.filepath)
+                if response.status_code == 404:
+                    response.close()
+                    raise FileNotFound(self.filepath, "FileReader", "loadfile_csv()")
+                try:
                     loaded_file = response.content.decode("utf-8")
                     csv_reader = csv.reader(loaded_file)
                     for row in csv_reader:
                         result.append(row)
+                except:
                     response.close()
-                    return result
-            except:
-                raise FileNotFoundOrBadFormat(self.filepath, "FileReader", "loadfile_csv()")
+                    raise BadFormat(self.filepath, "FileReader", "loadfile_csv()")
+                response.close()
+                return result
 
     def loadfile_tsv(self) -> Union[str, None, bool]:
         """method to load tsv files, locally or out of the web,
@@ -199,7 +211,7 @@ class Cache:
         gnd_id: str = None,
         category: str = None,
         value: Union[str, dict, list, bool, None] = None,
-    ) -> Union[Tuple[bool, bool], None]:
+    ) -> Tuple[bool, bool]:
         """usecase: GndConnector:
         checks a dict in self.data for an existing gnd id number and value,
         a specific dict structure is presupposed:
@@ -257,7 +269,7 @@ class Cache:
         else:
             raise MissingDefinition("usecase", "Cache", "check_for_redundancy()")
 
-    def check_json_structure(self, usecase: str = "GndConnector") -> Union[bool, None]:
+    def check_json_structure(self, usecase: str = "GndConnector") -> bool:
         """check json file structure in case of merging self.data
         with an already existing json file in FileWriter class,
         a specific dict structure is presupposed:
@@ -339,7 +351,7 @@ class Cache:
 
     def get_items_with_specific_value_in_a_category(
         self, category: str, value: str, mode: str = "dict"
-    ) -> Union[dict, list, bool]:
+    ) -> Union[dict, list]:
         """method to filter self.data dict, refering to the existance of a specific value in a category,
         i.e. get all gnd entities, which are of type person,
         parameter 'mode' controls the format of the return value"""
@@ -368,21 +380,20 @@ class FileWriter:
     ) -> None:
         """writes data into files
 
-        data: contains data of files as a string, delivered by FileReader or Cache class
+        data: contains data to write, used for dicts and lists in EntityLibrary, GndConnector and WikidataConnector
         filepath: path to file to write
         show_printmessages: show class internal printmessages on runtime or not
 
-        writefile_types: dict mapping file extensions to writing methods, can be used from outside to execute the right writing function"""
-        self.data: Union[str, dict, list, None] = data
+        writefile_types: dict to map file extensions to writing methods, can be used from outside to execute the required writing function"""
+        self.data: Union[dict, list, str, None] = data
         self.filepath: Union[str, None] = filepath
         self.show_printmessages: bool = show_printmessages
         self.writefile_types: dict = {".json": "writefile_json"}
 
     def writefile_json(self, do_if_file_exists: str = "cancel", usecase: str = "GndConnector") -> bool:
-        """method to write a new or enrich an existing json file,
-        do_if_file_exists parameter controls behavior in case a file in self.filepath already exists,
-        there are 3 submethods defined for a sort of switch statement, differentiating the 3 cases
-        'cancel', 'replace' and 'merge'
+        """method to write a new or enrich an existing json file, used in EntityLibrary, GndConnector and WikidataConnector
+        do_if_file_exists: parameter controls behavior in case a file in self.filepath already exists,
+        there are 3 submethods defined, differentiating the 3 cases 'cancel', 'replace' and 'merge'
         usecase: can be 'GndConnector' 'or 'EntityLibrary'"""
 
         def do_if_file_exists_cancel() -> bool:
@@ -458,9 +469,14 @@ class FileWriter:
                 f"FileWriter writefile_json(): new file {self.filepath} successfully created"
             ) if self.show_printmessages else None
             return True
-        except (MissingDefinition, BadFormat, FileNotFoundOrBadFormat):
+        except MissingDefinition:
             print(
-                "FileWriter writefile_json() internal error: cancel writing process"
+                "FileWriter writefile_json() internal error: missing definitions. cancel writing process.."
+            ) if self.show_printmessages else None
+            return False
+        except BadFormat:
+            print(
+                "FileWriter writefile_json() internal error: bad format. cancel writing process.."
             ) if self.show_printmessages else None
             return False
         if already_existing_file_cache.data == "empty":
