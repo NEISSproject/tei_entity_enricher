@@ -321,8 +321,8 @@ class TEINERPredWriteMap:
             attr_string += " "
         else:
             for attr in entity_detail[1].keys():
-                attr_string += attr + "=" + entity_detail[1][attr] + ","
-            attr_string = attr_string[:-1]
+                attr_string += attr + "=" + entity_detail[1][attr] + ", "
+            attr_string = attr_string[:-2]
         return tag_string + " | " + attr_string
 
     def build_tnw_detail_tablestring(self, tnw):
