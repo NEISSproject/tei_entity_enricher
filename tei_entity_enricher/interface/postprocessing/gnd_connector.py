@@ -2,7 +2,7 @@ import os
 from typing import Union, List
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
-from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound, FileNotFoundOrBadFormat
+from tei_entity_enricher.util.exceptions import FileNotFound
 
 
 class GndConnector:
