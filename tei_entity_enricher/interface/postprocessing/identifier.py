@@ -12,10 +12,12 @@ class Identifier:
     ) -> None:
         """delivers suggestions to which entity(ies) refers the input string(s)
 
-        input: contains a list of tuples, which themself consists of a name and a type string
-        show_printmessages: show class internal printmessages on runtime or not
-
-        current_result_data: buffer to save and print current query results"""
+        input:
+            contains a list of tuples, which themself consists of a name and a type string
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        current_result_data:
+            buffer to save and print current query results"""
         self.input: Union[List[Tuple[str, str]], None] = input
         self.show_printmessages: bool = show_printmessages
         self.current_result_data: Union[dict, None] = None
@@ -30,14 +32,17 @@ class Identifier:
     ) -> Union[Dict[str, list], bool]:
         """starts wikidata query and saves results in self.current_result_data
 
-        filter_for_precise_spelling variable determines wheather only exact matches
-        between the search string and the label value in the search list returned by
-        api are returned (filtering is executed only if there are more than 5 search hits,
-        otherwise it is not executed although filter_for_precise_spelling is True),
-        filter_for_correct_type variable determines wheather the entities returned by api
-        will be checked semantically with sparql queries in correspondance with the delivered
-        type strings in self.input; only entities of a correct type will be returned
-        check_connectivity: execute connectivity check in called WikidataConnector instance or not
+        filter_for_precise_spelling:
+            variable determines wheather only exact matches
+            between the search string and the label value in the search list returned by
+            api are returned (filtering is executed only if there are more than 5 search hits,
+            otherwise it is not executed although filter_for_precise_spelling is True),
+        filter_for_correct_type:
+            variable determines wheather the entities returned by api
+            will be checked semantically with sparql queries in correspondance with the delivered
+            type strings in self.input; only entities of a correct type will be returned
+        check_connectivity:
+            execute connectivity check in called WikidataConnector instance or not
         """
         c = WikidataConnector(
             self.input,

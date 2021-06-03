@@ -16,15 +16,22 @@ class GndConnector:
         """establishes connection to api, from which norm data for entities of Deutsche Nationalbibliothek´s database is retrieved,
         loaded data can be passed to an instance of Cache class for further processing or FileWriter class to save it
 
-        gnd_id: gnd id number(s)
-        apiindex: index of selected api in list defined in self.apilist
-        check_connectivity: execute connectivity check in __init__() or not (see connectivitycheck_loop())
-        show_printmessages: show class internal printmessages on runtime or not
-
-        apilist_filepath: path to apilist config file
-        apilist: list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
-        connection_established: data from an api has already been received or not
-        remaining_apis_to_check: list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
+        gnd_id:
+            gnd id number(s)
+        apiindex:
+            index of selected api in list defined in self.apilist
+        check_connectivity:
+            execute connectivity check in __init__() or not (see connectivitycheck_loop())
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        apilist_filepath:
+            path to apilist config file
+        apilist:
+            list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
+        connection_established:
+            data from an api has already been received or not
+        remaining_apis_to_check:
+            list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
         print("initializing GndConnector..") if show_printmessages else None
         self.show_printmessages: bool = show_printmessages
         self.gnd_id: Union[str, List[str]] = gnd_id
@@ -112,7 +119,7 @@ class GndConnector:
 
     def connectivitycheck_single(self, index_to_test: int, gnd_id_to_test: str = "118540238") -> bool:
         """auxiliary method of connectivitycheck_loop(),
-        checks a single api`s response status code and if response data type is json,
+        checks a single api`s (from self.apilist) response status code and checks if response data type is json,
         preset gnd_id_to_test value refers to Goethe"""
         try:
             result: dict = FileReader(
@@ -199,7 +206,7 @@ class GndConnector:
             return None
 
     def get_gnd_data(self, data_selection: Union[str, List[str], None] = None) -> Union[dict, None]:
-        """method to receive data from api with the possibility to filter results.
+        """method to receive data from api with the possibility to filter results,
         a dict is created, having gnd id numbers as keys and filtered or unfiltered response json data as values"""
         if self.check_connectivity == False:
             print(
