@@ -302,6 +302,7 @@ class TEIReader:
         tr_show_configs = st.beta_expander("Existing TEI Reader Configs", expanded=True)
         with tr_show_configs:
             st.markdown(self.build_config_tablestring())
+            st.markdown(' ') #only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI Reader Config}}")

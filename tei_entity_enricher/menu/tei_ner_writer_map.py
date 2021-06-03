@@ -354,6 +354,7 @@ class TEINERPredWriteMap:
                     st.warning(
                         f"Warning: The Mapping {cur_sel_mapping[self.tnw_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_name]} is assigned a tag."
                     )
+            st.markdown(' ') #only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")

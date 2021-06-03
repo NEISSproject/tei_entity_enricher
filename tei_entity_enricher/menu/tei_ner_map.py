@@ -520,6 +520,7 @@ class TEINERMap:
                     st.warning(
                         f"Warning: The Mapping {cur_sel_mapping[self.tnm_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_name]} is assigned to at least one tag."
                     )
+            st.markdown(' ') #only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI Read NER Entity Mapping}}")

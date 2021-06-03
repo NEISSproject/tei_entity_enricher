@@ -4,7 +4,7 @@ from os.path import join
 
 class tei_writer:
     def __init__(self, filename, tr=None, tnw=None):
-        self._space_codes = ["&#x2008;"]
+        self._space_codes = ["&#x2008;","&#xA0;"]
         #self._allowed_tags = {
         #    "rs": ['subtype="person"', 'subtype="city"', 'subtype="ground"', 'subtype="water"', 'subtype="org"'],
         #    "persName": [],
@@ -461,9 +461,11 @@ if __name__ == "__main__":
     import json
 
     with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/UJA_Edition.json") as f:
+    #with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
         tr = json.load(f)
     # print(tr)
     with open("tei_entity_enricher/tei_entity_enricher/templates/TNW/UJA_Prediction_Writer.json") as f:
+    #with open("../TNW/Arendt_Prediction_Writer.json") as f:
         tnw = json.load(f)
     write_predicted_text_list_back_to_TEI(
         "../uwe_johnson_data/data_040520/predicted_data_with_notes",
@@ -472,9 +474,11 @@ if __name__ == "__main__":
         tr=tr,
         tnw=tnw,
     )
-    # print(tnw)
+    #print(tnw)
     #brief = tei_writer("../uwe_johnson_data/data_040520/briefe/0119_060109.xml", tr=tr, tnw=tnw)
     #print(brief._text_tree)
-    # import html
-    # print(html.unescape('&pound;682&#x2008;m'))
-    # print(html.escape(html.unescape('&pound;682&#x2008;m')))
+    #import html
+    #if html.unescape('&#x2008;').replace(" ","") == "":
+    #print('Yeah'+html.unescape('&#x2007;').replace(" ","")+'!')
+    #print(html.unescape('A&#x2007;B'))
+    #print(html.unescape('&pound;682&#x2008;m').replace(" ",""))
