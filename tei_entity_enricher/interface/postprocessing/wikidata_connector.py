@@ -20,14 +20,20 @@ class WikidataConnector:
         """establishes connection to wikida web api and wikidata´s sparql endpoint,
         used to get a list of possible entities refering to input name and type strings
 
-        input: contains a list of tuples, which themself consists of a name and a type string
-        check_connectivity: execute connectivity check in __init__() or not (see connectivity_check())
-        wikidata_web_api_language: language setting of wikidata web api
-        wikidata_web_api_limit: maximum amount of returned search hits in wikidata web api query results
-        show_printmessages: show class internal printmessages on runtime or not
-
-        self.wikidata_web_api_baseUrl: baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
-        connection_established: data from an api has already been received or not"""
+        input:
+            contains a list of tuples, which themself consists of a name and a type string
+        check_connectivity:
+            execute connectivity check in __init__() or not (see connectivity_check())
+        wikidata_web_api_language:
+            language setting of wikidata web api
+        wikidata_web_api_limit:
+            maximum amount of returned search hits in wikidata web api query results
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        self.wikidata_web_api_baseUrl:
+            baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
+        connection_established:
+            data from an api has already been received or not"""
         print("initializing WikidataConnector..") if show_printmessages else None
         self.input: Union[List[Tuple[str, str]], None] = input
         self.check_connectivity: bool = check_connectivity
@@ -115,7 +121,8 @@ class WikidataConnector:
             ) if self.show_printmessages else None
 
     def connectivity_check(self) -> int:
-        """checking wikidata web api (preset query string: 'Berlin', hit limit: '1') and wikidata sparql endpoint (preset query input: ('Q64 (Berlin)', 'place')).
+        """checking wikidata web api (preset query string: 'Berlin', hit limit: '1')
+        and wikidata sparql endpoint (preset query input: ('Q64 (Berlin)', 'place')),
         returns 0 or -1 for unittest purposes"""
 
         def check_wikidata_web_api() -> bool:
@@ -171,14 +178,17 @@ class WikidataConnector:
     ) -> Union[Dict[str, list], bool]:
         """sends a entity query to wikidata web api using input strings of self.input
         and returns a dict with input strings as keys and a list as values,
-        which consists of the number of search hits and the returned data object,
-        filter_for_precise_spelling variable determines wheather only exact matches
-        between the search string and the label value in the search list returned by
-        api are returned (filtering is executed only if there are more than 5 search hits,
-        otherwise it is not executed although filter_for_precise_spelling is True),
-        filter_for_correct_type variable determines wheather the entities returned by api
-        will be checked semantically with sparql queries in correspondance with the delivered
-        type strings in self.input; only entities of a correct type will be returned"""
+        which consists of the number of search hits and the returned data object
+
+        filter_for_precise_spelling:
+            variable determines wheather only exact matches
+            between the search string and the label value in the search list returned by
+            api are returned (filtering is executed only if there are more than 5 search hits,
+            otherwise it is not executed although filter_for_precise_spelling is True),
+        filter_for_correct_type:
+            variable determines wheather the entities returned by api
+            will be checked semantically with sparql queries in correspondance with the delivered
+            type strings in self.input; only entities of a correct type will be returned"""
         if self.input == None:
             print(
                 "WikidataConnector get_wikidata_search_results() internal error: WikidataConnector has no input data."
@@ -261,9 +271,7 @@ class WikidataConnector:
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
         the value of the agent string can be choosen freely
 
-        this method checks only one entity at once and has to be used in an iteration
-
-        """
+        this method checks only one entity at once and has to be used in an iteration"""
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
         sparql = SPARQLWrapper(endpoint_url, agent=user_agent)

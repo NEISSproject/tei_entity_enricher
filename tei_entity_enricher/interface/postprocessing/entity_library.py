@@ -11,15 +11,18 @@ class EntityLibrary:
         data_file: Union[str, None] = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json"),
         show_printmessages: bool = True,
     ) -> None:
-        """is a memory of entities (saved properties are: name, furtherNames, type, gnd_id, wikidata_id),
+        """is a runtime memory of entities (saved properties are: name, furtherNames, type, gnd_id, wikidata_id),
         which is used as data source for named entity identification in post-processing
 
         it can be build up manually or inside an identification pipeline, where wikidata entity search results
-        can be enriched by data retrieved by GndConnector and added to EntityLibrary
+        can be enriched by data retrieved by GndConnector and alltogether added to EntityLibrary
 
-        data_file: path to json file, from which data is loaded and to which the data should be saved to
-        show_printmessages: show class internal printmessages on runtime or not
-        data: currently loaded dict, is loaded from json file on __init__(), if a correct filepath in data_file is provided
+        data_file:
+            path to json file, from which data is loaded and to which the data should be saved to
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        data:
+            currently loaded dict, is loaded from json file on __init__(), if a correct filepath in data_file is provided
         """
         self.data_file: Union[str, None] = data_file
         self.show_printmessages: bool = show_printmessages
@@ -32,9 +35,6 @@ class EntityLibrary:
 
     def load_library(self) -> bool:
         """used to load existing library data from a local json file with filepath saved in self.data_file"""
-        # todo: define custom exceptions and implement them in io.py and here, to handle specific exceptions
-        # if loadfile_json() fails because of file not found exception, create default entity_library.json
-        # if loadfile_json() fails because of bad format exception, do nothing
         if self.data_file is None:
             raise MissingDefinition("data_file", "EntityLibrary", "load_library()")
         fr = FileReader(self.data_file, "local", True, self.show_printmessages)
@@ -58,12 +58,7 @@ class EntityLibrary:
             result = fr.loadfile_json()
         except BadFormat:
             print(
-                f"EntityLibrary load_library(): could not load library from {self.data_file}, bad format."
-            ) if self.show_printmessages else None
-            return False
-        except FileNotFound:
-            print(
-                f"EntityLibrary load_library(): could not load library from {self.data_file}, file not found."
+                f"EntityLibrary load_library(): could not load library from {self.data_file}, no valid json format."
             ) if self.show_printmessages else None
             return False
         structure_check_cache = Cache(result)
@@ -76,17 +71,18 @@ class EntityLibrary:
         return True
 
     def add_entities_from_file(
-        self, source_path: str = None, origin: str = "local", source_type: str = None, mode="merge"
+        self, source_path: str = None, origin: str = "local", source_type: str = None
     ) -> Union[None, int]:
         """used to add data from source (json or csv format) into the already loaded entity library
 
-        source_path: uri or filepath in local system to source, from which entities should be added to library
-        origin: source setting for used FileReader, can be 'web' or 'local'
-        source_type: should be None; only when source_path doesnt deliver a correct file extension,
-        then source_type should be '.json' or '.csv' for clarification
-        mode: can be 'cancel', 'replace' or 'merge' (categories correspond to modi of FileWriter`s writefile_json() method)
+        source_path:
+            uri or filepath in local system to source, from which entities should be added to library
+        origin:
+            source setting for used FileReader, can be 'web' or 'local'
+        source_type:
+            should be None; only when source_path doesnt deliver a correct file extension,
+            then source_type should be '.json' or '.csv' for clarification
         """
-        # todo: implement custom exceptions
         file_extension = None
         if source_type is None:
             _, file_extension = os.path.splitext(source_path)
@@ -104,11 +100,6 @@ class EntityLibrary:
                 f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, bad format"
             ) if self.show_printmessages == True else None
             return None
-        except FileNotFound:
-            print(
-                f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, file not found"
-            ) if self.show_printmessages == True else None
-            return None
         except MissingDefinition:
             print(
                 f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, missing input parameter"
@@ -119,7 +110,7 @@ class EntityLibrary:
     def add_entities(
         self,
         data: List[dict] = None,
-    ) -> Union[None, int]:
+    ) -> Union[int, None]:
         """method to add entities to library, which has been passed to function via data parameter;
         structure of data has to match the structure of self.data entities;
         data structure and redundancy checks are compulsory"""
@@ -184,9 +175,13 @@ class EntityLibrary:
         """method to save currently loaded library data to export_path,
         supports .json and .csv file format
 
-        file_type: selects file format to export to
-        export_path: file path to export data to
-        mode: defines mode of FileWriter`s writefile function"""
+        file_type:
+            selects file format to export to, can be '.json' or '.csv'
+        export_path:
+            file path to export data to
+        mode:
+            defines FileWriter`s behaviour in case the file in export_path already exists,
+            can be 'cancel', 'replace' or 'merge'"""
         if file_type != ".csv" and file_type != ".json":
             print("EntityLibrary export_library() internal error: file_type parameter not defined")
             return False
@@ -202,14 +197,13 @@ class EntityLibrary:
         export_data = self.data if file_type == ".json" else None
         if export_data is None:
             pass
-            # todo: write transformation
+            # todo: write self.data to csv transformation
         fw = FileWriter(export_data, export_path, self.show_printmessages)
-        # todo: decision to give possibilty to merge files
         try:
-            result = fw.writefile_json(mode, "EntityLibrary")
+            result = fw.writefile_types.get(file_type)(mode, "EntityLibrary")
         except MissingDefinition:
             print(
-                "EntityLibrary export_library(): could not write file due to missing definition of usecase parameter"
+                "EntityLibrary export_library(): could not write file due to missing definition of mode and/or usecase parameter"
             ) if self.show_printmessages == True else None
             result = None
         return result

@@ -18,12 +18,17 @@ class FileReader:
         """loads json, beacon, csv and tsv files from local file system or web source,
         used in GndConnector, WikidataConnector, FileWriter and EntityLibrary classes
 
-        filepath: path to file to read
-        origin: values can be 'web' or 'local', to determine, whether self.filepath contains an url or a local file path
-        internal_call: if FileReader is used in instances of other classes, some error messages can be surpressed
-        show_printmessages: show class internal printmessages on runtime or not
-
-        loadfile_types: dict to map file extensions to loading methods, can be used from outside to execute the required loading function"""
+        filepath:
+            path to file to read
+        origin:
+            values can be 'web' or 'local', to determine, whether self.filepath contains an url or a local file path
+        internal_call:
+            if FileReader is used in instances of other classes, some error messages can be surpressed
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        loadfile_types:
+            dict to map file extensions to loading methods, can be used from outside
+            to execute the requiredloading function"""
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
@@ -72,7 +77,8 @@ class FileReader:
         beacon is a file format to list norm data, often used in digital editions
         to offer a list of all entities, which can be found in the edition,
         those beacon file mostly contain only gnd numbers, but no further informations about the listed entities,
-        the method returns a string of file content or a string value 'empty', if file in self.filepath exists, but is empty"""
+        the method returns a string of file content or a string value 'empty',
+        if file in self.filepath exists, but is empty"""
         if self.filepath == None:
             raise MissingDefinition("filepath", "FileReader", "loadfile_beacon()")
         if self.origin == None:
@@ -108,9 +114,11 @@ class FileReader:
         name, type, wikidata_id, gnd_id, furtherNames\0;
         if two furtherNames are provided, the second should be saved in
         a key field named furtherNames\1 and so on;
-        delimiter: define character, which delimits the fields in the csv file
-        transform_for_entity_library_import: activate data transformation for usecase of importing
-        entity data into entity library"""
+
+        delimiter:
+            define character, which delimits the fields in the csv file
+        transform_for_entity_library_import:
+            activate data transformation for usecase of importing entity data into entity library"""
         if self.filepath == None:
             raise MissingDefinition("filepath", "FileReader", "loadfile_csv()")
         if self.origin == None:
@@ -194,8 +202,10 @@ class Cache:
         """saves data for manipulation processes, offers methods for diverse purposes, used in a beacon file processing pipeline and
         EntityLibrary saving process,
 
-        data: contains data of beacon or json files as a string, delivered by FileReader class
-        show_printmessages: show class internal printmessages on runtime or not
+        data:
+            contains data of beacon or json files as a string, delivered by FileReader class
+        show_printmessages:
+            show class internal printmessages on runtime or not
         """
         self.data: Union[str, dict, list, None] = data
         self.show_printmessages: bool = show_printmessages
@@ -280,7 +290,8 @@ class Cache:
             {'gnd_id2_key1': 'gnd_id2_val1',
             'gnd_id2_key2': 'gnd_id2_val2'}
         }
-        usecase: 'GndConnector' or 'EntityLibrary'"""
+        usecase:
+            'GndConnector' or 'EntityLibrary'"""
         if usecase == "GndConnector":
             if type(self.data) == dict:
                 for key in self.data:
@@ -314,7 +325,7 @@ class Cache:
 
     def check_beacon_prefix_statement(self) -> bool:
         """method to check an imported beacon file, if the listed entities are defined by gnd norm data ids"""
-        regex_prefix_line = re.compile("#PREFIX:\s+http:\/\/d-nb.info\/gnd\/")
+        regex_prefix_line = re.compile(r"#PREFIX:\s+http:\/\/d-nb.info\/gnd\/")
         regex_meta_lines = re.compile("^#")
         found = False
         lines = self.data.split("\n")
@@ -330,7 +341,7 @@ class Cache:
     def get_gnd_ids_of_beacon_file(self) -> List[str]:
         """method to get all listed gnd id numbers from a beacon file"""
         if self.check_beacon_prefix_statement() == True:
-            regex_gndid = re.compile("^.{9,10}(?=\|)")
+            regex_gndid = re.compile(r"^.{9,10}(?=\|)")
             lines = self.data.split("\n")
             result_list = []
             for line in lines:
@@ -352,9 +363,15 @@ class Cache:
     def get_items_with_specific_value_in_a_category(
         self, category: str, value: str, mode: str = "dict"
     ) -> Union[dict, list]:
-        """method to filter self.data dict, refering to the existance of a specific value in a category,
+        """method to filter self.data dict from GndConnector,
+        refering to the existance of a specific value in a category,
         i.e. get all gnd entities, which are of type person,
-        parameter 'mode' controls the format of the return value"""
+        category:
+            a dict key on the second level, which is used to filter second level data in self.data
+        value:
+            the value which category keys should have
+        mode:
+            controls the format of the return value"""
         if mode == "dict":
             result = {}
             for gnd_id in self.data:
@@ -380,21 +397,30 @@ class FileWriter:
     ) -> None:
         """writes data into files
 
-        data: contains data to write, used for dicts and lists in EntityLibrary, GndConnector and WikidataConnector
-        filepath: path to file to write
-        show_printmessages: show class internal printmessages on runtime or not
-
-        writefile_types: dict to map file extensions to writing methods, can be used from outside to execute the required writing function"""
+        data:
+            contains data to write, used for strings, dicts and lists
+            in EntityLibrary, GndConnector and WikidataConnector
+        filepath:
+            path to file to write
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        writefile_types:
+            dict to map file extensions to writing methods, can be used from outside
+            to execute the required writing function"""
         self.data: Union[dict, list, str, None] = data
         self.filepath: Union[str, None] = filepath
         self.show_printmessages: bool = show_printmessages
-        self.writefile_types: dict = {".json": "writefile_json"}
+        self.writefile_types: dict = {".json": "writefile_json", ".csv": "writefile_csv"}
 
     def writefile_json(self, do_if_file_exists: str = "cancel", usecase: str = "GndConnector") -> bool:
-        """method to write a new or enrich an existing json file, used in EntityLibrary, GndConnector and WikidataConnector
-        do_if_file_exists: parameter controls behavior in case a file in self.filepath already exists,
-        there are 3 submethods defined, differentiating the 3 cases 'cancel', 'replace' and 'merge'
-        usecase: can be 'GndConnector' 'or 'EntityLibrary'"""
+        """method to write a new or enrich an existing json file,
+        used in EntityLibrary, GndConnector and WikidataConnector
+
+        do_if_file_exists:
+            parameter controls behavior in case a file in self.filepath already exists,
+            there are 3 submethods defined, differentiating the 3 cases 'cancel', 'replace' and 'merge'
+        usecase:
+            can be 'GndConnector' 'or 'EntityLibrary'"""
 
         def do_if_file_exists_cancel() -> bool:
             print(
@@ -488,3 +514,15 @@ class FileWriter:
             return True
         returnvalue = do_if_file_exists_switch.get(do_if_file_exists)()
         return returnvalue
+
+    def writefile_csv(self, do_if_file_exists: str = "cancel", usecase: str = "EntityLibrary") -> bool:
+        """method to write a new or enrich an existing csv file, used in EntityLibrary
+
+        do_if_file_exists:
+            parameter controls behavior in case a file in self.filepath already exists,
+            there are 3 submethods defined, differentiating the 3 cases 'cancel', 'replace' and 'merge'
+        usecase:
+            can be 'EntityLibrary'"""
+
+        # todo: write it
+        pass
