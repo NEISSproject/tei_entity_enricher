@@ -124,14 +124,14 @@ class EntityLibrary:
             return -1
         # check for redundancy
         from_data_removed_entities = []
-        for index, entity in enumerate(self.data):
-            redundancy_check_cache = Cache(data)
+        for entity in data:
+            redundancy_check_cache = Cache(self.data)
             redundancy_check_result = redundancy_check_cache.check_for_redundancy(
                 "EntityLibrary", entity["wikidata_id"], entity["gnd_id"]
             )
             if any(redundancy_check_result):
                 from_data_removed_entities.append(entity)
-                data.remove(self.data[index])
+                data.remove(entity)
         from_data_removed_entities_amount = len(from_data_removed_entities)
         if from_data_removed_entities_amount > 0:
             print(
