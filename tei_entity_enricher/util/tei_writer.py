@@ -5,16 +5,16 @@ from os.path import join
 class tei_writer:
     def __init__(self, filename, tr=None, tnw=None):
         self._space_codes = ["&#x2008;"]
-        self._allowed_tags = {
-            "rs": ['subtype="person"', 'subtype="city"', 'subtype="ground"', 'subtype="water"', 'subtype="org"'],
-            "persName": [],
-            "persname": [],
-            "placeName": ['subtype="city"', 'subtype="ground"', 'subtype="water"'],
-            "placename": ['subtype="city"', 'subtype="ground"', 'subtype="water"'],
-            "orgName": [],
-            "orgname": [],
-            "date": [],
-        }
+        #self._allowed_tags = {
+        #    "rs": ['subtype="person"', 'subtype="city"', 'subtype="ground"', 'subtype="water"', 'subtype="org"'],
+        #    "persName": [],
+        #    "persname": [],
+        #    "placeName": ['subtype="city"', 'subtype="ground"', 'subtype="water"'],
+        #    "placename": ['subtype="city"', 'subtype="ground"', 'subtype="water"'],
+        #    "orgName": [],
+        #    "orgname": [],
+        #    "date": [],
+        #}
         with open(filename, "r") as f:
             tei = f.read()
         begintextindex = tei.find("<text ")
@@ -164,11 +164,11 @@ class tei_writer:
         with open(outputpath, "w") as file:
             file.write(self.get_tei_file_string())
 
-    def _has_subtype(self, tagname, tagbegin):
-        for subtype in self._allowed_tags[tagname]:
-            if tagbegin.find(subtype) >= 0:
-                return True
-        return False
+    #def _has_subtype(self, tagname, tagbegin):
+    #    for subtype in self._allowed_tags[tagname]:
+    #        if tagbegin.find(subtype) >= 0:
+    #            return True
+    #    return False
 
     def _merge_tags_to_insert(self, ins_tag, textstring):
         merged_tags = []
@@ -374,10 +374,11 @@ class tei_writer:
         #            tag_dict["tagcontent"], predicted_data, already_tagged, predicted_note_data, is_note
         #        )
         else:
-            if tag_dict["name"] in self._allowed_tags.keys() and (
-                len(self._allowed_tags[tag_dict["name"]]) == 0
-                or self._has_subtype(tag_dict["name"], tag_dict["tagbegin"])
-            ):
+            #if tag_dict["name"] in self._allowed_tags.keys() and (
+            #    len(self._allowed_tags[tag_dict["name"]]) == 0
+            #    or self._has_subtype(tag_dict["name"], tag_dict["tagbegin"])
+            #):
+            if tag_dict["name"] in self._fixed_tags:
                 tagged = True
             else:
                 tagged = already_tagged
@@ -472,8 +473,8 @@ if __name__ == "__main__":
         tnw=tnw,
     )
     # print(tnw)
-    # brief = tei_writer("../uwe_johnson_data/data_040520/briefe/0119_060109.xml", tr=tr, tnw=tnw)
-    # print(brief._note_tags)
+    #brief = tei_writer("../uwe_johnson_data/data_040520/briefe/0119_060109.xml", tr=tr, tnw=tnw)
+    #print(brief._text_tree)
     # import html
     # print(html.unescape('&pound;682&#x2008;m'))
     # print(html.escape(html.unescape('&pound;682&#x2008;m')))
