@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 class TEIManPP:
     def __init__(self, state, show_menu=True):
         self.state = state

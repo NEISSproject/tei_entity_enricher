@@ -76,9 +76,7 @@ class TEINERPredWriteMap:
             for fix_tag in mapping[self.tnw_attr_fixed_tags]:
                 if " " in fix_tag:
                     val = False
-                    st.error(
-                        f"You defined an fixed tag ({fix_tag}) containing a space character. This is not allowed!"
-                    )
+                    st.error(f"You defined an fixed tag ({fix_tag}) containing a space character. This is not allowed!")
         # clear empty mapping entries
         entities_to_del = []
         for entity in mapping[self.tnw_attr_entity_dict].keys():
@@ -103,9 +101,12 @@ class TEINERPredWriteMap:
                             f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute value {mapping[self.tnw_attr_entity_dict][entity][1][attribute]} without a corresponding attribute name. This is not allowed."
                         )
                     elif (
-                        attribute is not None and attribute != ""
-                        and (mapping[self.tnw_attr_entity_dict][entity][1][attribute] is None
-                        or mapping[self.tnw_attr_entity_dict][entity][1][attribute] == "")
+                        attribute is not None
+                        and attribute != ""
+                        and (
+                            mapping[self.tnw_attr_entity_dict][entity][1][attribute] is None
+                            or mapping[self.tnw_attr_entity_dict][entity][1][attribute] == ""
+                        )
                     ):
                         val = False
                         st.error(
@@ -354,7 +355,7 @@ class TEINERPredWriteMap:
                     st.warning(
                         f"Warning: The Mapping {cur_sel_mapping[self.tnw_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_name]} is assigned a tag."
                     )
-            st.markdown(' ') #only for layouting reasons (placeholder)
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")

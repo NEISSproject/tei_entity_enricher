@@ -220,7 +220,7 @@ class NERTaskDef:
         ntd_show = st.beta_expander("Existing NER Task Entity Definitions", expanded=True)
         with ntd_show:
             st.markdown(self.build_ntd_tablestring())
-            st.markdown(' ') #only for layouting reasons (placeholder)
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{NER Task Entity Definition}}")

@@ -435,4 +435,4 @@ class TEINERGroundtruthBuilder:
         tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
-            st.markdown(' ') #only for layouting reasons (placeholder)
+            st.markdown(" ")  # only for layouting reasons (placeholder)

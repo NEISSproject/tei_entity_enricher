@@ -101,9 +101,12 @@ class TEINERMap:
                                 f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute value {assingned_tag_list[index][1][attribute]} without a corresponding attribute name. This is not allowed."
                             )
                         elif (
-                            attribute is not None and attribute != ""
-                            and (assingned_tag_list[index][1][attribute] is None
-                            or assingned_tag_list[index][1][attribute] == "")
+                            attribute is not None
+                            and attribute != ""
+                            and (
+                                assingned_tag_list[index][1][attribute] is None
+                                or assingned_tag_list[index][1][attribute] == ""
+                            )
                         ):
                             val = False
                             st.error(
@@ -520,7 +523,7 @@ class TEINERMap:
                     st.warning(
                         f"Warning: The Mapping {cur_sel_mapping[self.tnm_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_name]} is assigned to at least one tag."
                     )
-            st.markdown(' ') #only for layouting reasons (placeholder)
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI Read NER Entity Mapping}}")
