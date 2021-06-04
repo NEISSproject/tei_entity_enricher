@@ -1,6 +1,7 @@
 import streamlit as st
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from tei_entity_enricher.interface.postprocessing.io import FileReader
+import tei_entity_enricher.menu.tei_man_postproc as tmp
 
 
 class TEINERPostprocessing:
@@ -51,3 +52,4 @@ class TEINERPostprocessing:
         # with col2:
         #     self.show_edit_environment()
         # self.show_test_environment()
+        tmp.TEIManPP(self.state)
