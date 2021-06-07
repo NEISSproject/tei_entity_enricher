@@ -20,35 +20,40 @@ class TestPostprocessingIo(unittest.TestCase):
     def get_FileReaders(self):
         return [
             FileReader(
-                "http://www.andreas-praefcke.de/temp/BEACON-GND-Bern.txt",
-                "web",
-                False,
-                False,
+                filepath="http://www.andreas-praefcke.de/temp/BEACON-GND-Bern.txt",
+                origin="web",
+                internal_call=False,
+                show_printmessages=False,
             ),
             FileReader(
-                os.path.join(module_path, "util", "beacon_file_for_tests.txt"),
-                "local",
-                False,
-                False,
-            ),
-            FileReader("http://lobid.org/gnd/1105592812.json", "web", False, False),
-            FileReader(
-                os.path.join(module_path, "util", "json_file_for_tests.json"),
-                "local",
-                False,
-                False,
+                filepath=os.path.join(module_path, "util", "beacon_file_for_tests.txt"),
+                origin="local",
+                internal_call=False,
+                show_printmessages=False,
             ),
             FileReader(
-                "https://support.staffbase.com/hc/en-us/article_attachments/360009197031/username.csv",
-                "web",
-                False,
-                False,
+                filepath="http://lobid.org/gnd/1105592812.json",
+                origin="web",
+                internal_call=False,
+                show_printmessages=False,
             ),
             FileReader(
-                os.path.join(module_path, "util", "csv_file_for_tests.csv"),
-                "local",
-                False,
-                False,
+                filepath=os.path.join(module_path, "util", "json_file_for_tests.json"),
+                origin="local",
+                internal_call=False,
+                show_printmessages=False,
+            ),
+            FileReader(
+                filepath="https://support.staffbase.com/hc/en-us/article_attachments/360009197031/username.csv",
+                origin="web",
+                internal_call=False,
+                show_printmessages=False,
+            ),
+            FileReader(
+                filepath=os.path.join(module_path, "util", "csv_file_for_tests.csv"),
+                origin="local",
+                internal_call=False,
+                show_printmessages=False,
             ),
         ]
 
@@ -87,10 +92,10 @@ class TestPostprocessingIo(unittest.TestCase):
     def test_Cache_init(self):
         for fr in self.get_FileReaders():
             if ".json" in fr.filepath:
-                c = Cache(fr.loadfile_json(), False)
+                c = Cache(data=fr.loadfile_json(), show_printmessages=False)
                 self.assertEqual(c.print_cache(), 0, "print_cache() should return 0")
             if ".txt" in fr.filepath:
-                c = Cache(fr.loadfile_beacon(), False)
+                c = Cache(data=fr.loadfile_beacon(), show_printmessages=False)
                 self.assertEqual(c.print_cache(), 0, "print_cache() should return 0")
 
     def test_Cache_redundancy_check(self):
@@ -98,7 +103,7 @@ class TestPostprocessingIo(unittest.TestCase):
             "123": {"name": "Max Mustermann"},
             "456": {"name": "Maxine Musterfrau"},
         }
-        c = Cache(test_dict, False)
+        c = Cache(data=test_dict, show_printmessages=False)
         self.assertTrue(
             any(c.check_for_redundancy("GndConnector", None, "123", "name", "Maxine Mustermann")),
             "any(check_for_redundancy()) should return True",
@@ -138,7 +143,7 @@ class TestPostprocessingIo(unittest.TestCase):
     def test_Cache_beacon_praefix_check(self):
         for fr in self.get_FileReaders():
             if ".txt" in fr.filepath:
-                c = Cache(fr.loadfile_beacon(), False)
+                c = Cache(data=fr.loadfile_beacon(), show_printmessages=False)
                 self.assertTrue(
                     c.check_beacon_prefix_statement(),
                     "check_beacon_prefix_statement() should return True",
@@ -147,7 +152,7 @@ class TestPostprocessingIo(unittest.TestCase):
     def test_Cache_get_gnd_ids_of_beacon_file(self):
         for fr in self.get_FileReaders():
             if ".txt" in fr.filepath:
-                c = Cache(fr.loadfile_beacon(), False)
+                c = Cache(data=fr.loadfile_beacon(), show_printmessages=False)
                 result = c.get_gnd_ids_of_beacon_file()
                 self.assertEqual(
                     type(result),
@@ -166,7 +171,7 @@ class TestPostprocessingIo(unittest.TestCase):
             "456": {"name": "456", "type": "b"},
             "789": {"name": "789", "type": "a"},
         }
-        c = Cache(test_dict, False)
+        c = Cache(data=test_dict, show_printmessages=False)
         result = c.get_items_with_specific_value_in_a_category("type", "a")
         self.assertEqual(
             len(result),

@@ -38,7 +38,9 @@ class GndConnector:
         self.apiindex: int = apiindex
         self.apilist_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "gnd_apilist.json")
         try:
-            self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
+            self.apilist: Union[dict, None] = FileReader(
+                filepath=self.apilist_filepath, origin="local", internal_call=True, show_printmessages=False
+            ).loadfile_json()
         except FileNotFound:
             print(
                 "GndConnector: could not find gnd_apilist.json in config dir. creating file with default settings..."
@@ -102,7 +104,7 @@ class GndConnector:
             self.apiindex: int = 0
             try:
                 makedir_if_necessary(os.path.dirname(self.apilist_filepath))
-                FileWriter(self.apilist, self.apilist_filepath).writefile_json()
+                FileWriter(data=self.apilist, filepath=self.apilist_filepath).writefile_json()
             except:
                 print(
                     f"GndConnector __init__(): could not create default gnd_apilist.json in config folder."
@@ -123,10 +125,10 @@ class GndConnector:
         preset gnd_id_to_test value refers to Goethe"""
         try:
             result: dict = FileReader(
-                self.apilist[index_to_test]["baseUrl"].format(gnd_id_to_test),
-                "web",
-                True,
-                self.show_printmessages,
+                filepath=self.apilist[index_to_test]["baseUrl"].format(gnd_id_to_test),
+                origin="web",
+                internal_call=True,
+                show_printmessages=self.show_printmessages,
             ).loadfile_json()
         except:
             return False
@@ -221,7 +223,9 @@ class GndConnector:
         if type(self.gnd_id) == str:
             _temp_data = {}
             try:
-                filereader = FileReader(self.return_complete_url(), "web", True, True)
+                filereader = FileReader(
+                    filepath=self.return_complete_url(), origin="web", internal_call=True, show_printmessages=False
+                )
                 _temp_data = filereader.loadfile_json()
             except:
                 print(
@@ -243,7 +247,12 @@ class GndConnector:
             for index, gnd in enumerate(self.gnd_id):
                 _temp_data = {}
                 try:
-                    filereader = FileReader(self.return_complete_url(index), "web", True, True)
+                    filereader = FileReader(
+                        filepath=self.return_complete_url(index),
+                        origin="web",
+                        internal_call=True,
+                        show_printmessages=True,
+                    )
                     _temp_data = filereader.loadfile_json()
                 except:
                     print(
