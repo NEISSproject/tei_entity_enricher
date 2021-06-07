@@ -48,7 +48,10 @@ class WikidataConnector:
         )
         try:
             self.wikidata_sparql_queries: Union[dict, None] = FileReader(
-                self.wikidata_sparql_queries_filepath, "local", True
+                filepath=self.wikidata_sparql_queries_filepath,
+                origin="local",
+                internal_call=True,
+                show_printmessages=False,
             ).loadfile_json()
         except FileNotFound:
             print(
@@ -107,7 +110,11 @@ class WikidataConnector:
             }
             try:
                 makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
-                FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
+                FileWriter(
+                    data=self.wikidata_sparql_queries,
+                    filepath=self.wikidata_sparql_queries_filepath,
+                    show_printmessages=False,
+                ).writefile_json()
             except:
                 print(
                     f"WikidataConnector __init__(): could not create default sparql_queries.json in config folder."
@@ -128,14 +135,14 @@ class WikidataConnector:
         def check_wikidata_web_api() -> bool:
             try:
                 result = FileReader(
-                    self.wikidata_web_api_baseUrl.format(
+                    filepath=self.wikidata_web_api_baseUrl.format(
                         "Berlin",
                         self.wikidata_web_api_language,
                         "1",
                     ),
-                    "web",
-                    True,
-                    self.show_printmessages,
+                    origin="web",
+                    internal_call=True,
+                    show_printmessages=self.show_printmessages,
                 ).loadfile_json()
             except:
                 print(
@@ -207,14 +214,14 @@ class WikidataConnector:
         result_dict = {}
         for string_tuple in self.input:
             filereader = FileReader(
-                self.wikidata_web_api_baseUrl.format(
+                filepath=self.wikidata_web_api_baseUrl.format(
                     string_tuple[0],
                     self.wikidata_web_api_language,
                     self.wikidata_web_api_limit,
                 ),
-                "web",
-                True,
-                self.show_printmessages,
+                origin="web",
+                internal_call=True,
+                show_printmessages=self.show_printmessages,
             )
             try:
                 filereader_result = filereader.loadfile_json()
@@ -274,7 +281,7 @@ class WikidataConnector:
         this method checks only one entity at once and has to be used in an iteration"""
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
-        sparql = SPARQLWrapper(endpoint_url, agent=user_agent)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
         sparql.setQuery(self.wikidata_sparql_queries.get(type)[0] % entity_id)
         sparql.setReturnFormat(JSON)
         result = sparql.query().convert()

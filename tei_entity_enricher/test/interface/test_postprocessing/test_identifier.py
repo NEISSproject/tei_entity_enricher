@@ -12,7 +12,7 @@ class TestPostprocessingIdentifier(unittest.TestCase):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
 
     def get_identifiers(self):
-        return [Identifier([("Berlin", "place")], True)]
+        return [Identifier(input=[("Berlin", "place")], show_printmessages=True)]
 
     # tests
     def test_init(self):

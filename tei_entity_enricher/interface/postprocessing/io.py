@@ -3,13 +3,14 @@ import re
 import json
 import requests
 import csv
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, IO
 from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound
 
 
 class FileReader:
     def __init__(
         self,
+        file: Union[IO, None] = None,
         filepath: Union[str, None] = None,
         origin: Union[str, None] = None,
         internal_call: bool = False,
@@ -29,6 +30,7 @@ class FileReader:
         loadfile_types:
             dict to map file extensions to loading methods, can be used from outside
             to execute the requiredloading function"""
+        self.file: Union[IO, None] = file
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
@@ -41,36 +43,43 @@ class FileReader:
         }
 
     def loadfile_json(self) -> Union[dict, str]:
-        """method to load json files, locally or out of the web,
+        """method to load json files, locally or out of the web, from filepath or from passed file,
         it can return a json object or a string 'empty' (in case a file in self.filepath was found, but is empty)"""
-        if self.filepath == None:
-            raise MissingDefinition("filepath", "FileReader", "loadfile_json()")
-        if self.origin == None:
-            raise MissingDefinition("origin", "FileReader", "loadfile_json()")
-        elif self.origin == "local":
+        if self.file is not None:
             try:
-                with open(self.filepath) as loaded_file:
-                    if os.stat(self.filepath).st_size == 0:
-                        imported_data = "empty"
-                    else:
-                        imported_data = json.load(loaded_file)
-                return imported_data
-            except FileNotFoundError:
-                raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
+                imported_data = json.load(self.file)
             except json.decoder.JSONDecodeError:
-                raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
-        elif self.origin == "web":
-            response = requests.get(self.filepath)
-            if response.status_code == 404:
-                response.close()
-                raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
-            try:
-                imported_data = response.json()
-            except:
-                response.close()
-                raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
-            response.close()
+                raise BadFormat(self.file, "FileReader", "loadfile_json()")
             return imported_data
+        else:
+            if self.filepath == None:
+                raise MissingDefinition("filepath", "FileReader", "loadfile_json()")
+            if self.origin == None:
+                raise MissingDefinition("origin", "FileReader", "loadfile_json()")
+            elif self.origin == "local":
+                try:
+                    with open(self.filepath) as loaded_file:
+                        if os.stat(self.filepath).st_size == 0:
+                            imported_data = "empty"
+                        else:
+                            imported_data = json.load(loaded_file)
+                    return imported_data
+                except FileNotFoundError:
+                    raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
+                except json.decoder.JSONDecodeError:
+                    raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
+            elif self.origin == "web":
+                response = requests.get(self.filepath)
+                if response.status_code == 404:
+                    response.close()
+                    raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
+                try:
+                    imported_data = response.json()
+                except:
+                    response.close()
+                    raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
+                response.close()
+                return imported_data
 
     def loadfile_beacon(self) -> Union[dict, str]:
         """method to load beacon files, locally or out of the web,
@@ -107,7 +116,7 @@ class FileReader:
             return loaded_file
 
     def loadfile_csv(self, delimiting_character: str = ",", transform_for_entity_library_import: bool = True) -> dict:
-        """method to load csv files, locally or out of the web,
+        """method to load csv files, locally or out of the web, from filepath or from passed file,
         used to add data to entity library;
         the csv file should contain the following key names
         in the first row (order and upper- or lowercase doesnt matter):
@@ -119,6 +128,29 @@ class FileReader:
             define character, which delimits the fields in the csv file
         transform_for_entity_library_import:
             activate data transformation for usecase of importing entity data into entity library"""
+        if self.file is not None:
+            if transform_for_entity_library_import == True:
+                result = []
+                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt
+                csv_reader = csv.DictReader(self.file)
+                for row in csv_reader:
+                    new_row = {}
+                    new_furtherNames = []
+                    for key in list(row.keys()):
+                        if "furthernames" in key.lower():
+                            new_furtherNames.append(row[key])
+                            continue
+                        new_row[key.lower()] = row[key]
+                    new_row["furtherNames"] = new_furtherNames
+                    result.append(new_row)
+                return result
+            else:
+                result = []
+                # HIER WEITER: self.file wird so wahrscheinlich noch nicht zu einem Text umgewandelt
+                csv_reader = csv.reader(self.file)
+                for row in csv_reader:
+                    result.append(row)
+                return result
         if self.filepath == None:
             raise MissingDefinition("filepath", "FileReader", "loadfile_csv()")
         if self.origin == None:
@@ -486,8 +518,10 @@ class FileWriter:
             "merge": do_if_file_exists_merge,
         }
         try:
-            already_existing_file = FileReader(self.filepath, "local", True)
-            already_existing_file_cache = Cache(already_existing_file.loadfile_json())
+            already_existing_file = FileReader(
+                filepath=self.filepath, origin="local", internal_call=True, show_printmessages=False
+            )
+            already_existing_file_cache = Cache(data=already_existing_file.loadfile_json())
         except FileNotFound:
             with open(self.filepath, "w") as file:
                 json.dump(self.data, file, indent="\t")

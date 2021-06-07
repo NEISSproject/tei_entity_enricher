@@ -27,35 +27,45 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
 
     def test_EntityLibrary_load_library(self):
         for el in self.get_entity_library():
-            self.assertEqual(type(el.load_library()), bool, "type of loaded library data should be bool")
+            self.assertEqual(
+                type(el.load_library()),
+                bool,
+                "type of loaded library data can be bool or str, but should be in this case bool",
+            )
 
     def test_EntityLibrary_add_entities(self):
         for el in self.get_entity_library():
             self.assertEqual(
                 el.add_entities(
-                    [{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": "123"}]
+                    data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": "123"}]
                 ),
-                0,
-                "an integer with value 0 should be returned because a new entity should has been successfully added to entity library",
+                (0, 0),
+                "a tuple of integers (0, 0) should be returned because a new entity should has been successfully added to entity library and no entity has been filtered out",
             )
             self.assertEqual(
-                el.add_entities(
-                    [{"name": "Test", "furtherNames": "", "type": "test", "wikidata_id": "", "gnd_id": ""}]
+                type(
+                    el.add_entities(
+                        data=[{"name": "Test", "furtherNames": "", "type": "test", "wikidata_id": "", "gnd_id": ""}]
+                    )
                 ),
-                -1,
-                "an integer with value -1 should be returned because the value of furtherNames has to be of type list",
+                str,
+                "a string with an error should be returned because the value of furtherNames has to be of type list",
             )
             self.assertEqual(
-                el.add_entities(
-                    [{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": ""}]
+                type(
+                    el.add_entities(
+                        data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": ""}]
+                    )
                 ),
-                -1,
-                "an integer with value -1 should be returned because the passed wikidata_id is already assigned to an entity in entity library",
+                str,
+                "a string with an error should be returned because the passed wikidata_id is already assigned to an entity in entity library",
             )
             self.assertEqual(
-                el.add_entities(
-                    [{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "", "gnd_id": "123"}]
+                type(
+                    el.add_entities(
+                        data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "", "gnd_id": "123"}]
+                    )
                 ),
-                -1,
-                "an integer with value -1 should be returned because the passed gnd_id is already assigned to an entity in entity library",
+                str,
+                "a string with an error should be returned because the passed gnd_id is already assigned to an entity in entity library",
             )
