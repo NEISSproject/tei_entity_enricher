@@ -23,14 +23,22 @@ class Identifier:
         self.show_printmessages: bool = show_printmessages
         self.current_result_data: Union[dict, None] = None
 
-    def check_entity_library_by_name(
+    def check_entity_library_by_names_and_type(
         self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
     ) -> Dict[Tuple[str, str], List[dict]]:
-        """checks name and furtherNames values of loaded_library
-        for input_tuple and returns a dict with input_tuple as key and a list of entity dicts as value"""
-        pass
-        # search entitys of correct typ
-        # in this results search name and furtherNames values
+        """checks name, furtherNames and type values of loaded_library
+        for input_tuple and returns a list of entity dicts as value;
+        a found entity must be of the correct type and has to have the name
+        either in the name key or in the furtherNames key"""
+        searchstring_name = input_tuple[0]
+        searchstring_type = input_tuple[1]
+        result_list = list(
+            filter(
+                lambda item: (item["type"] == searchstring_type)
+                and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"]))
+            )
+        )
+        return result_list
 
     def check_query_results_with_wikidata_ids_of_entity_library(
         self, loaded_library: EntityLibrary = None, library_files: List[str] = None
@@ -48,6 +56,7 @@ class Identifier:
         wikidata_filter_for_correct_type: bool = True,
         wikidata_web_api_language: str = "de",
         wikidata_web_api_limit: str = "50",
+        check_connectivity_to_wikidata: bool = False,
     ) -> Dict[Tuple[str, str], List[dict]]:
         """delivers entity suggestions to tuples in self.input,
         returns dict with tuples as keys and entity list as values,
@@ -81,11 +90,37 @@ class Identifier:
         if query_entity_library is not None:
             query_entity_library_result = {}
             for tuple in self.input:
-                tuple_result = self.check_entity_library_by_name(tuple, query_entity_library)
-                query_entity_library_result.update(tuple_result)
-            query_wikidata_result = {}
-            # HIER WEITER: wikidata-abfragen machen
-            # beide ergebnisse zu einem dict zusammensetzen (nach überschneidungen via wikidata_id schauen, einheitliches format erzeugen)
+                tuple_result_list = self.check_entity_library_by_names_and_type(tuple, query_entity_library)
+                query_entity_library_result[tuple] = tuple_result_list
+        query_wikidata_result = {}
+        query_wikidata_result = self.wikidata_query(
+            wikidata_filter_for_precise_spelling,
+            wikidata_filter_for_correct_type,
+            wikidata_web_api_language,
+            wikidata_web_api_limit,
+            check_connectivity_to_wikidata,
+        )
+        output_dict = {}
+        if query_entity_library is not None:
+            if len(query_entity_library_result) > 0:
+                if len(query_wikidata_result) > 0:
+                    # wenn entity library check und wikidata check jeweils mindestens eine entität geliefert haben
+                    pass
+                else:
+                    # wenn nur entity library check mindestens eine entität geliefert hat
+                    pass
+            else:
+                if len(query_wikidata_result) > 0:
+                    # wenn nur wikidata check mindestens eine entität geliefert hat
+                    pass
+                else:
+                    # wenn weder entity library noch wikidata entitäten geliefert haben
+                    pass
+
+        """
+        HIER WEITER
+        """
+        # beide möglichen ergebnisse zu einem dict zusammensetzen (nach überschneidungen via wikidata_id schauen, einheitliches format erzeugen)
 
     def wikidata_query(
         self,
