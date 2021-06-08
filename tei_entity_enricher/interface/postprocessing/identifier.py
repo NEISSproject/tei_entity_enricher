@@ -48,7 +48,7 @@ class Identifier:
         wikidata_filter_for_correct_type: bool = True,
         wikidata_web_api_language: str = "de",
         wikidata_web_api_limit: str = "50",
-    ) -> Dict[Tuple[str, str] : List[dict]]:
+    ) -> Dict[Tuple[str, str], List[dict]]:
         """delivers entity suggestions to tuples in self.input,
         returns dict with tuples as keys and entity list as values,
         uses entity library query and wikidata queries,
