@@ -24,11 +24,13 @@ class Identifier:
         self.current_result_data: Union[dict, None] = None
 
     def check_entity_library_by_name(
-        self, loaded_library: EntityLibrary = None, library_files: List[str] = None
-    ) -> Union[Dict[Tuple[str, str], dict], dict]:
-        """checks name and furtherNames values of loaded_library or files in library_files
-        for tuple in self.input and returns a dict with tuple as keys and a list of entity dicts as value"""
+        self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
+    ) -> Dict[Tuple[str, str], List[dict]]:
+        """checks name and furtherNames values of loaded_library
+        for input_tuple and returns a dict with input_tuple as key and a list of entity dicts as value"""
         pass
+        # search entitys of correct typ
+        # in this results search name and furtherNames values
 
     def check_query_results_with_wikidata_ids_of_entity_library(
         self, loaded_library: EntityLibrary = None, library_files: List[str] = None
@@ -37,9 +39,55 @@ class Identifier:
         and returns a dict with name values as keys and entity dicts as values"""
         pass
 
-    # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgebenexit()
+    # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgeben
 
-    def query(
+    def suggest(
+        self,
+        query_entity_library: Union[EntityLibrary, None] = None,
+        wikidata_filter_for_precise_spelling: bool = True,
+        wikidata_filter_for_correct_type: bool = True,
+        wikidata_web_api_language: str = "de",
+        wikidata_web_api_limit: str = "50",
+    ) -> Dict[Tuple[str, str] : List[dict]]:
+        """delivers entity suggestions to tuples in self.input,
+        returns dict with tuples as keys and entity list as values,
+        uses entity library query and wikidata queries,
+        if no reference to a active library instance is given in query_entity_library,
+        no entity library query is executed
+
+        {
+            ('Berlin', 'place'): [
+                {"name": "Berlin", "furtherNames": [], "type": "place", "wikidata_id": "Q64", "gnd_id": ""},
+                {}
+            ]
+        }
+
+        {
+            'Berlin': [
+                4,
+                {
+                    "searchinfo": {},
+                    "search": [
+                    {"id": "Q64",..., "label": "Berlin", "description": "federal state, capital and largest city of Germany"},
+                    {'id': 'Q821244', ...., 'label': 'Berlin', 'description': 'city in Coos County, New Hampshire, USA'}
+                    ],
+                    ...,
+                    "success": 1
+                }
+            ]
+        }
+
+        """
+        if query_entity_library is not None:
+            query_entity_library_result = {}
+            for tuple in self.input:
+                tuple_result = self.check_entity_library_by_name(tuple, query_entity_library)
+                query_entity_library_result.update(tuple_result)
+            query_wikidata_result = {}
+            # HIER WEITER: wikidata-abfragen machen
+            # beide ergebnisse zu einem dict zusammensetzen (nach überschneidungen via wikidata_id schauen, einheitliches format erzeugen)
+
+    def wikidata_query(
         self,
         filter_for_precise_spelling: bool = True,
         filter_for_correct_type: bool = True,
@@ -81,48 +129,3 @@ class Identifier:
                 wikidataId = hit.get("id", "No wikidata id delivered")
                 descr = hit.get("description", "No description delivered")
                 print(f"----- {descr} -- {wikidataId}")
-
-
-def identifier_demo(input):
-    i = Identifier(input)
-
-    print(f"\n\nIdentifier started, input: {input}\n\n\n---------------getting raw result------------------")
-    i_result_raw = i.query(False, False)
-    print("\n\nraw result\n##########")
-    i.summarize_current_results()
-    print("\n")
-    print(i_result_raw)
-
-    print("\n\n\n\n\n---------------getting spell filtered result------------------")
-    i_result_spelling_filtered = i.query(True, False)
-    print("\n\nfiltered result #1 (filtered by exact spelling)\n##########")
-    i.summarize_current_results()
-    print("\n")
-    print(i_result_spelling_filtered)
-
-    print("\n\n\n\n\n---------------getting type filtered result------------------")
-    i_result_type_filtered = i.query(False, True)
-    print("\n\nfiltered result #2 (filtered by type)\n##########")
-    i.summarize_current_results()
-    print("\n")
-    print(i_result_type_filtered)
-
-    print("\n\n\n\n\n\n---------------getting fully filtered result------------------")
-    i_result_all_filtered = i.query()
-    print("\n\nfiltered result #3 (filtered by spelling and by type)\n##########")
-    i.summarize_current_results()
-    print("\n")
-    print(i_result_all_filtered)
-
-
-if __name__ == "__main__":
-    identifier_demo(
-        [
-            ("Mecklenburg", "place"),
-            ("Schwerin", "place"),
-            ("Roger Labahn", "person"),
-            ("Uwe Johnson Gesellschaft", "organisation"),
-            ("Rostock", "place"),
-            ("Bertolt Brecht", "person"),
-        ]
-    )

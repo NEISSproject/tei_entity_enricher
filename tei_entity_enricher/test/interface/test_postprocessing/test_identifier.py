@@ -30,22 +30,27 @@ class TestPostprocessingIdentifier(unittest.TestCase):
 
     def test_query(self):
         for identifier in self.get_identifiers():
-            result = identifier.query(True, True, "de", "5")
-            self.assertIsInstance(result, dict, "return value type of query() should be dict")
+            result = identifier.wikidata_query(
+                filter_for_precise_spelling=True,
+                filter_for_correct_type=True,
+                wikidata_web_api_language="de",
+                wikidata_web_api_limit="5",
+            )
+            self.assertIsInstance(result, dict, "return value type of wikidata_query() should be dict")
             self.assertIsInstance(
                 result[list(result.keys())[0]],
                 list,
-                "from query() returned dict should have lists as its values",
+                "from wikidata_query() returned dict should have lists as its values",
             )
             self.assertIsInstance(
                 result[list(result.keys())[0]][0],
                 int,
-                "from query() returned lists in dict should have an integer value on index 0",
+                "from wikidata_query() returned lists in dict should have an integer value on index 0",
             )
             self.assertIsInstance(
                 result[list(result.keys())[0]][1],
                 dict,
-                "from query() returned lists in dict should have an dict value on index 1",
+                "from wikidata_query() returned lists in dict should have an dict value on index 1",
             )
 
 
