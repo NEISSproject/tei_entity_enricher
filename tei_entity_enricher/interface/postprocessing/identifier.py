@@ -1,3 +1,4 @@
+from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from typing import Union, List, Tuple, Dict
 from tei_entity_enricher.interface.postprocessing.wikidata_connector import (
     WikidataConnector,
@@ -21,6 +22,22 @@ class Identifier:
         self.input: Union[List[Tuple[str, str]], None] = input
         self.show_printmessages: bool = show_printmessages
         self.current_result_data: Union[dict, None] = None
+
+    def check_entity_library_by_name(
+        self, loaded_library: EntityLibrary = None, library_files: List[str] = None
+    ) -> Union[Dict[Tuple[str, str], dict], dict]:
+        """checks name and furtherNames values of loaded_library or files in library_files
+        for tuple in self.input and returns a dict with tuple as keys and a list of entity dicts as value"""
+        pass
+
+    def check_query_results_with_wikidata_ids_of_entity_library(
+        self, loaded_library: EntityLibrary = None, library_files: List[str] = None
+    ) -> Union[Dict[str, dict], dict]:
+        """checks results of self.query() by wikidata_id value refering to entity library
+        and returns a dict with name values as keys and entity dicts as values"""
+        pass
+
+    # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgebenexit()
 
     def query(
         self,

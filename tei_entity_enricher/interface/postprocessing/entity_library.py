@@ -1,4 +1,5 @@
 from typing import Union, List, IO, Tuple
+from streamlit.uploaded_file_manager import UploadedFile
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.exceptions import MissingDefinition, FileNotFound, BadFormat
@@ -83,7 +84,12 @@ class EntityLibrary:
         return True
 
     def add_entities_from_file(
-        self, source_path: str = None, origin: str = "local", source_type: str = None, file: IO = None
+        self,
+        source_path: str = None,
+        origin: str = "local",
+        source_type: str = None,
+        file: UploadedFile = None,
+        csv_delimiter: str = ",",
     ) -> Union[Tuple[int, int], str, None]:
         """used to add data from source (json or csv format) into the already loaded entity library
 
@@ -112,7 +118,10 @@ class EntityLibrary:
             )
             file_load_method = fr.loadfile_types.get(source_type or file_extension)
         try:
-            result = getattr(fr, file_load_method)()
+            if file_load_method == ".csv":
+                result = getattr(fr, file_load_method)(delimiting_character=csv_delimiter)
+            else:
+                result = getattr(fr, file_load_method)()
         except FileNotFound:
             print(
                 f"EntityLibrary import_data_from_file_to_library() error: could not import new data from {source_path} to entity library, file not found"
@@ -144,9 +153,9 @@ class EntityLibrary:
         structure_check_cache = Cache(data=data)
         if structure_check_cache.check_json_structure("EntityLibrary") == False:
             print(
-                f"EntityLibrary add_entities(): could not add entities to entity library, data does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
+                f"Could not add entities to entity library, data does not fulfill the structure requirements. See documentation for requirement list."
             ) if self.show_printmessages else None
-            return f"EntityLibrary add_entities(): could not add entities to entity library, data does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
+            return f"Could not add entities to entity library, data does not fulfill the structure requirements. See documentation for requirement list."
         # check for redundancy
         from_data_removed_entities = []
         for entity in reversed(data):
@@ -171,8 +180,10 @@ class EntityLibrary:
             ) if self.show_printmessages == True else None
             return 0, from_data_removed_entities_amount
         else:
-            print(f"No entities have been added to entity library.") if self.show_printmessages == True else None
-            return f"No entities have been added to entity library."
+            print(
+                f"None of the entities were added to entity library due to redundancy issues."
+            ) if self.show_printmessages == True else None
+            return f"None of the entities were added to entity library due to redundancy issues."
 
     def save_library(self) -> Union[bool, None]:
         """used to save current library data to the local json file with filepath self.data_file"""

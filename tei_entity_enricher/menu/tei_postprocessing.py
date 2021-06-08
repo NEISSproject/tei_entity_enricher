@@ -7,6 +7,15 @@ from tei_entity_enricher.util.helper import state_failed, state_ok
 logger = logging.getLogger(__name__)
 
 
+## offenes problem: csv.DictReader kann keine UploadedFiles-Instanzen händeln, obwohl es das laut Dokumentation und Erfahrungsberichten tun sollte
+## fehlermeldung:
+#   "Error: iterator should return strings, not bytes (did you open the file in text mode?)"
+## stand:
+#   -code funktioniert mit durch open() bereitgestellten files;
+#   -UploadedFiles-klasse bietet read()-mthode an, deren einsatz erzeugt eine andere fehlermeldung:
+#       "Error: iterator should return strings, not int (did you open the file in text mode?)"
+
+
 class TEINERPostprocessing:
     def __init__(self, state, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel
@@ -14,7 +23,9 @@ class TEINERPostprocessing:
         used state variables:
         ---------------------
         pp_el_filepath: str
-        pp_el_object: list (from json)"""
+        pp_el_object: list with dicts (from json)
+        pp_el_upload_messages: list with strings
+        pp_el_reload_counter: int"""
         self.state = state
         if show_menu:
             self.show()
@@ -22,24 +33,34 @@ class TEINERPostprocessing:
     def init_el_state_variables(self):
         """initialize state variables:
         pp_el_filepath = default path defined in EntityLibrary class
-        pp_el_object is not initialized because its init value, when queried from state, is already None"""
+        pp_el_object is not initialized because its init value, when queried from state, is already None
+        pp_el_upload_messages is not initialized because it is used (defined and emptied) just locally in add entities process
+        pp_el_reload_counter is not initialized because it is used (defined and emptied) just locally in add entities process"""
         if self.state.pp_el_filepath is None:
             entity_library = EntityLibrary(show_printmessages=False)
             self.state.pp_el_filepath = entity_library.data_file
 
     def reset_el_state_variable(self, variable: str):
         """reset one or all state variables to init state"""
-        default_fp = EntityLibrary(show_printmessages=False).data_file
 
         def fp():
+            default_fp = EntityLibrary(show_printmessages=False).data_file
             self.state.pp_el_filepath = default_fp
 
         def object():
             self.state.pp_el_object = None
 
+        def upload_messages():
+            self.state.pp_el_upload_messages = None
+
+        def reload_counter():
+            self.state.pp_el_reload_counter = None
+
         def all():
             fp()
             object()
+            upload_messages()
+            reload_counter()
 
         def fallback():
             return None
@@ -47,6 +68,8 @@ class TEINERPostprocessing:
         call_dict = {
             "pp_el_filepath": fp,
             "pp_el_object": object,
+            "pp_el_upload_messages": upload_messages,
+            "pp_el_reload_counter": reload_counter,
             "all": all,
         }
         call_dict.get(variable, fallback)()
@@ -145,8 +168,9 @@ class TEINERPostprocessing:
         if el_quit_button == True:
             el_misc_message.empty()
             el_init_message.empty()
-            self.reset_el_state_variable("all")
+            self.reset_el_state_variable("pp_el_object")
         if el_add_entities_from_file_button == True:
+            self.state.pp_el_upload_messages = []
             for uploaded_file in el_add_entities_from_file_loader:
                 el_add_entities_from_file_single_file_result = self.state.pp_el_object.add_entities_from_file(
                     file=uploaded_file
@@ -155,10 +179,26 @@ class TEINERPostprocessing:
                     f"add_entities_from_file() result: {el_add_entities_from_file_single_file_result}. is el_add_entities_from_file_single_file_result[0] == 0?: {el_add_entities_from_file_single_file_result[0] == 0}"
                 )
                 if el_add_entities_from_file_single_file_result[0] == 0:
-                    el_add_entities_from_file_success_message.success(
-                        f"Data from {uploaded_file.name} successfully added to library. But {el_add_entities_from_file_single_file_result[1]} entity/ies has/have been ignored due to redundance issues."
+                    self.state.pp_el_upload_messages.append(
+                        f"Data from {uploaded_file.name} successfully added to library. {el_add_entities_from_file_single_file_result[1]} entity/ies has/have been ignored due to redundance issues."
                     )
                 if type(el_add_entities_from_file_single_file_result) == str:
-                    el_add_entities_from_file_success_message.error(el_add_entities_from_file_single_file_result)
+                    self.state.pp_el_upload_messages.append(
+                        f"Data from {uploaded_file.name} not added to library: {el_add_entities_from_file_single_file_result}"
+                    )
+            logger.info(self.state.pp_el_upload_messages)
+            self.state.pp_el_reload_counter = 2
+        if self.state.pp_el_upload_messages is not None:
+            with el_add_entities_from_file_success_message.beta_container():
+                for message in self.state.pp_el_upload_messages:
+                    if "successfully" in message:
+                        st.success(message)
+                    else:
+                        st.info(message)
+            if self.state.pp_el_reload_counter == 0:
+                self.reset_el_state_variable("pp_el_upload_messages")
+                self.state.pp_el_reload_counter = None
+            else:
+                self.state.pp_el_reload_counter = self.state.pp_el_reload_counter - 1
         ## 2. Manual TEI Postprocessing
         tmp.TEIManPP(self.state)

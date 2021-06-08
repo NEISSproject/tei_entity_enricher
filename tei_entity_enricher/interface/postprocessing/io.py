@@ -3,14 +3,15 @@ import re
 import json
 import requests
 import csv
-from typing import Union, List, Tuple, IO
+from typing import Union, List, Tuple
+from streamlit.uploaded_file_manager import UploadedFile
 from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound
 
 
 class FileReader:
     def __init__(
         self,
-        file: Union[IO, None] = None,
+        file: Union[UploadedFile, None] = None,
         filepath: Union[str, None] = None,
         origin: Union[str, None] = None,
         internal_call: bool = False,
@@ -30,7 +31,7 @@ class FileReader:
         loadfile_types:
             dict to map file extensions to loading methods, can be used from outside
             to execute the requiredloading function"""
-        self.file: Union[IO, None] = file
+        self.file: Union[UploadedFile, None] = file
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
