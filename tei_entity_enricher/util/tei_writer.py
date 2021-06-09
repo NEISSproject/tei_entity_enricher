@@ -102,7 +102,7 @@ class TEI_Writer:
             return None, 0, 0, 0, 0, ""
 
     def _swap_tag_ends(self, first_tag, second_tag, cur_text):
-        print(first_tag, second_tag, cur_text)
+        #print(first_tag, second_tag, cur_text)
         first_tag_end = "</" + first_tag + ">"
         second_tag_end = "</" + second_tag + ">"
         first_tag_end_begin_index = cur_text.find(first_tag_end)
@@ -531,8 +531,8 @@ class TEI_Writer:
 def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory, tr, tnw):
     for filename in os.listdir(directory):
         if (
-            not filename.endswith("_notes.json") and "0191_060186.xml" in filename
-        ):  # and '0048_060046.xml' not in filename:
+            not filename.endswith("_notes.json")):# and "0191_060186.xml" in filename
+        #):  # and '0048_060046.xml' not in filename:
             print(filename)
             with open(join(directory, filename)) as f:
                 predicted_data = json.load(f)
@@ -575,12 +575,12 @@ if __name__ == "__main__":
     with open("tei_entity_enricher/tei_entity_enricher/templates/TNW/UJA_Prediction_Writer.json") as f:
         # with open("../TNW/Arendt_Prediction_Writer.json") as f:
         tnw = json.load(f)
-    write_predicted_text_list_back_to_TEI(
-        "../uwe_johnson_data/data_040520/predicted_data_with_notes",
-        "../uwe_johnson_data/data_040520/briefe",
-        "test",
-        tr=tr,
-        tnw=tnw,
-    )
+    #write_predicted_text_list_back_to_TEI(
+    #    "../uwe_johnson_data/data_040520/predicted_data_with_notes",
+    #    "../uwe_johnson_data/data_040520/briefe",
+    #    "test",
+    #    tr=tr,
+    #    tnw=tnw,
+    #)
     # tei_file=TEI_Writer('test/0045_060044.xml',tr=tr)
     # run_test("test",tr)
