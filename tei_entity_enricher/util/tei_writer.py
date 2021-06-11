@@ -75,8 +75,9 @@ class TEI_Writer:
             return newstartindex + 2 + self._find_endstartindex(cur_text[newstartindex + 2 :], tag_name)
         return endstartindex
 
-    def _extract_next_tag(self, cur_text):
+    def _extract_next_tag(self, cur_text, swap=False):
         beginstartindex = cur_text.find("<")
+        swap_tag = ""
         if beginstartindex >= 0:
             beginstopindex = cur_text.find(">")
             if beginstopindex < beginstartindex:
@@ -87,19 +88,49 @@ class TEI_Writer:
                 beginstopindex = cur_text.find("-->") + 2
             endstartindex = beginstopindex + self._find_endstartindex(cur_text[beginstopindex:], tag_name)
             if cur_text[beginstopindex - 1] == "/" or tag_name == "!--":
-                return tag_name, beginstartindex, beginstopindex, -1, -1
+                return tag_name, beginstartindex, beginstopindex, -1, -1, ""
             if endstartindex < beginstopindex:
-                print("Error: CheckSyntax")
-                raise ValueError
+                if swap:
+                    swap_tag = tag_name
+                else:
+                    print("Error: CheckSyntax")
+                    raise ValueError
             endstopindex = endstartindex + len(tag_name) + 2
-            return tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex
+            return tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, swap_tag
 
         else:
-            return None, 0, 0, 0, 0
+            return None, 0, 0, 0, 0, ""
 
-    def _build_subtexttaglist(self, cur_text):
-        tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex = self._extract_next_tag(cur_text)
-        if tag_name is not None:
+    def _swap_tag_ends(self, first_tag, second_tag, cur_text):
+        #print(first_tag, second_tag, cur_text)
+        first_tag_end = "</" + first_tag + ">"
+        second_tag_end = "</" + second_tag + ">"
+        first_tag_end_begin_index = cur_text.find(first_tag_end)
+        second_tag_end_begin_index = cur_text.find(second_tag_end,first_tag_end_begin_index)
+        if first_tag_end_begin_index < 0 or second_tag_end_begin_index < 0:
+            print("Error: CheckSyntax")
+            raise ValueError
+        new_text = (
+            cur_text[:first_tag_end_begin_index]
+            + cur_text[first_tag_end_begin_index + len(first_tag_end) : second_tag_end_begin_index]
+            + second_tag_end
+            + first_tag_end
+        )
+        if second_tag_end_begin_index + len(second_tag_end) < len(cur_text):
+            new_text = new_text + cur_text[second_tag_end_begin_index + len(second_tag_end) :]
+        # print(new_text)
+        if len(cur_text) != len(new_text):
+            print("Error: CheckSyntax")
+            raise ValueError
+        return new_text, new_text.find(first_tag_end), new_text.find(first_tag_end) + len(first_tag_end) - 1
+
+    def _build_subtexttaglist(self, cur_text, swap=False):
+        tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, cur_swap_tag = self._extract_next_tag(
+            cur_text, swap=swap
+        )
+        if swap and len(cur_swap_tag) > 0:
+            return [], cur_swap_tag
+        elif tag_name is not None:
             returnlist = []
             if beginstartindex > 0:
                 returnlist.append(cur_text[:beginstartindex])
@@ -112,22 +143,39 @@ class TEI_Writer:
             if endstartindex > 0:
                 tag_dict["tagend"] = cur_text[endstartindex : endstopindex + 1]
                 if beginstopindex + 1 < endstartindex:
-                    tag_dict["tagcontent"] = self._build_subtexttaglist(cur_text[beginstopindex + 1 : endstartindex])
+                    tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
+                        cur_text[beginstopindex + 1 : endstartindex], swap=swap
+                    )
+                    if swap and len(swap_tag)>0:
+                        new_text, endstartindex, endstopindex = self._swap_tag_ends(tag_name, swap_tag, cur_text)
+                        tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
+                                    new_text[beginstopindex + 1 : endstartindex], swap=swap
+                                )
                 returnlist.append(tag_dict)
                 if endstopindex + 1 < len(cur_text):
-                    returnlist.append(self._build_subtexttaglist(cur_text[endstopindex + 1 :]))
+                    listelement, swap_tag = self._build_subtexttaglist(
+                        cur_text[endstopindex + 1 :], swap=swap
+                    )
+                    if swap and len(swap_tag) > 0:
+                        return [], swap_tag
+                    returnlist.append(listelement)
             elif beginstopindex + 1 < len(cur_text):
                 returnlist.append(tag_dict)
-                returnlist.append(self._build_subtexttaglist(cur_text[beginstopindex + 1 :]))
+                listelement, swap_tag = self._build_subtexttaglist(
+                    cur_text[beginstopindex + 1 :], swap=swap
+                )
+                if swap and len(swap_tag) > 0:
+                    return [], swap_tag
+                returnlist.append(listelement)
             else:
                 returnlist.append(tag_dict)
-            return returnlist
+            return returnlist, ""
         else:
-            return cur_text
+            return cur_text, ""
 
     def _build_text_tree(self):
         self._max_id = 0
-        self._text_tree = self._build_subtexttaglist(self._text)
+        self._text_tree, _= self._build_subtexttaglist(self._text)
 
     def _get_full_xml_of_tree_content(self, cur_element):
         if isinstance(cur_element, dict):
@@ -152,18 +200,21 @@ class TEI_Writer:
         return self._begin + self._text + self._end
 
     def write_back_to_file(self, outputpath):
-        self.refresh_text_by_tree()
         with open(outputpath, "w") as file:
             file.write(self.get_tei_file_string())
 
     def _merge_tags_to_insert(self, ins_tag, textstring):
         merged_tags = []
-        last_tag = {"tag": "X", "begin": 0, "end": 0, "note":False}
+        last_tag = {"tag": "X", "begin": 0, "end": 0, "note": False}
         for tag in ins_tag:
             if "begin" in tag.keys():
-                if last_tag["tag"] == tag["tag"] and last_tag["note"] == tag["note"] and (
-                    last_tag["end"] == tag["begin"]
-                    or (last_tag["end"] + 1 == tag["begin"] and textstring[last_tag["end"]] in (" ", "-"))
+                if (
+                    last_tag["tag"] == tag["tag"]
+                    and last_tag["note"] == tag["note"]
+                    and (
+                        last_tag["end"] == tag["begin"]
+                        or (last_tag["end"] + 1 == tag["begin"] and textstring[last_tag["end"]] in (" ", "-"))
+                    )
                 ):
                     if "end" in tag.keys():
                         last_tag["end"] = tag["end"]
@@ -306,7 +357,11 @@ class TEI_Writer:
                         self._cur_pred_index = 0
 
         if len(self._cur_word) > 0:
-            if already_tagged == False and predicted_data[self._contentindex][self._wordindex][1] != "O" and i - len(self._cur_pred_word) + 1 >=0:
+            if (
+                already_tagged == False
+                and predicted_data[self._contentindex][self._wordindex][1] != "O"
+                and i - len(self._cur_word) + 1 >= 0
+            ):
                 ins_tag.append(
                     {
                         "tag": predicted_data[self._contentindex][self._wordindex][1],
@@ -315,7 +370,11 @@ class TEI_Writer:
                     }
                 )
         if len(self._cur_note_word) > 0:
-            if already_tagged == False and predicted_note_data[self._notecontentindex][self._notewordindex][1] != "O"  and i - len(self._cur_pred_note_word) + 1 >=0:
+            if (
+                already_tagged == False
+                and predicted_note_data[self._notecontentindex][self._notewordindex][1] != "O"
+                and i - len(self._cur_note_word) + 1 >= 0
+            ):
                 ins_tag.append(
                     {
                         "tag": predicted_note_data[self._notecontentindex][self._notewordindex][1],
@@ -413,6 +472,11 @@ class TEI_Writer:
                 )
         return contentlist
 
+    def sort_begins_and_ends_in_text_tree(self):
+        self.refresh_text_by_tree()
+        self._text_tree, _ = self._build_subtexttaglist(self._text, swap=True)
+        self.refresh_text_by_tree()
+
     def write_predicted_ner_tags(self, predicted_data, predicted_note_data):
         self._contentindex = 0
         self._notecontentindex = 0
@@ -435,6 +499,7 @@ class TEI_Writer:
             if len(predicted_note_data) > self._notecontentindex:
                 print("Error: Predicted Note Data does not match the text of the notes of the xml file")
                 raise ValueError
+        self.sort_begins_and_ends_in_text_tree()
 
     def _is_tag_matching_tag_list(self, tag_content, tag_list):
         for tag_config in tag_list:
@@ -465,9 +530,9 @@ class TEI_Writer:
 
 def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory, tr, tnw):
     for filename in os.listdir(directory):
-        if not filename.endswith(
-            "_notes.json"
-        ): # and '0191_060186.xml' in filename: #and '0048_060046.xml' not in filename:
+        if (
+            not filename.endswith("_notes.json")):# and "0191_060186.xml" in filename
+        #):  # and '0048_060046.xml' not in filename:
             print(filename)
             with open(join(directory, filename)) as f:
                 predicted_data = json.load(f)
@@ -477,10 +542,8 @@ def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory
                     predicted_note_data = json.load(g)
             else:
                 predicted_note_data = []
-
             brief = TEI_Writer(join(origdirectory, filename[5:-5]), tr=tr, tnw=tnw)
             brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
-            brief.refresh_text_by_tree()
             brief.write_back_to_file(join(outdirectory, filename[5:-5]))
 
 
@@ -490,14 +553,15 @@ def build_tag_list_from_tnw(tnw):
         tag_list.append(tnw["entity_dict"][entity])
     return tag_list
 
-def run_test(directory,tr):
-    count=0
+
+def run_test(directory, tr):
+    count = 0
     for filename in os.listdir(directory):
-        count+=1
-        if 1==1: #'0191_060186.xml' not in filename and '0588_101040.xml' not in filename: #588 ist DD R -Beispiel
+        count += 1
+        if 1 == 1:  #'0191_060186.xml' not in filename and '0588_101040.xml' not in filename: #588 ist DD R -Beispiel
             print(join(directory, filename))
-            print(count,len(os.listdir(directory)))
-            tei_file=TEI_Writer(join(directory, filename),tr=tr)
+            print(count, len(os.listdir(directory)))
+            tei_file = TEI_Writer(join(directory, filename), tr=tr)
     print(count)
 
 
@@ -518,5 +582,5 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     #)
-    tei_file=TEI_Writer('test/0588_101040.xml',tr=tr)
-    #run_test("test",tr)
+    # tei_file=TEI_Writer('test/0045_060044.xml',tr=tr)
+    # run_test("test",tr)
