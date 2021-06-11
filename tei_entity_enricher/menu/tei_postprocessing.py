@@ -2,7 +2,7 @@ import streamlit as st
 import logging
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 import tei_entity_enricher.menu.tei_man_postproc as tmp
-from tei_entity_enricher.util.helper import state_failed, state_ok
+from tei_entity_enricher.util.helper import state_failed, state_ok, transform_arbitrary_text_to_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +150,7 @@ class TEINERPostprocessing:
                     el_file_preview.json(self.state.pp_el_object.data)
                     el_init_message.success("Entity library is activated.")
                 elif type(load_attempt_result) == str:
+                    load_attempt_result = transform_arbitrary_text_to_markdown(load_attempt_result)
                     logger.warning(f"Entity library loading process failed: {load_attempt_result}")
                     el_filepath_state_col.latex(state_failed)
                     el_init_message.error(load_attempt_result)
