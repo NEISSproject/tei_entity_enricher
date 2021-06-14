@@ -102,11 +102,11 @@ class TEI_Writer:
             return None, 0, 0, 0, 0, ""
 
     def _swap_tag_ends(self, first_tag, second_tag, cur_text):
-        #print(first_tag, second_tag, cur_text)
+        # print(first_tag, second_tag, cur_text)
         first_tag_end = "</" + first_tag + ">"
         second_tag_end = "</" + second_tag + ">"
         first_tag_end_begin_index = cur_text.find(first_tag_end)
-        second_tag_end_begin_index = cur_text.find(second_tag_end,first_tag_end_begin_index)
+        second_tag_end_begin_index = cur_text.find(second_tag_end, first_tag_end_begin_index)
         if first_tag_end_begin_index < 0 or second_tag_end_begin_index < 0:
             print("Error: CheckSyntax")
             raise ValueError
@@ -146,24 +146,20 @@ class TEI_Writer:
                     tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
                         cur_text[beginstopindex + 1 : endstartindex], swap=swap
                     )
-                    if swap and len(swap_tag)>0:
+                    if swap and len(swap_tag) > 0:
                         new_text, endstartindex, endstopindex = self._swap_tag_ends(tag_name, swap_tag, cur_text)
                         tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
-                                    new_text[beginstopindex + 1 : endstartindex], swap=swap
-                                )
+                            new_text[beginstopindex + 1 : endstartindex], swap=swap
+                        )
                 returnlist.append(tag_dict)
                 if endstopindex + 1 < len(cur_text):
-                    listelement, swap_tag = self._build_subtexttaglist(
-                        cur_text[endstopindex + 1 :], swap=swap
-                    )
+                    listelement, swap_tag = self._build_subtexttaglist(cur_text[endstopindex + 1 :], swap=swap)
                     if swap and len(swap_tag) > 0:
                         return [], swap_tag
                     returnlist.append(listelement)
             elif beginstopindex + 1 < len(cur_text):
                 returnlist.append(tag_dict)
-                listelement, swap_tag = self._build_subtexttaglist(
-                    cur_text[beginstopindex + 1 :], swap=swap
-                )
+                listelement, swap_tag = self._build_subtexttaglist(cur_text[beginstopindex + 1 :], swap=swap)
                 if swap and len(swap_tag) > 0:
                     return [], swap_tag
                 returnlist.append(listelement)
@@ -175,26 +171,26 @@ class TEI_Writer:
 
     def _build_text_tree(self):
         self._max_id = 0
-        self._text_tree, _= self._build_subtexttaglist(self._text)
+        self._text_tree, _ = self._build_subtexttaglist(self._text)
 
-    def _get_full_xml_of_tree_content(self, cur_element):
-        if isinstance(cur_element, dict):
-            text = cur_element["tagbegin"]
-            if "tagcontent" in cur_element.keys():
-                text += self._get_full_xml_of_tree_content(cur_element["tagcontent"])
-            if "tagend" in cur_element.keys():
-                text += cur_element["tagend"]
-            return text
-        elif isinstance(cur_element, list):
-            text = ""
-            for element in cur_element:
-                text = text + self._get_full_xml_of_tree_content(element)
-            return text
-        elif isinstance(cur_element, str):
-            return cur_element
+    # def _get_full_xml_of_tree_content(self, cur_element):
+    #    if isinstance(cur_element, dict):
+    #        text = cur_element["tagbegin"]
+    #        if "tagcontent" in cur_element.keys():
+    #            text += get_full_xml_of_tree_content(cur_element["tagcontent"])
+    #        if "tagend" in cur_element.keys():
+    #            text += cur_element["tagend"]
+    #        return text
+    #    elif isinstance(cur_element, list):
+    #        text = ""
+    #        for element in cur_element:
+    #            text = text + get_full_xml_of_tree_content(element)
+    #        return text
+    #    elif isinstance(cur_element, str):
+    #        return cur_element
 
     def refresh_text_by_tree(self):
-        self._text = self._get_full_xml_of_tree_content(self._text_tree)
+        self._text = get_full_xml_of_tree_content(self._text_tree)
 
     def get_tei_file_string(self):
         return self._begin + self._text + self._end
@@ -246,8 +242,6 @@ class TEI_Writer:
         return new_tagged_string
 
     def _write_textstring(self, textstring, predicted_data, already_tagged, predicted_note_data, is_note):
-        if "Harold Stassen" in textstring:
-            print("Hier")
         if textstring is not None and textstring != "":
             ins_tag = []
             ignore_char_until = 0
@@ -530,9 +524,8 @@ class TEI_Writer:
 
 def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory, tr, tnw):
     for filename in os.listdir(directory):
-        if (
-            not filename.endswith("_notes.json")):# and "0191_060186.xml" in filename
-        #):  # and '0048_060046.xml' not in filename:
+        if not filename.endswith("_notes.json"):  # and "0191_060186.xml" in filename
+            # ):  # and '0048_060046.xml' not in filename:
             print(filename)
             with open(join(directory, filename)) as f:
                 predicted_data = json.load(f)
@@ -547,10 +540,46 @@ def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory
             brief.write_back_to_file(join(outdirectory, filename[5:-5]))
 
 
-def build_tag_list_from_tnw(tnw):
+def get_full_xml_of_tree_content(cur_element):
+    if isinstance(cur_element, dict):
+        text = cur_element["tagbegin"]
+        if "tagcontent" in cur_element.keys():
+            text += get_full_xml_of_tree_content(cur_element["tagcontent"])
+        if "tagend" in cur_element.keys():
+            text += cur_element["tagend"]
+        return text
+    elif isinstance(cur_element, list):
+        text = ""
+        for element in cur_element:
+            text = text + get_full_xml_of_tree_content(element)
+        return text
+    elif isinstance(cur_element, str):
+        return cur_element
+
+
+def get_pure_text_of_tree_element(cur_element,tr,first=True):
+    if isinstance(cur_element, dict):
+        text=""
+        if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"] and (cur_element["name"] not in tr["note_tags"] or first):
+            text = get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False)
+        return text
+    elif isinstance(cur_element, list):
+        text = ""
+        for element in cur_element:
+            text = text + get_pure_text_of_tree_element(element,tr,first=False)
+        return text
+    elif isinstance(cur_element, str):
+        return cur_element
+
+
+def build_tag_list_from_entity_dict(entity_dict,mode="tnw"):
     tag_list = []
-    for entity in tnw["entity_dict"]:
-        tag_list.append(tnw["entity_dict"][entity])
+    for entity in entity_dict:
+        if mode=="tnw":
+            tag_list.append(entity_dict[entity])
+        elif mode=="tnm":
+            for tag_entry in entity_dict[entity]:
+                tag_list.append(tag_entry)
     return tag_list
 
 
@@ -575,12 +604,12 @@ if __name__ == "__main__":
     with open("tei_entity_enricher/tei_entity_enricher/templates/TNW/UJA_Prediction_Writer.json") as f:
         # with open("../TNW/Arendt_Prediction_Writer.json") as f:
         tnw = json.load(f)
-    #write_predicted_text_list_back_to_TEI(
+    # write_predicted_text_list_back_to_TEI(
     #    "../uwe_johnson_data/data_040520/predicted_data_with_notes",
     #    "../uwe_johnson_data/data_040520/briefe",
     #    "test",
     #    tr=tr,
     #    tnw=tnw,
-    #)
+    # )
     # tei_file=TEI_Writer('test/0045_060044.xml',tr=tr)
-    # run_test("test",tr)
+    # run_test("test",tr) #test/0809_101259.xml

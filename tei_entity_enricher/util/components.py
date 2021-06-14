@@ -60,7 +60,7 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
         for i in range(max_len):
             needed = False
             for key in answer_dict:
-                if answer_dict[key][i] is not None and answer_dict[key][i] != "":
+                if answer_dict[key][i] is not None and answer_dict[key][i] != "" and answer_dict[key][i] != "nan":
                     needed = True
             if needed:
                 for key in answer_dict:
