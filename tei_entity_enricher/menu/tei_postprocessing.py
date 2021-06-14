@@ -41,9 +41,10 @@ def get_filepath():
 
 
 class TEINERPostprocessing:
-    def __init__(self, show_menu: bool = True):
+    def __init__(self, state, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
         if show_menu:
+            self.state = state
             self.show()
 
     def show(self):
@@ -172,4 +173,4 @@ class TEINERPostprocessing:
                                         st.info(message)
 
         ## 2. Manual TEI Postprocessing
-        # tmp.TEIManPP(self.state)
+        tmp.TEIManPP(self.state)
