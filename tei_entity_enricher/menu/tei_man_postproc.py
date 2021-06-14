@@ -5,14 +5,7 @@ import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
 from tei_entity_enricher.util.components import editable_multi_column_table
 from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown
-
-def extract_attributes_and_values(tag,tagbegin):
-    attr_dict={}
-    attr_list=tagbegin[len(tag)+2:-1].split(" ")
-    for element in attr_list:
-        attr_value=element.split("=")
-        attr_dict[attr_value[0]]=attr_value[1][1:-1]
-    return attr_dict
+#from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 class TEIManPP:
     def __init__(self, state, show_menu=True):
@@ -51,7 +44,7 @@ class TEIManPP:
             tag_entry['tagbegin'] = self.show_editable_attr_value_def(tag_entry['name'],tag_entry['tagbegin'],'tmp_edit_search_attr_dict')
         with col2:
             st.markdown("### Textcontent of the tag:")
-            st.markdown(transform_arbitrary_text_to_markdown(tei_writer.get_pure_text_of_tree_element(tag_entry["tagcontent"],self.state.tmp_cur_tr)))
+            st.markdown(transform_arbitrary_text_to_markdown(tag_entry["pure_tagcontent"]))
             st.markdown("### Full tag in xml:")
             st.markdown(transform_arbitrary_text_to_markdown(tei_writer.get_full_xml_of_tree_content(tag_entry)))
         return tag_entry
@@ -78,9 +71,12 @@ class TEIManPP:
         if st.button('Search Matching Entities in TEI-File:'):
             if self.state.tmp_teifile or self.state.tmp_open_teifile:
                 tei = tei_writer.TEI_Writer(self.state.tmp_teifile, openfile=self.state.tmp_open_teifile, tr=selected_tr)
-                self.state.tmp_cur_tr=selected_tr
                 self.state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
                 self.state.tmp_current_loop_element=1
+                if len(self.state.tmp_matching_tag_list)>0:
+                    self.enrich_search_list_with_pure_tagcontent(selected_tr)
+                    if self.state.pp_el_object:
+                        self.enrich_search_list_with_link_suggestions()
             else:
                 self.state.avoid_rerun()
                 self.state.tmp_matching_tag_list = []
@@ -134,6 +130,18 @@ class TEIManPP:
                 )
                 tag_list = tei_writer.build_tag_list_from_entity_dict(self.tnm.mappingdict[self.state.tmp_selected_tnm_name]["entity_dict"],"tnm")
         return tag_list
+
+    def enrich_search_list_with_pure_tagcontent(self,tr):
+        for tag in self.state.tmp_matching_tag_list:
+            tag["pure_tagcontent"]=tei_writer.get_pure_text_of_tree_element(tag["tagcontent"],tr)
+
+
+    def enrich_search_list_with_link_suggestions(self):
+        entitylist=[]
+        #for tag in self.state.tmp_matching_tag_list:
+        #    entitylist.append(tuple())
+        #Identifier()
+
 
     def show(self):
         st.subheader("Manual TEI Postprocessing")
