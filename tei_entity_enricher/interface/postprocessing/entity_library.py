@@ -9,7 +9,8 @@ import os
 class EntityLibrary:
     def __init__(
         self,
-        data_file: Union[str, None] = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json"),
+        data_file: Union[str, None] = None,
+        use_default_data_file: bool = False,
         show_printmessages: bool = True,
     ) -> None:
         """is a runtime memory of entities (saved properties are: name, furtherNames, type, gnd_id, wikidata_id),
@@ -20,12 +21,19 @@ class EntityLibrary:
 
         data_file:
             path to json file, from which data is loaded and to which the data should be saved to
+        use_default_data_file:
+            load EntityLibrary with default data_file-path or not
         show_printmessages:
             show class internal printmessages on runtime or not
+        default_data_file:
+            default path to json file in local_save_path/config/postprocessing/entity_library.json, is saved here and not
+            as default value on init for processing reasons in menu/tei_postprocessing.py
         data:
             currently loaded dict, is loaded from json file on __init__(), if a correct filepath in data_file is provided
         """
-        self.data_file: Union[str, None] = data_file
+        self.use_default_data_file: bool = use_default_data_file
+        self.default_data_file: str = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json")
+        self.data_file: Union[str, None] = self.default_data_file if self.use_default_data_file == True else data_file
         self.show_printmessages: bool = show_printmessages
         self.data: Union[list, None] = None
         if self.data_file is not None:
@@ -178,7 +186,7 @@ class EntityLibrary:
             print(
                 f"{data_amount_after_filtering} entity/ies has/have been added to entity library."
             ) if self.show_printmessages == True else None
-            return 0, from_data_removed_entities_amount
+            return data_amount_after_filtering, from_data_removed_entities_amount
         else:
             print(
                 f"None of the entities were added to entity library due to redundancy issues."

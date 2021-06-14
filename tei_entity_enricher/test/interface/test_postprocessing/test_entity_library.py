@@ -14,7 +14,7 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
         self.tempdir.cleanup()  # remove temp dir after all tests of this class are done
 
     def get_entity_library(self):
-        return [EntityLibrary()]
+        return [EntityLibrary(use_default_data_file=True)]
 
     # tests
     def test_EntityLibrary_init(self):
@@ -39,8 +39,8 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
                 el.add_entities(
                     data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": "123"}]
                 ),
-                (0, 0),
-                "a tuple of integers (0, 0) should be returned because a new entity should has been successfully added to entity library and no entity has been filtered out",
+                (1, 0),
+                "a tuple of integers (1, 0) should be returned because a new entity should has been successfully added to entity library and no entity has been filtered out",
             )
             self.assertEqual(
                 type(
