@@ -6,7 +6,7 @@ import shutil
 import streamlit as st
 
 from tei_entity_enricher.util import config_io
-from tei_entity_enricher.util.components import file_selector, file_selector_expander
+from tei_entity_enricher.util.components import file_selector, file_selector_expander, dir_selector_expander
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
@@ -75,6 +75,8 @@ class NERTrainer(object):
             print(os.getcwd())
             selected_file = file_selector_expander(folder_path=os.getcwd())
             st.text(selected_file)
+            selected_dir = dir_selector_expander(folder_path=os.getcwd())
+            st.text(selected_dir)
 
     def load_trainer_params(self):
         if not os.path.isfile("trainer_params.json"):

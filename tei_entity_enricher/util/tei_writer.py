@@ -500,17 +500,17 @@ class TEI_Writer:
         self.sort_begins_and_ends_in_text_tree()
 
     def _is_tag_matching_tag_list(self, tag_content, tag_list):
-        cur_attr_dict=extract_attributes_and_values(tag_content["name"],tag_content["tagbegin"])
+        cur_attr_dict = extract_attributes_and_values(tag_content["name"], tag_content["tagbegin"])
         for tag_config in tag_list:
-            cur_tag_config_matches=True
-            if tag_config[0] != tag_content["name"] and len(tag_config[0])>0:
-                cur_tag_config_matches=False
+            cur_tag_config_matches = True
+            if tag_config[0] != tag_content["name"] and len(tag_config[0]) > 0:
+                cur_tag_config_matches = False
             for attr in tag_config[1]:
-                if len(attr)>0 and attr not in cur_attr_dict.keys():
-                    cur_tag_config_matches=False
-                elif len(attr)>0 and attr in cur_attr_dict.keys():
-                    if len(tag_config[1][attr])>0 and cur_attr_dict[attr]!=tag_config[1][attr]:
-                        cur_tag_config_matches=False
+                if len(attr) > 0 and attr not in cur_attr_dict.keys():
+                    cur_tag_config_matches = False
+                elif len(attr) > 0 and attr in cur_attr_dict.keys():
+                    if len(tag_config[1][attr]) > 0 and cur_attr_dict[attr] != tag_config[1][attr]:
+                        cur_tag_config_matches = False
             if cur_tag_config_matches:
                 return True
         return False
@@ -538,13 +538,14 @@ class TEI_Writer:
                     )
         return contentlist
 
-def extract_attributes_and_values(tag,tagbegin):
-    attr_dict={}
-    attr_list=tagbegin[len(tag)+2:-1].split(" ")
+
+def extract_attributes_and_values(tag, tagbegin):
+    attr_dict = {}
+    attr_list = tagbegin[len(tag) + 2 : -1].split(" ")
     for element in attr_list:
         if "=" in element:
-            attr_value=element.split("=")
-            attr_dict[attr_value[0]]=attr_value[1][1:-1]
+            attr_value = element.split("=")
+            attr_dict[attr_value[0]] = attr_value[1][1:-1]
     return attr_dict
 
 
@@ -583,30 +584,38 @@ def get_full_xml_of_tree_content(cur_element):
         return cur_element
 
 
-def get_pure_text_of_tree_element(cur_element,tr,first=True,id_to_mark=None):
+def get_pure_text_of_tree_element(cur_element, tr, first=True, id_to_mark=None):
     if isinstance(cur_element, dict):
-        text=""
-        if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"] and (cur_element["name"] not in tr["note_tags"] or first):
-            if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"]==id_to_mark:
-                text = "<marked_id>"+get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False,id_to_mark=id_to_mark)+"</marked_id>"
+        text = ""
+        if (
+            "tagcontent" in cur_element.keys()
+            and cur_element["name"] not in tr["exclude_tags"]
+            and (cur_element["name"] not in tr["note_tags"] or first)
+        ):
+            if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"] == id_to_mark:
+                text = (
+                    "<marked_id>"
+                    + get_pure_text_of_tree_element(cur_element["tagcontent"], tr, first=False, id_to_mark=id_to_mark)
+                    + "</marked_id>"
+                )
             else:
-                text = get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False,id_to_mark=id_to_mark)
+                text = get_pure_text_of_tree_element(cur_element["tagcontent"], tr, first=False, id_to_mark=id_to_mark)
         return text
     elif isinstance(cur_element, list):
         text = ""
         for element in cur_element:
-            text = text + get_pure_text_of_tree_element(element,tr,first=False,id_to_mark=id_to_mark)
+            text = text + get_pure_text_of_tree_element(element, tr, first=False, id_to_mark=id_to_mark)
         return text
     elif isinstance(cur_element, str):
         return cur_element
 
 
-def build_tag_list_from_entity_dict(entity_dict,mode="tnw"):
+def build_tag_list_from_entity_dict(entity_dict, mode="tnw"):
     tag_list = []
     for entity in entity_dict:
-        if mode=="tnw":
+        if mode == "tnw":
             tag_list.append(entity_dict[entity])
-        elif mode=="tnm":
+        elif mode == "tnm":
             for tag_entry in entity_dict[entity]:
                 tag_list.append(tag_entry)
     return tag_list
@@ -622,11 +631,12 @@ def run_test(directory, tr):
             tei_file = TEI_Writer(join(directory, filename), tr=tr)
     print(count)
 
+
 def parse_xml_to_text(text):
-    new_text= str(BeautifulSoup("<text>"+text+"</text>", "xml").find("text"))[6:-7]
-    new_text=new_text.replace('\n','<br/>')
-    new_text= ' '.join(new_text.split())
-    new_text= new_text.replace('<br/>','\n\n')
+    new_text = str(BeautifulSoup("<text>" + text + "</text>", "xml").find("text"))[6:-7]
+    new_text = new_text.replace("\n", "<br/>")
+    new_text = " ".join(new_text.split())
+    new_text = new_text.replace("<br/>", "\n\n")
     return new_text
 
 
@@ -647,8 +657,8 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    tei_file=TEI_Writer('test/0809_101259.xml',tr=tr)
-    print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(),tr,id_to_mark='5')))
-    #mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
-    #print(mlist[1],mlist[5])
+    tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
+    print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
+    # mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
+    # print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml

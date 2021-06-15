@@ -77,19 +77,48 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
 
 def file_selector_expander(folder_path=".", target="Select file..."):
     with st.beta_expander(target):
-        selected_file = file_selector(folder_path)
+        selected_file = file_selector(folder_path, parent=target)
     return selected_file
 
 
-def file_selector(folder_path=".", sub_level=0, max_level=10):
+def dir_selector_expander(folder_path=".", target="Select directory..."):
+    with st.beta_expander(target):
+        selected_dir = dir_selector(folder_path, parent=target)
+    return selected_dir
+
+
+def file_selector(folder_path=".", sub_level=0, max_level=10, parent=""):
     filenames = [
         f for f in os.listdir(folder_path) if not f[0] == "."
     ]  # get file names from dir excluding hidden files
     a, b = st.beta_columns([sub_level + 1, 2 * max_level])
-    selected_filename = b.selectbox(f"{folder_path}", filenames)
+    selected_filename = b.selectbox(f"{folder_path}", filenames, key=f"{parent}{folder_path}")
+    if selected_filename is None:
+        return None
     abs_path = os.path.join(folder_path, selected_filename)
     if os.path.isdir(abs_path):
         return file_selector(
             abs_path, sub_level=sub_level + 1 if sub_level < max_level else sub_level, max_level=max_level
         )
     return os.path.join(folder_path, selected_filename)
+
+
+def dir_selector(folder_path=".", sub_level=0, max_level=10, parent=""):
+    filenames = [
+        f for f in os.listdir(folder_path) if not f[0] == "." and os.path.isdir(os.path.join(folder_path, f))
+    ]  # get file names from dir excluding hidden files
+    a, b, c = st.beta_columns([sub_level + 1, 2 * max_level, 2])
+    selected_dirname = b.selectbox(f"{folder_path}", filenames, key=f"{parent}{folder_path}")
+    if selected_dirname is None:
+        return None
+    abs_path = os.path.join(folder_path, selected_dirname)
+    if os.path.isdir(abs_path):
+        c.text("")
+        c.text("")
+        if c.button("apply", key=f"{parent}{folder_path}"):
+            return abs_path
+
+        return dir_selector(
+            abs_path, sub_level=sub_level + 1 if sub_level < max_level else sub_level, max_level=max_level
+        )
+    return os.path.join(folder_path, selected_dirname)

@@ -363,13 +363,13 @@ class TEINERMap:
                 key="tnm_tr_test",
             )
             mapping = self.mappingdict[self.state.tnm_test_selected_mapping_name]
-            #self.state.tnm_teifile = st.text_input(
+            # self.state.tnm_teifile = st.text_input(
             #    "Choose a TEI File:",
             #    self.state.tnm_teifile or "",
             #    key="tnm_test_tei_file",
-            #)
-            self.state.tnm_open_teifile = st.file_uploader('Choose a TEI-File',key='tnm_test_file_upload')
-            #if self.state.tnm_open_teifile:
+            # )
+            self.state.tnm_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
+            # if self.state.tnm_open_teifile:
             #    st.write(self.state.tnm_open_teifile.getvalue().decode("utf-8"))
             if self.state.tnm_teifile or self.state.tnm_open_teifile:
                 tei = tp.TEIFile(

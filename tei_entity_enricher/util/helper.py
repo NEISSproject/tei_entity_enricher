@@ -50,8 +50,10 @@ def makedir_if_necessary(directory):
     if not os.path.isdir(directory):
         os.makedirs(directory)
 
+
 def transform_xml_to_markdown(xml):
     return "```xml\n" + xml + "\n ```"
+
 
 def transform_arbitrary_text_to_markdown(text):
     return (
@@ -66,7 +68,7 @@ def transform_arbitrary_text_to_markdown(text):
         .replace("]", "\]")
         .replace("#", "\#")
         .replace("\t", " ")
-        .replace(" ","&nbsp;")
+        .replace(" ", "&nbsp;")
     )
 
 
