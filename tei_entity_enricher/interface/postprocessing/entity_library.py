@@ -1,4 +1,4 @@
-from typing import Union, List, IO, Tuple
+from typing import Union, List, Tuple
 from streamlit.uploaded_file_manager import UploadedFile
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary

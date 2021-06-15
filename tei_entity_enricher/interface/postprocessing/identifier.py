@@ -3,6 +3,8 @@ from typing import Union, List, Tuple, Dict
 from tei_entity_enricher.interface.postprocessing.wikidata_connector import (
     WikidataConnector,
 )
+from tei_entity_enricher import __version__
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 class Identifier:
@@ -47,6 +49,27 @@ class Identifier:
         and returns a dict with name values as keys and entity dicts as values"""
         pass
 
+    def get_gnd_id_of_wikidata_entity(self, wikidata_id: str):
+        query = """
+            PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+            PREFIX wd: <http://www.wikidata.org/entity/>
+
+            SELECT ?o
+            WHERE
+            {
+                wd:%s wdt:P227 ?o .
+            }
+            """
+        endpoint_url = "https://query.wikidata.org/sparql"
+        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
+        sparql.setQuery(query % wikidata_id)
+        sparql.setReturnFormat(JSON)
+        result = sparql.query().convert()
+        return result["results"]["bindings"]
+        # if there is no result, the bindings is an empty list
+        # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
+
     # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgeben
 
     def suggest(
@@ -86,6 +109,13 @@ class Identifier:
             ]
         }
 
+        {
+            ('Berlin', 'place'): [
+                {"name": "Berlin", "furtherNames": [], "type": "place", "wikidata_id": "Q64", "gnd_id": ""},
+                {}
+            ]
+        }
+
         """
         if query_entity_library is not None:
             query_entity_library_result = {}
@@ -102,9 +132,10 @@ class Identifier:
         )
         output_dict = {}
         if query_entity_library is not None:
+            # wenn beides, entity library und wikidata check, durchgeführt wurden
             if len(query_entity_library_result) > 0:
                 if len(query_wikidata_result) > 0:
-                    # wenn entity library check und wikidata check jeweils mindestens eine entität geliefert haben
+                    # wenn beide, entity library check und wikidata check, jeweils mindestens eine entität geliefert haben
                     pass
                 else:
                     # wenn nur entity library check mindestens eine entität geliefert hat
@@ -114,8 +145,16 @@ class Identifier:
                     # wenn nur wikidata check mindestens eine entität geliefert hat
                     pass
                 else:
-                    # wenn weder entity library noch wikidata entitäten geliefert haben
+                    # wenn keine, weder entity library noch wikidata, entitäten geliefert haben
                     pass
+        else:
+            # wenn nur der wikidata check durchgeführt wurde
+            if len(query_wikidata_result) > 0:
+                # wenn der wikidata check mindestens eine entität geliefert hat
+                pass
+            else:
+                # wenn der wikidata check keine entitäten geliefert hat
+                pass
 
         """
         HIER WEITER
