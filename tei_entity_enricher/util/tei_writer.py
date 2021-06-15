@@ -1,5 +1,9 @@
 import os
 from os.path import join
+from bs4 import BeautifulSoup
+import re
+
+_RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
 class TEI_Writer:
@@ -511,6 +515,9 @@ class TEI_Writer:
                 return True
         return False
 
+    def get_text_tree(self):
+        return self._text_tree
+
     def get_list_of_tags_matching_tag_list(self, tag_list):
         matching_tag_list = []
         self._loop_contentlist(matching_tag_list, self._text_tree, tag_list)
@@ -576,16 +583,19 @@ def get_full_xml_of_tree_content(cur_element):
         return cur_element
 
 
-def get_pure_text_of_tree_element(cur_element,tr,first=True):
+def get_pure_text_of_tree_element(cur_element,tr,first=True,id_to_mark=None):
     if isinstance(cur_element, dict):
         text=""
         if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"] and (cur_element["name"] not in tr["note_tags"] or first):
-            text = get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False)
+            if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"]==id_to_mark:
+                text = "<marked_id>"+get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False,id_to_mark=id_to_mark)+"</marked_id>"
+            else:
+                text = get_pure_text_of_tree_element(cur_element["tagcontent"],tr,first=False,id_to_mark=id_to_mark)
         return text
     elif isinstance(cur_element, list):
         text = ""
         for element in cur_element:
-            text = text + get_pure_text_of_tree_element(element,tr,first=False)
+            text = text + get_pure_text_of_tree_element(element,tr,first=False,id_to_mark=id_to_mark)
         return text
     elif isinstance(cur_element, str):
         return cur_element
@@ -612,6 +622,13 @@ def run_test(directory, tr):
             tei_file = TEI_Writer(join(directory, filename), tr=tr)
     print(count)
 
+def parse_xml_to_text(text):
+    new_text= str(BeautifulSoup("<text>"+text+"</text>", "xml").find("text"))[6:-7]
+    new_text=new_text.replace('\n','<br/>')
+    new_text= ' '.join(new_text.split())
+    new_text= new_text.replace('<br/>','\n\n')
+    return new_text
+
 
 if __name__ == "__main__":
     import json
@@ -631,6 +648,7 @@ if __name__ == "__main__":
     #    tnw=tnw,
     # )
     tei_file=TEI_Writer('test/0809_101259.xml',tr=tr)
-    mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
-    print(mlist[1],mlist[5])
+    print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(),tr,id_to_mark='5')))
+    #mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
+    #print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml
