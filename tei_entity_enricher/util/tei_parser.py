@@ -142,11 +142,11 @@ class TEIFile:
                 self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
                 self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
                 self._note_statistics = self._merge_statistics(self._note_statistics, note_statistics_to_add)
-            elif pagecontent.name not in ["lb", "pb"]:
+            elif pagecontent.name not in ["lb", "pb"] and pagecontent.name not in self._exclude_tags:
                 text_list.append(" ")
                 tagged_text_list.append(" ")
-        text_list.append(" ")
-        tagged_text_list.append(" ")
+        #text_list.append(" ")
+        #tagged_text_list.append(" ")
         return text_list, tagged_text_list, statistics
 
     def _get_text_and_statistics(self, filename):
@@ -392,9 +392,16 @@ def split_into_sentences(tagged_text_line_list):
 
 
 if __name__ == "__main__":
+    import json
+
+    with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/UJA_Edition.json") as f:
+        # with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
+        tr = json.load(f)
+    # print(tr)
     # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
-    brief = TEIFile("../uwe_johnson_data/data_040520/briefe/0119_060109.xml")
-    print(brief.get_text())
-    print(brief.get_notes())
+    brief = TEIFile("../uwe_johnson_data/data_040520/briefe/0671_101120.xml",tr_config=tr)
+    #print(brief.get_text())
+    print( str(BeautifulSoup("<text>Thema beim<marked_id> Teilverbandstreffen V&#x2008;/&#x2008;71 vermeiden.</text>", "xml").find("text"))[6:-7])
+    #print(brief.get_notes())

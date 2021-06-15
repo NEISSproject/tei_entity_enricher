@@ -283,6 +283,7 @@ class TEINERGroundtruthBuilder:
             ),
             unsafe_allow_html=True,
         )
+        st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show_build_gt_environment(self):
         tng_dict = {}
@@ -372,6 +373,7 @@ class TEINERGroundtruthBuilder:
         }
         if st.button("Build Groundtruth"):
             if self.validate_build_configuration(tng_dict, self.state.tng_teifile_folder):
+                self.state.avoid_rerun()
                 self.build_groundtruth(tng_dict, self.state.tng_teifile_folder)
 
     def delete_groundtruth(self, groundtruth):
@@ -412,6 +414,7 @@ class TEINERGroundtruthBuilder:
 
     def show_existing_tng(self):
         st.markdown(self.build_tng_tablestring())
+        st.markdown(" ")  # only for layouting reasons (placeholder)
         self.state.tng_selected_display_tng_name = st.selectbox(
             f"Choose a groundtruth for displaying its statistics:",
             list(self.tngdict.keys()),

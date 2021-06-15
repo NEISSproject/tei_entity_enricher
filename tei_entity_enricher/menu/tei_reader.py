@@ -262,9 +262,10 @@ class TEIReader:
                 key="tr_test",
             )
             config = self.configdict[self.state.tr_test_selected_config_name]
-            self.state.teifile = st.text_input("Choose a TEI File:", self.state.teifile or "", key="tr_test_tei_file")
-            if self.state.teifile:
-                tei = tp.TEIFile(self.state.teifile, config)
+            # self.state.teifile = st.text_input("Choose a TEI File:", self.state.teifile or "", key="tr_test_tei_file")
+            self.state.tr_open_teifile = st.file_uploader("Choose a TEI-File", key="tr_test_file_upload")
+            if self.state.teifile or self.state.tr_open_teifile:
+                tei = tp.TEIFile(self.state.teifile, config, openfile=self.state.tr_open_teifile)
                 st.subheader("Text Content:")
                 st.markdown(transform_arbitrary_text_to_markdown(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
@@ -302,6 +303,7 @@ class TEIReader:
         tr_show_configs = st.beta_expander("Existing TEI Reader Configs", expanded=True)
         with tr_show_configs:
             st.markdown(self.build_config_tablestring())
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI Reader Config}}")

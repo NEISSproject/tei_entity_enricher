@@ -47,6 +47,10 @@ class _SessionState:
         """requests a rerun."""
         self._state["session"].request_rerun()
 
+    def avoid_rerun(self):
+        """avoids for one time to do a rerun. (e.g. after a Button was pressed)"""
+        self._state["is_rerun"] = True
+
     def sync(self):
         """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
 

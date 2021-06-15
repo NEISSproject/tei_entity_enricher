@@ -6,8 +6,9 @@ from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
+    get_listoutput,
 )
-from tei_entity_enricher.util.components import editable_multi_column_table
+from tei_entity_enricher.util.components import editable_multi_column_table, editable_single_column_table
 import tei_entity_enricher.menu.ner_task_def as ner_task
 
 
@@ -22,6 +23,7 @@ class TEINERPredWriteMap:
         self.tnw_attr_ntd = "ntd"
         self.tnw_attr_template = "template"
         self.tnw_attr_entity_dict = "entity_dict"
+        self.tnw_attr_fixed_tags = "fixed_tags"
         self.tnw_mode_add = "add"
         self.tnw_mode_dupl = "duplicate"
         self.tnw_mode_edit = "edit"
@@ -70,6 +72,11 @@ class TEINERPredWriteMap:
         ):
             val = False
             st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnw_attr_name]}!")
+        if len(mapping[self.tnw_attr_fixed_tags]) > 0:
+            for fix_tag in mapping[self.tnw_attr_fixed_tags]:
+                if " " in fix_tag:
+                    val = False
+                    st.error(f"You defined an fixed tag ({fix_tag}) containing a space character. This is not allowed!")
         # clear empty mapping entries
         entities_to_del = []
         for entity in mapping[self.tnw_attr_entity_dict].keys():
@@ -94,9 +101,12 @@ class TEINERPredWriteMap:
                             f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute value {mapping[self.tnw_attr_entity_dict][entity][1][attribute]} without a corresponding attribute name. This is not allowed."
                         )
                     elif (
-                        attribute is not None and attribute != ""
-                        and (mapping[self.tnw_attr_entity_dict][entity][1][attribute] is None
-                        or mapping[self.tnw_attr_entity_dict][entity][1][attribute] == "")
+                        attribute is not None
+                        and attribute != ""
+                        and (
+                            mapping[self.tnw_attr_entity_dict][entity][1][attribute] is None
+                            or mapping[self.tnw_attr_entity_dict][entity][1][attribute] == ""
+                        )
                     ):
                         val = False
                         st.error(
@@ -153,6 +163,10 @@ class TEINERPredWriteMap:
         self.state.tnw_ntd_name = None
         self.state.tnw_entity_dict = None
 
+    def show_editable_fixed_tags(self, fixed_list, mode, name):
+        st.markdown("Define tags in which no entities should be written.")
+        return editable_single_column_table(entry_list=fixed_list, key="tnw_fixed" + mode + name, head="Fixed Tags")
+
     def show_editable_attr_value_def(self, attr_value_dict, name):
         st.markdown("Define optionally attributes with values which have to be set for this tag!")
         entry_dict = {"Attributes": [], "Values": []}
@@ -196,18 +210,24 @@ class TEINERPredWriteMap:
             if mode == self.tnw_mode_add:
                 tnw_mapping_dict[self.tnw_attr_ntd] = {}
                 tnw_mapping_dict[self.tnw_attr_entity_dict] = {}
+                tnw_mapping_dict[self.tnw_attr_fixed_tags] = []
             if mode in [self.tnw_mode_dupl, self.tnw_mode_add]:
                 self.state.tnw_name = st.text_input(
                     "New TEI NER Prediction Writer Mapping Name:", self.state.tnw_name or ""
                 )
                 if self.state.tnw_name:
                     tnw_mapping_dict[self.tnw_attr_name] = self.state.tnw_name
-
             sel_tnw_ntd_name = st.selectbox(
                 "Corresponding NER task definition",
                 list(self.ntd.defdict.keys()),
                 list(self.ntd.defdict.keys()).index(init_tnw_ntd_name) if init_tnw_ntd_name else 0,
                 key="tnw_ntd_sel" + mode,
+            )
+            init_fixed_list = tnw_mapping_dict[self.tnw_attr_fixed_tags]
+            self.state.tnw_fixed_list = self.show_editable_fixed_tags(
+                self.state.tnw_fixed_list if self.state.tnw_fixed_list else init_fixed_list,
+                mode,
+                tnw_mapping_dict[self.tnw_attr_name] if self.tnw_attr_name in tnw_mapping_dict.keys() else "",
             )
             if self.state.tnw_ntd_name and sel_tnw_ntd_name != self.state.tnw_ntd_name:
                 self.state.tnw_entity_dict = None
@@ -227,6 +247,7 @@ class TEINERPredWriteMap:
 
             if st.button("Save TEI NER Prediction Writer Mapping", key=mode):
                 tnw_mapping_dict[self.tnw_attr_ntd] = self.ntd.defdict[self.state.tnw_ntd_name]
+                tnw_mapping_dict[self.tnw_attr_fixed_tags] = self.state.tnw_fixed_list
                 tnw_mapping_dict[self.tnw_attr_entity_dict] = self.state.tnw_entity_dict.copy()
                 self.validate_and_saving_mapping(tnw_mapping_dict, mode)
 
@@ -274,7 +295,7 @@ class TEINERPredWriteMap:
             options[self.state.tnw_edit_options]()
 
     def build_tnw_tablestring(self):
-        tablestring = "Name | NER Task | Template \n -----|-------|-------"
+        tablestring = "Name | NER Task | Fixed Tags | Template \n -----|-------|-------|-------"
         for mapping in self.mappingslist:
             if mapping[self.tnw_attr_template]:
                 template = "yes"
@@ -285,6 +306,8 @@ class TEINERPredWriteMap:
                 + mapping[self.tnw_attr_name]
                 + " | "
                 + mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_name]
+                + " | "
+                + get_listoutput(mapping[self.tnw_attr_fixed_tags])
                 + " | "
                 + template
             )
@@ -299,8 +322,8 @@ class TEINERPredWriteMap:
             attr_string += " "
         else:
             for attr in entity_detail[1].keys():
-                attr_string += attr + "=" + entity_detail[1][attr] + ","
-            attr_string = attr_string[:-1]
+                attr_string += attr + "=" + entity_detail[1][attr] + ", "
+            attr_string = attr_string[:-2]
         return tag_string + " | " + attr_string
 
     def build_tnw_detail_tablestring(self, tnw):
@@ -332,6 +355,7 @@ class TEINERPredWriteMap:
                     st.warning(
                         f"Warning: The Mapping {cur_sel_mapping[self.tnw_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_name]} is assigned a tag."
                     )
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")

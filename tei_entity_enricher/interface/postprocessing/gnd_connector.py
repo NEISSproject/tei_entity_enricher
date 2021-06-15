@@ -2,6 +2,7 @@ import os
 from typing import Union, List
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
+from tei_entity_enricher.util.exceptions import FileNotFound
 
 
 class GndConnector:
@@ -15,22 +16,32 @@ class GndConnector:
         """establishes connection to api, from which norm data for entities of Deutsche Nationalbibliothek´s database is retrieved,
         loaded data can be passed to an instance of Cache class for further processing or FileWriter class to save it
 
-        gnd_id: gnd id number(s)
-        apiindex: index of selected api in list defined in self.apilist
-        check_connectivity: execute connectivity check in __init__() or not (see connectivitycheck_loop())
-        show_printmessages: show class internal printmessages on runtime or not
-
-        apilist_filepath: path to apilist config file
-        apilist: list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
-        connection_established: data from an api has already been received or not
-        remaining_apis_to_check: list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
+        gnd_id:
+            gnd id number(s)
+        apiindex:
+            index of selected api in list defined in self.apilist
+        check_connectivity:
+            execute connectivity check in __init__() or not (see connectivitycheck_loop())
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        apilist_filepath:
+            path to apilist config file
+        apilist:
+            list of dicts as configuration data set, defining api`s url and aliases for filtering purposes (see get_gnd_data())
+        connection_established:
+            data from an api has already been received or not
+        remaining_apis_to_check:
+            list of apiindex values, which have not been checked yet in connectivitycheck_loop()"""
         print("initializing GndConnector..") if show_printmessages else None
         self.show_printmessages: bool = show_printmessages
         self.gnd_id: Union[str, List[str]] = gnd_id
         self.apiindex: int = apiindex
         self.apilist_filepath: str = os.path.join(local_save_path, "config", "postprocessing", "gnd_apilist.json")
-        self.apilist: Union[dict, None] = FileReader(self.apilist_filepath, "local", True).loadfile_json()
-        if self.apilist is None:
+        try:
+            self.apilist: Union[dict, None] = FileReader(
+                filepath=self.apilist_filepath, origin="local", internal_call=True, show_printmessages=False
+            ).loadfile_json()
+        except FileNotFound:
             print(
                 "GndConnector: could not find gnd_apilist.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
@@ -91,8 +102,13 @@ class GndConnector:
                 },
             ]
             self.apiindex: int = 0
-            makedir_if_necessary(os.path.dirname(self.apilist_filepath))
-            FileWriter(self.apilist, self.apilist_filepath).writefile_json()
+            try:
+                makedir_if_necessary(os.path.dirname(self.apilist_filepath))
+                FileWriter(data=self.apilist, filepath=self.apilist_filepath).writefile_json()
+            except:
+                print(
+                    f"GndConnector __init__(): could not create default gnd_apilist.json in config folder."
+                ) if self.show_printmessages == True else None
         self.check_connectivity: bool = check_connectivity
         self.connection_established: bool = False
         self.remaining_apis_to_check: list = [i for i, _ in enumerate(self.apilist)]
@@ -105,18 +121,18 @@ class GndConnector:
 
     def connectivitycheck_single(self, index_to_test: int, gnd_id_to_test: str = "118540238") -> bool:
         """auxiliary method of connectivitycheck_loop(),
-        checks a single api`s response status code and if response data type is json,
+        checks a single api`s (from self.apilist) response status code and checks if response data type is json,
         preset gnd_id_to_test value refers to Goethe"""
         try:
             result: dict = FileReader(
-                self.apilist[index_to_test]["baseUrl"].format(gnd_id_to_test),
-                "web",
-                True,
-                self.show_printmessages,
-            )
+                filepath=self.apilist[index_to_test]["baseUrl"].format(gnd_id_to_test),
+                origin="web",
+                internal_call=True,
+                show_printmessages=self.show_printmessages,
+            ).loadfile_json()
         except:
             return False
-        if result != None and result != False:
+        if type(result) == dict:
             return True
         return False
 
@@ -192,7 +208,7 @@ class GndConnector:
             return None
 
     def get_gnd_data(self, data_selection: Union[str, List[str], None] = None) -> Union[dict, None]:
-        """method to receive data from api with the possibility to filter results.
+        """method to receive data from api with the possibility to filter results,
         a dict is created, having gnd id numbers as keys and filtered or unfiltered response json data as values"""
         if self.check_connectivity == False:
             print(
@@ -207,7 +223,9 @@ class GndConnector:
         if type(self.gnd_id) == str:
             _temp_data = {}
             try:
-                filereader = FileReader(self.return_complete_url(), "web", True, True)
+                filereader = FileReader(
+                    filepath=self.return_complete_url(), origin="web", internal_call=True, show_printmessages=False
+                )
                 _temp_data = filereader.loadfile_json()
             except:
                 print(
@@ -229,22 +247,21 @@ class GndConnector:
             for index, gnd in enumerate(self.gnd_id):
                 _temp_data = {}
                 try:
-                    filereader = FileReader(self.return_complete_url(index), "web", True, True)
+                    filereader = FileReader(
+                        filepath=self.return_complete_url(index),
+                        origin="web",
+                        internal_call=True,
+                        show_printmessages=True,
+                    )
                     _temp_data = filereader.loadfile_json()
                 except:
                     print(
-                        "GndConnector connectivity error in get_gnd_data() method: could not load resource from api as expected."
-                    ) if self.show_printmessages else None
-                    return None
-                if _temp_data != None and _temp_data != False:
-                    result[gnd] = _temp_data
-                    print(
-                        f"GndConnector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed"
-                    ) if self.show_printmessages else None
-                else:
-                    print(
                         f"GndConnector get_gnd_data() status: for gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} no data could be delivered by api"
                     ) if self.show_printmessages else None
+                result[gnd] = _temp_data
+                print(
+                    f"GndConnector get_gnd_data() status: gnd id {index + 1} ({gnd}) of {len(self.gnd_id)} processed"
+                ) if self.show_printmessages else None
             self.connection_established = True
         # filtering: build new dict with selected values, which should be returned (base mode = all base aliases from apilist definition. list mode = select specific aliases from base set)
         # defining sub method for filtering

@@ -1,6 +1,7 @@
 from typing import Union, List, Tuple, Dict
 from SPARQLWrapper import SPARQLWrapper, JSON
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.exceptions import FileNotFound
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher import __version__
 import math
@@ -19,14 +20,20 @@ class WikidataConnector:
         """establishes connection to wikida web api and wikidata´s sparql endpoint,
         used to get a list of possible entities refering to input name and type strings
 
-        input: contains a list of tuples, which themself consists of a name and a type string
-        check_connectivity: execute connectivity check in __init__() or not (see connectivity_check())
-        wikidata_web_api_language: language setting of wikidata web api
-        wikidata_web_api_limit: maximum amount of returned search hits in wikidata web api query results
-        show_printmessages: show class internal printmessages on runtime or not
-
-        self.wikidata_web_api_baseUrl: baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
-        connection_established: data from an api has already been received or not"""
+        input:
+            contains a list of tuples, which themself consists of a name and a type string
+        check_connectivity:
+            execute connectivity check in __init__() or not (see connectivity_check())
+        wikidata_web_api_language:
+            language setting of wikidata web api
+        wikidata_web_api_limit:
+            maximum amount of returned search hits in wikidata web api query results
+        show_printmessages:
+            show class internal printmessages on runtime or not
+        self.wikidata_web_api_baseUrl:
+            baseUrl of wikidata web api, contains search string, language and limit of resulting hits placeholder
+        connection_established:
+            data from an api has already been received or not"""
         print("initializing WikidataConnector..") if show_printmessages else None
         self.input: Union[List[Tuple[str, str]], None] = input
         self.check_connectivity: bool = check_connectivity
@@ -39,10 +46,14 @@ class WikidataConnector:
         self.wikidata_sparql_queries_filepath: str = os.path.join(
             local_save_path, "config", "postprocessing", "sparql_queries.json"
         )
-        self.wikidata_sparql_queries: Union[dict, None] = FileReader(
-            self.wikidata_sparql_queries_filepath, "local", True
-        ).loadfile_json()
-        if self.wikidata_sparql_queries is None:
+        try:
+            self.wikidata_sparql_queries: Union[dict, None] = FileReader(
+                filepath=self.wikidata_sparql_queries_filepath,
+                origin="local",
+                internal_call=True,
+                show_printmessages=False,
+            ).loadfile_json()
+        except FileNotFound:
             print(
                 "WikidataConnector: could not find sparql_queries.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
@@ -97,8 +108,17 @@ class WikidataConnector:
                     """,
                 ],
             }
-            makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
-            FileWriter(self.wikidata_sparql_queries, self.wikidata_sparql_queries_filepath).writefile_json()
+            try:
+                makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
+                FileWriter(
+                    data=self.wikidata_sparql_queries,
+                    filepath=self.wikidata_sparql_queries_filepath,
+                    show_printmessages=False,
+                ).writefile_json()
+            except:
+                print(
+                    f"WikidataConnector __init__(): could not create default sparql_queries.json in config folder."
+                ) if self.show_printmessages == True else None
         self.connection_established: bool = False
         if self.check_connectivity == True:
             self.connectivity_check()
@@ -108,31 +128,29 @@ class WikidataConnector:
             ) if self.show_printmessages else None
 
     def connectivity_check(self) -> int:
-        """checking wikidata web api (preset query string: 'Berlin', hit limit: '1') and wikidata sparql endpoint (preset query input: ('Q64 (Berlin)', 'place')).
+        """checking wikidata web api (preset query string: 'Berlin', hit limit: '1')
+        and wikidata sparql endpoint (preset query input: ('Q64 (Berlin)', 'place')),
         returns 0 or -1 for unittest purposes"""
 
         def check_wikidata_web_api() -> bool:
             try:
                 result = FileReader(
-                    self.wikidata_web_api_baseUrl.format(
+                    filepath=self.wikidata_web_api_baseUrl.format(
                         "Berlin",
                         self.wikidata_web_api_language,
                         "1",
                     ),
-                    "web",
-                    True,
-                    self.show_printmessages,
-                )
+                    origin="web",
+                    internal_call=True,
+                    show_printmessages=self.show_printmessages,
+                ).loadfile_json()
             except:
                 print(
-                    "WikidataConnector connectivity_check() error: internal failure in check_wikidata_web_api() trying to initiate FileReader instance"
+                    "WikidataConnector connectivity_check() error: no connection to wikidata web api"
                 ) if self.show_printmessages else None
                 return False
-            if result != None and result != False:
+            if type(result) == dict:
                 return True
-            print(
-                "WikidataConnector connectivity_check() error: no connection to wikidata web api"
-            ) if self.show_printmessages else None
             return False
 
         def check_wikidata_sparql_endpoint() -> bool:
@@ -167,14 +185,17 @@ class WikidataConnector:
     ) -> Union[Dict[str, list], bool]:
         """sends a entity query to wikidata web api using input strings of self.input
         and returns a dict with input strings as keys and a list as values,
-        which consists of the number of search hits and the returned data object,
-        filter_for_precise_spelling variable determines wheather only exact matches
-        between the search string and the label value in the search list returned by
-        api are returned (filtering is executed only if there are more than 5 search hits,
-        otherwise it is not executed although filter_for_precise_spelling is True),
-        filter_for_correct_type variable determines wheather the entities returned by api
-        will be checked semantically with sparql queries in correspondance with the delivered
-        type strings in self.input; only entities of a correct type will be returned"""
+        which consists of the number of search hits and the returned data object
+
+        filter_for_precise_spelling:
+            variable determines wheather only exact matches
+            between the search string and the label value in the search list returned by
+            api are returned (filtering is executed only if there are more than 5 search hits,
+            otherwise it is not executed although filter_for_precise_spelling is True),
+        filter_for_correct_type:
+            variable determines wheather the entities returned by api
+            will be checked semantically with sparql queries in correspondance with the delivered
+            type strings in self.input; only entities of a correct type will be returned"""
         if self.input == None:
             print(
                 "WikidataConnector get_wikidata_search_results() internal error: WikidataConnector has no input data."
@@ -193,16 +214,20 @@ class WikidataConnector:
         result_dict = {}
         for string_tuple in self.input:
             filereader = FileReader(
-                self.wikidata_web_api_baseUrl.format(
+                filepath=self.wikidata_web_api_baseUrl.format(
                     string_tuple[0],
                     self.wikidata_web_api_language,
                     self.wikidata_web_api_limit,
                 ),
-                "web",
-                True,
-                self.show_printmessages,
+                origin="web",
+                internal_call=True,
+                show_printmessages=self.show_printmessages,
             )
-            filereader_result = filereader.loadfile_json()
+            try:
+                filereader_result = filereader.loadfile_json()
+            except:
+                print("WikidataConnector get_wikidata_search_results() error: internal failure")
+                return False
             if all(x == False for x in [filter_for_precise_spelling, filter_for_correct_type]):
                 print(f"no filtering in {string_tuple} result") if self.show_printmessages == True else None
             if filter_for_precise_spelling == True:
@@ -253,12 +278,10 @@ class WikidataConnector:
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
         the value of the agent string can be choosen freely
 
-        this method checks only one entity at once and has to be used in an iteration
-
-        """
+        this method checks only one entity at once and has to be used in an iteration"""
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
-        sparql = SPARQLWrapper(endpoint_url, agent=user_agent)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
         sparql.setQuery(self.wikidata_sparql_queries.get(type)[0] % entity_id)
         sparql.setReturnFormat(JSON)
         result = sparql.query().convert()
