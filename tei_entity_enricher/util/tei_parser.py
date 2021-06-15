@@ -402,5 +402,6 @@ if __name__ == "__main__":
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
     brief = TEIFile("../uwe_johnson_data/data_040520/briefe/0671_101120.xml",tr_config=tr)
-    print(brief.get_text())
+    #print(brief.get_text())
+    print( str(BeautifulSoup("<text>Thema beim<marked_id> Teilverbandstreffen V&#x2008;/&#x2008;71 vermeiden.</text>", "xml").find("text"))[6:-7])
     #print(brief.get_notes())

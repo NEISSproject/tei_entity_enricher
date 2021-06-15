@@ -4,7 +4,7 @@ import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
 from tei_entity_enricher.util.components import editable_multi_column_table
-from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown, transform_xml_to_markdown
+from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown, transform_xml_to_markdown, transform_arbitrary_text_to_latex
 #from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 class TEIManPP:
@@ -56,7 +56,7 @@ class TEIManPP:
         return returndict
 
 
-    def tei_edit_specific_entity(self,tag_entry):
+    def tei_edit_specific_entity(self,tag_entry,tr):
         col1, col2 = st.beta_columns(2)
         with col1:
             tag_entry['name']=st.text_input("Editable Tag Name",tag_entry['name'],key='tmp_edit_ent_name',help="Here you can change the name of the tag.")
@@ -64,9 +64,11 @@ class TEIManPP:
         with col2:
             st.markdown("### Textcontent of the tag:")
             if "pure_tagcontent" in tag_entry.keys():
-                st.markdown(transform_arbitrary_text_to_markdown(tag_entry["pure_tagcontent"]))
+                st.markdown(transform_arbitrary_text_to_markdown(tei_writer.parse_xml_to_text(tag_entry["pure_tagcontent"])))
             st.markdown("### Full tag in xml:")
             st.markdown(transform_xml_to_markdown(tei_writer.get_full_xml_of_tree_content(tag_entry)))
+            st.markdown("### Surrounding text in the TEI File:")
+            st.write(self.get_surrounded_text(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1]["tag_id"],250,tr))
         return tag_entry
 
     def tei_edit_environment(self):
@@ -91,9 +93,11 @@ class TEIManPP:
         if st.button('Search Matching Entities in TEI-File:'):
             if self.state.tmp_teifile or self.state.tmp_open_teifile:
                 tei = tei_writer.TEI_Writer(self.state.tmp_teifile, openfile=self.state.tmp_open_teifile, tr=selected_tr)
+                self.state.tmp_current_search_text_tree=tei.get_text_tree()
                 self.state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
                 self.state.tmp_current_loop_element=1
                 if len(self.state.tmp_matching_tag_list)>0:
+
                     self.enrich_search_list_with_pure_tagcontent(selected_tr)
                     if self.state.pp_el_object:
                         self.enrich_search_list_with_link_suggestions()
@@ -115,8 +119,24 @@ class TEIManPP:
                 key="tmp_loop_slider",
             )
             self.state.tmp_current_loop_element=st.number_input("Goto Search Result with Index:",1,len(self.state.tmp_matching_tag_list),self.state.tmp_current_loop_element)
-            self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1]=self.tei_edit_specific_entity(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
-            st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
+            self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1]=self.tei_edit_specific_entity(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1],selected_tr)
+
+            #st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
+
+    def get_surrounded_text(self,id,sliding_window,tr):
+        if "pure_tagcontent" in self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1].keys():
+            marked_text=tei_writer.parse_xml_to_text(tei_writer.get_pure_text_of_tree_element(self.state.tmp_current_search_text_tree,tr,id_to_mark=id))
+            splitted_text = marked_text.split("<marked_id>")
+            before_text=splitted_text[0]
+            splitted_second_text=splitted_text[1].split("</marked_id>")
+            entity_text=splitted_second_text[0]
+            after_text=splitted_second_text[1]
+            if len(before_text)>=sliding_window:
+                before_text='...'+before_text[-sliding_window:]
+            if len(after_text)>=sliding_window:
+                after_text=after_text[:sliding_window]+'...'
+            return before_text+"$\\text{\\textcolor{red}{"+entity_text+"}}$"+after_text
+        return ""
 
     def define_search_criterion(self):
         col1, col2 = st.beta_columns(2)
