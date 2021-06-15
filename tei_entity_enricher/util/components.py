@@ -1,7 +1,8 @@
+import os
+
 import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid
-import numpy as np
 
 
 def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1):
@@ -64,11 +65,31 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
                     needed = True
             if needed:
                 for key in answer_dict:
-                    if key=="nan":
+                    if key == "nan":
                         returndict[""].append(answer_dict[key][i])
-                    elif answer_dict[key][i]=="nan":
+                    elif answer_dict[key][i] == "nan":
                         returndict[key].append("")
                     else:
                         returndict[key].append(answer_dict[key][i])
         return returndict
     return entry_dict
+
+
+def file_selector_expander(folder_path=".", target="Select file..."):
+    with st.beta_expander(target):
+        selected_file = file_selector(folder_path)
+    return selected_file
+
+
+def file_selector(folder_path=".", sub_level=0, max_level=10):
+    filenames = [
+        f for f in os.listdir(folder_path) if not f[0] == "."
+    ]  # get file names from dir excluding hidden files
+    a, b = st.beta_columns([sub_level + 1, 2 * max_level])
+    selected_filename = b.selectbox(f"{folder_path}", filenames)
+    abs_path = os.path.join(folder_path, selected_filename)
+    if os.path.isdir(abs_path):
+        return file_selector(
+            abs_path, sub_level=sub_level + 1 if sub_level < max_level else sub_level, max_level=max_level
+        )
+    return os.path.join(folder_path, selected_filename)
