@@ -64,6 +64,11 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
                     needed = True
             if needed:
                 for key in answer_dict:
-                    returndict[key].append(answer_dict[key][i])
+                    if key=="nan":
+                        returndict[""].append(answer_dict[key][i])
+                    elif answer_dict[key][i]=="nan":
+                        returndict[key].append("")
+                    else:
+                        returndict[key].append(answer_dict[key][i])
         return returndict
     return entry_dict
