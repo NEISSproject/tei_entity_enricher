@@ -6,6 +6,7 @@ import shutil
 import streamlit as st
 
 from tei_entity_enricher.util import config_io
+from tei_entity_enricher.util.components import file_selector, file_selector_expander
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
@@ -31,23 +32,49 @@ class NERTrainer(object):
     ):
         self._workdir_path = os.getcwd()
         self.state = state
+        self.training_state = None
         self.trainer_params_json = None
         if self.workdir() != 0:
             return
         with remember_cwd():
             os.chdir(self._workdir_path)
-            logger.info("load trainer params")
-            if self.load_trainer_params() != 0:
-                st.error("Failed to load trainer_params.json")
-                return
-            if self.data_configuration() != 0:
-                st.error("Failed to run data_configuration")
-                return
+            with st.beta_expander("Train configuration"):
+                logger.info("load trainer params")
+                if self.load_trainer_params() != 0:
+                    st.error("Failed to load trainer_params.json")
+                    return
+                if self.data_configuration() != 0:
+                    st.error("Failed to run data_configuration")
+                    return
 
             train_manager = get_manager()
             if st.button("Set trainer params"):
                 train_manager.set_params(self.trainer_params_json)
                 logger.info("trainer params set!")
+            st.text("Train Manager")
+            b1, b2, b3, b4 = st.beta_columns(4)
+            if b1.button("Start"):
+                train_manager.start()
+            if b2.button("Stop"):
+                train_manager.stop()
+            if b3.button("Clear"):
+                train_manager.clear_process()
+            if b4.button("refresh"):
+                logger.info("refresh streamlit")
+
+            if train_manager.has_process():
+                with st.beta_expander("Epoch progress", expanded=True):
+                    progress_str = train_manager.read_progress()
+                    logger.info(progress_str)
+                    st.text(progress_str)
+            if train_manager.has_process():
+                with st.beta_expander("Train log", expanded=True):
+                    log_str = train_manager.log_content()
+                    # logger.info(log_str)
+                    st.text(log_str)
+            print(os.getcwd())
+            selected_file = file_selector_expander(folder_path=os.getcwd())
+            st.text(selected_file)
 
     def load_trainer_params(self):
         if not os.path.isfile("trainer_params.json"):
