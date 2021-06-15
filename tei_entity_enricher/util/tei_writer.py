@@ -496,8 +496,18 @@ class TEI_Writer:
         self.sort_begins_and_ends_in_text_tree()
 
     def _is_tag_matching_tag_list(self, tag_content, tag_list):
+        cur_attr_dict=extract_attributes_and_values(tag_content["name"],tag_content["tagbegin"])
         for tag_config in tag_list:
-            if tag_config[0] == tag_content["name"]:
+            cur_tag_config_matches=True
+            if tag_config[0] != tag_content["name"] and len(tag_config[0])>0:
+                cur_tag_config_matches=False
+            for attr in tag_config[1]:
+                if len(attr)>0 and attr not in cur_attr_dict.keys():
+                    cur_tag_config_matches=False
+                elif len(attr)>0 and attr in cur_attr_dict.keys():
+                    if len(tag_config[1][attr])>0 and cur_attr_dict[attr]!=tag_config[1][attr]:
+                        cur_tag_config_matches=False
+            if cur_tag_config_matches:
                 return True
         return False
 
@@ -520,6 +530,15 @@ class TEI_Writer:
                         matching_tag_list, contentlist[contentindex]["tagcontent"], tag_list
                     )
         return contentlist
+
+def extract_attributes_and_values(tag,tagbegin):
+    attr_dict={}
+    attr_list=tagbegin[len(tag)+2:-1].split(" ")
+    for element in attr_list:
+        if "=" in element:
+            attr_value=element.split("=")
+            attr_dict[attr_value[0]]=attr_value[1][1:-1]
+    return attr_dict
 
 
 def write_predicted_text_list_back_to_TEI(directory, origdirectory, outdirectory, tr, tnw):
@@ -611,5 +630,7 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    # tei_file=TEI_Writer('test/0045_060044.xml',tr=tr)
-    # run_test("test",tr) #test/0809_101259.xml
+    tei_file=TEI_Writer('test/0809_101259.xml',tr=tr)
+    mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
+    print(mlist[1],mlist[5])
+    # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml

@@ -4,7 +4,7 @@ import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
 from tei_entity_enricher.util.components import editable_multi_column_table
-from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown
+from tei_entity_enricher.util.helper import transform_arbitrary_text_to_markdown, transform_xml_to_markdown
 #from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 class TEIManPP:
@@ -17,15 +17,20 @@ class TEIManPP:
             self.tnw = tnw_map.TEINERPredWriteMap(state, show_menu=False)
             self.show()
 
-    def show_editable_attr_value_def(self, tagname, tagbegin, name):
+    def show_editable_attr_value_def(self, tagname, tagbegin):
         st.markdown("Editable Attributes and Values for current search result!")
         entry_dict = {"Attributes": [], "Values": []}
-        attr_list=tagbegin[len(tagname)+2:-1].split(" ")
+        if tagbegin.endswith("/>"):
+            end=-2
+        else:
+            end=-1
+        attr_list=tagbegin[len(tagname)+2:end].split(" ")
         for element in attr_list:
-            attr_value=element.split("=")
-            entry_dict["Attributes"].append(attr_value[0])
-            entry_dict["Values"].append(attr_value[1][1:-1])
-        answer = editable_multi_column_table(entry_dict, name, openentrys=20)
+            if "=" in element:
+                attr_value=element.split("=")
+                entry_dict["Attributes"].append(attr_value[0])
+                entry_dict["Values"].append(attr_value[1][1:-1])
+        answer = editable_multi_column_table(entry_dict, None, openentrys=20)
         new_tagbegin="<"+tagname
         attrdict={}
         for i in range(len(answer["Attributes"])):
@@ -36,17 +41,32 @@ class TEIManPP:
         new_tagbegin=new_tagbegin+">"
         return new_tagbegin
 
+    def show_sd_search_attr_value_def(self, attr_value_dict, name):
+        st.markdown("Define optionally attributes with values which have to be mandatory for the search!")
+        entry_dict = {"Attributes": [], "Values": []}
+        for key in attr_value_dict.keys():
+            entry_dict["Attributes"].append(key)
+            entry_dict["Values"].append(attr_value_dict[key])
+        answer = editable_multi_column_table(entry_dict, "tnw_attr_value" + name, openentrys=20)
+        returndict = {}
+        for i in range(len(answer["Attributes"])):
+            if answer["Attributes"][i] in returndict.keys():
+                st.warning(f'Multiple definitions of the attribute {answer["Attributes"][i]} are not supported.')
+            returndict[answer["Attributes"][i]] = answer["Values"][i]
+        return returndict
+
 
     def tei_edit_specific_entity(self,tag_entry):
         col1, col2 = st.beta_columns(2)
         with col1:
             tag_entry['name']=st.text_input("Editable Tag Name",tag_entry['name'],key='tmp_edit_ent_name',help="Here you can change the name of the tag.")
-            tag_entry['tagbegin'] = self.show_editable_attr_value_def(tag_entry['name'],tag_entry['tagbegin'],'tmp_edit_search_attr_dict')
+            tag_entry['tagbegin'] = self.show_editable_attr_value_def(tag_entry['name'],tag_entry['tagbegin'])
         with col2:
             st.markdown("### Textcontent of the tag:")
-            st.markdown(transform_arbitrary_text_to_markdown(tag_entry["pure_tagcontent"]))
+            if "pure_tagcontent" in tag_entry.keys():
+                st.markdown(transform_arbitrary_text_to_markdown(tag_entry["pure_tagcontent"]))
             st.markdown("### Full tag in xml:")
-            st.markdown(transform_arbitrary_text_to_markdown(tei_writer.get_full_xml_of_tree_content(tag_entry)))
+            st.markdown(transform_xml_to_markdown(tei_writer.get_full_xml_of_tree_content(tag_entry)))
         return tag_entry
 
     def tei_edit_environment(self):
@@ -129,11 +149,20 @@ class TEIManPP:
                     key="tmp_sel_tnm",
                 )
                 tag_list = tei_writer.build_tag_list_from_entity_dict(self.tnm.mappingdict[self.state.tmp_selected_tnm_name]["entity_dict"],"tnm")
+            else:
+                self.state.tmp_sd_search_tag = st.text_input(
+                        "Define a Tag as search criterion",
+                        self.state.tmp_sd_search_tag or "",
+                        key="tmp_sd_search_tag",help="Define a Tag as a search criterion!"
+                    )
+                self.state.tmp_sd_search_tag_attr_dict = self.show_sd_search_attr_value_def(self.state.tmp_sd_search_tag_attr_dict if self.state.tmp_sd_search_tag_attr_dict else {}, "tmp_sd_search_tag_attr_dict")
+                tag_list=[[self.state.tmp_sd_search_tag,self.state.tmp_sd_search_tag_attr_dict]]
         return tag_list
 
     def enrich_search_list_with_pure_tagcontent(self,tr):
         for tag in self.state.tmp_matching_tag_list:
-            tag["pure_tagcontent"]=tei_writer.get_pure_text_of_tree_element(tag["tagcontent"],tr)
+            if "tagcontent" in tag.keys():
+                tag["pure_tagcontent"]=tei_writer.get_pure_text_of_tree_element(tag["tagcontent"],tr)
 
 
     def enrich_search_list_with_link_suggestions(self):
