@@ -1,9 +1,13 @@
 from typing import Union, List, Tuple
 from streamlit.uploaded_file_manager import UploadedFile
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
+from tei_entity_enricher.interface.postprocessing.wikidata_connector import WikidataConnector
+from tei_entity_enricher.interface.postprocessing.gnd_connector import GndConnector
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.exceptions import MissingDefinition, FileNotFound, BadFormat
 import os
+from tei_entity_enricher import __version__
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 class EntityLibrary:
@@ -60,7 +64,16 @@ class EntityLibrary:
                 try:
                     makedir_if_necessary(os.path.dirname(self.data_file))
                     FileWriter(
-                        data=[{"name": "", "furtherNames": [], "type": "", "wikidata_id": "", "gnd_id": ""}],
+                        data=[
+                            {
+                                "name": "",
+                                "furtherNames": [],
+                                "type": "",
+                                "description": "",
+                                "wikidata_id": "",
+                                "gnd_id": "",
+                            }
+                        ],
                         filepath=self.data_file,
                         show_printmessages=self.show_printmessages,
                     ).writefile_json()
@@ -148,7 +161,6 @@ class EntityLibrary:
         result = self.add_entities(result)
         return result
 
-    # HIER WEITER: falsche Zählung der tatsächlich hinzugefügten Entities fixen
     def add_entities(
         self,
         data: List[dict] = None,
@@ -257,3 +269,91 @@ class EntityLibrary:
             ) if self.show_printmessages == True else None
             result = None
         return result
+
+    def add_missing_id_numbers(self, add_first_suggested_wikidata_entity_if_no_id_was_given: bool = False) -> List[str]:
+        return_messages = []
+        for entity in self.data:
+            entity_unchanged = entity.copy()
+            if (entity["wikidata_id"] == "") and (entity["gnd_id"] == ""):
+                if add_first_suggested_wikidata_entity_if_no_id_was_given == False:
+                    continue
+                else:
+                    input_tuple = (entity["name"], entity["type"])
+                    wikidata_connector = WikidataConnector([input_tuple])
+                    wikidata_connector_result = wikidata_connector.get_wikidata_search_results()
+                    if wikidata_connector_result[input_tuple][0] > 0:
+                        wikidata_id_of_first_suggested_entity = wikidata_connector_result[input_tuple][1]["search"][0][
+                            "id"
+                        ]
+                        result_of_gnd_id_retrieval_attempt = self.get_gnd_id_of_wikidata_entity(
+                            wikidata_id_of_first_suggested_entity
+                        )
+                        gnd_id_of_first_suggested_entity = (
+                            result_of_gnd_id_retrieval_attempt[0]["o"]["value"]
+                            if len(result_of_gnd_id_retrieval_attempt) > 0
+                            else ""
+                        )
+                        # update self.data
+                        entity["wikidata_id"] = wikidata_id_of_first_suggested_entity
+                        entity["gnd_id"] = gnd_id_of_first_suggested_entity
+                        return_messages.append(f"entity {entity_unchanged} changed to {entity}")
+                    else:
+                        return_messages.append(f"no id data could be retrieved for {entity_unchanged}")
+                    continue
+            if (entity["wikidata_id"] != "") and (entity["gnd_id"] == ""):
+                result_of_gnd_id_retrieval_attempt = self.get_gnd_id_of_wikidata_entity(entity["wikidata_id"])
+                gnd_id_of_first_suggested_entity = (
+                    result_of_gnd_id_retrieval_attempt[0]["o"]["value"]
+                    if len(result_of_gnd_id_retrieval_attempt) > 0
+                    else ""
+                )
+                # update self.data
+                entity["gnd_id"] = gnd_id_of_first_suggested_entity
+                if gnd_id_of_first_suggested_entity != "":
+                    return_messages.append(f"entity {entity_unchanged} changed to {entity}")
+                else:
+                    return_messages.append(f"no id data could be retrieved for {entity_unchanged}")
+                continue
+            if (entity["wikidata_id"] == "") and (entity["gnd_id"] != ""):
+                gnd_connector = GndConnector(entity["gnd_id"])
+                gnd_data = gnd_connector.get_gnd_data(["sameAs"])
+                filter_list_result = list(
+                    filter(
+                        lambda item: "http://www.wikidata.org/entity/" in item["@id"],
+                        gnd_data[entity["gnd_id"]]["sameAs"],
+                    )
+                )
+                if len(filter_list_result) == 1:
+                    from_gnd_api_retrieved_wikidata_id = filter_list_result[0]["@id"][31:]
+                    entity["wikidata_id"] = from_gnd_api_retrieved_wikidata_id
+                    return_messages.append(f"entity {entity_unchanged} changed to {entity}")
+                else:
+                    return_messages.append(f"no id data could be retrieved for {entity_unchanged}")
+                continue
+            if (entity["wikidata_id"] != "") and (entity["gnd_id"] != ""):
+                return_messages.append(f"no id data had to be retrieved for {entity_unchanged}")
+                continue
+        return return_messages
+
+    def get_gnd_id_of_wikidata_entity(self, wikidata_id: str):
+        """method to get gnd id number for a given wikidata id by sparql query,
+        p227 = gnd id"""
+        query = """
+            PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+            PREFIX wd: <http://www.wikidata.org/entity/>
+
+            SELECT ?o
+            WHERE
+            {
+                wd:%s wdt:P227 ?o .
+            }
+            """
+        endpoint_url = "https://query.wikidata.org/sparql"
+        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
+        sparql.setQuery(query % wikidata_id)
+        sparql.setReturnFormat(JSON)
+        result = sparql.query().convert()
+        return result["results"]["bindings"]
+        # if there is no result, bindings is an empty list
+        # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]

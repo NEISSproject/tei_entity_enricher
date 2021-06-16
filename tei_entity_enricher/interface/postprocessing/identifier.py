@@ -27,7 +27,7 @@ class Identifier:
 
     def check_entity_library_by_names_and_type(
         self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
-    ) -> Dict[Tuple[str, str], List[dict]]:
+    ) -> List[dict]:
         """checks name, furtherNames and type values of loaded_library
         for input_tuple and returns a list of entity dicts as value;
         a found entity must be of the correct type and has to have the name
@@ -37,7 +37,8 @@ class Identifier:
         result_list = list(
             filter(
                 lambda item: (item["type"] == searchstring_type)
-                and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"]))
+                and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"])),
+                loaded_library.data,
             )
         )
         return result_list
@@ -49,26 +50,23 @@ class Identifier:
         and returns a dict with name values as keys and entity dicts as values"""
         pass
 
-    def get_gnd_id_of_wikidata_entity(self, wikidata_id: str):
-        query = """
-            PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-            PREFIX wd: <http://www.wikidata.org/entity/>
+    def check_wikidata_result_has_data(self, wikidata_result: Dict[Tuple[str, str], list]) -> bool:
+        """checks length of dict and integer in dict[key] list on index 0,
+        which shows the length of the list in dict[key][1] (the amount of entity dicts in dict[key][1])"""
+        result = False
+        if len(wikidata_result) > 0:
+            for key in wikidata_result:
+                if wikidata_result[key][0] > 0:
+                    result = True
+        return result
 
-            SELECT ?o
-            WHERE
-            {
-                wd:%s wdt:P227 ?o .
-            }
-            """
-        endpoint_url = "https://query.wikidata.org/sparql"
-        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
-        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
-        sparql.setQuery(query % wikidata_id)
-        sparql.setReturnFormat(JSON)
-        result = sparql.query().convert()
-        return result["results"]["bindings"]
-        # if there is no result, the bindings is an empty list
-        # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
+    def check_entity_library_result_has_data(self, entity_library_result: Dict[Tuple[str, str], List[dict]]) -> bool:
+        result = False
+        if len(entity_library_result) > 0:
+            for key in entity_library_result:
+                if len(entity_library_result[key]) > 0:
+                    result = True
+        return result
 
     # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgeben
 
@@ -80,22 +78,23 @@ class Identifier:
         wikidata_web_api_language: str = "de",
         wikidata_web_api_limit: str = "50",
         check_connectivity_to_wikidata: bool = False,
-    ) -> Dict[Tuple[str, str], List[dict]]:
+    ) -> Union[Dict[Tuple[str, str], List[dict]], dict]:
         """delivers entity suggestions to tuples in self.input,
-        returns dict with tuples as keys and entity list as values,
+        returns dict with tuples as keys and entity list (list of dicts, whoses structure corresponds
+        to entity library entity structure) as values or returns an empty dict, if no suggestions could be made,
         uses entity library query and wikidata queries,
         if no reference to a active library instance is given in query_entity_library,
         no entity library query is executed
 
         {
             ('Berlin', 'place'): [
-                {"name": "Berlin", "furtherNames": [], "type": "place", "wikidata_id": "Q64", "gnd_id": ""},
+                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
                 {}
             ]
         }
 
         {
-            'Berlin': [
+            ('Berlin', 'place'): [
                 4,
                 {
                     "searchinfo": {},
@@ -111,17 +110,20 @@ class Identifier:
 
         {
             ('Berlin', 'place'): [
-                {"name": "Berlin", "furtherNames": [], "type": "place", "wikidata_id": "Q64", "gnd_id": ""},
+                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
                 {}
             ]
         }
 
         """
+        # retrieve data
+        query_entity_library_result = {}
+        entity_library_has_data = None
         if query_entity_library is not None:
-            query_entity_library_result = {}
             for tuple in self.input:
                 tuple_result_list = self.check_entity_library_by_names_and_type(tuple, query_entity_library)
                 query_entity_library_result[tuple] = tuple_result_list
+            entity_library_has_data = self.check_entity_library_result_has_data(query_entity_library_result)
         query_wikidata_result = {}
         query_wikidata_result = self.wikidata_query(
             wikidata_filter_for_precise_spelling,
@@ -130,31 +132,76 @@ class Identifier:
             wikidata_web_api_limit,
             check_connectivity_to_wikidata,
         )
+        wikidata_result_has_data = self.check_wikidata_result_has_data(query_wikidata_result)
+        # create output
         output_dict = {}
         if query_entity_library is not None:
-            # wenn beides, entity library und wikidata check, durchgeführt wurden
-            if len(query_entity_library_result) > 0:
-                if len(query_wikidata_result) > 0:
+            # wenn beides, entity library check und wikidata check, durchgeführt wurden
+            if entity_library_has_data:
+                if wikidata_result_has_data:
                     # wenn beide, entity library check und wikidata check, jeweils mindestens eine entität geliefert haben
+                    # HIER WEITER
+                    # todo: rendundanzcheck: prüfen, ob die wikidata-suche entitäten gefunden hat, die auch von der entity library-suche ausgegeben werden
                     pass
                 else:
                     # wenn nur entity library check mindestens eine entität geliefert hat
-                    pass
+                    output_dict = query_entity_library_result
             else:
-                if len(query_wikidata_result) > 0:
+                if wikidata_result_has_data:
                     # wenn nur wikidata check mindestens eine entität geliefert hat
-                    pass
+                    _temp_el = EntityLibrary(show_printmessages=False)
+                    for key in query_wikidata_result:
+                        entity_list_in_query_wikidata_result = []
+                        for subkey in query_wikidata_result[key][1]["search"]:
+                            _gnd_retrieve_attempt_result = _temp_el.get_gnd_id_of_wikidata_entity(subkey["id"])
+                            _gnd_id_to_add = (
+                                _gnd_retrieve_attempt_result[0]["o"]["value"]
+                                if len(_gnd_retrieve_attempt_result) > 0
+                                else ""
+                            )
+                            entity_list_in_query_wikidata_result.append(
+                                {
+                                    "name": subkey["label"],
+                                    "furtherNames": [],
+                                    "type": key[1],
+                                    "description": subkey["description"],
+                                    "wikidata_id": subkey["id"],
+                                    "gnd_id": _gnd_id_to_add,
+                                }
+                            )
+                        output_dict[key] = entity_list_in_query_wikidata_result
                 else:
                     # wenn keine, weder entity library noch wikidata, entitäten geliefert haben
-                    pass
+                    output_dict = {}
         else:
             # wenn nur der wikidata check durchgeführt wurde
-            if len(query_wikidata_result) > 0:
+            if wikidata_result_has_data:
                 # wenn der wikidata check mindestens eine entität geliefert hat
-                pass
+                _temp_el = EntityLibrary(show_printmessages=False)
+                for key in query_wikidata_result:
+                    entity_list_in_query_wikidata_result = []
+                    for subkey in query_wikidata_result[key][1]["search"]:
+                        _gnd_retrieve_attempt_result = _temp_el.get_gnd_id_of_wikidata_entity(subkey["id"])
+                        _gnd_id_to_add = (
+                            _gnd_retrieve_attempt_result[0]["o"]["value"]
+                            if len(_gnd_retrieve_attempt_result) > 0
+                            else ""
+                        )
+                        entity_list_in_query_wikidata_result.append(
+                            {
+                                "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
+                                "furtherNames": [],
+                                "type": key[1],
+                                "description": subkey.get("description", "No description delivered"),
+                                "wikidata_id": subkey.get("id", ""),
+                                "gnd_id": _gnd_id_to_add,
+                            }
+                        )
+                    output_dict[key] = entity_list_in_query_wikidata_result
             else:
                 # wenn der wikidata check keine entitäten geliefert hat
-                pass
+                output_dict = {}
+        return output_dict
 
         """
         HIER WEITER
@@ -168,7 +215,7 @@ class Identifier:
         wikidata_web_api_language: str = "de",
         wikidata_web_api_limit: str = "50",
         check_connectivity: bool = False,
-    ) -> Union[Dict[str, list], bool]:
+    ) -> Union[Dict[Tuple[str, str], list], bool]:
         """starts wikidata query and saves results in self.current_result_data
 
         filter_for_precise_spelling:

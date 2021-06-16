@@ -132,7 +132,7 @@ class FileReader:
         if self.file is not None:
             if transform_for_entity_library_import == True:
                 result = []
-                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt
+                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt (falls file eine UploadedFile ist)
                 csv_reader = csv.DictReader(self.file)
                 for row in csv_reader:
                     new_row = {}
@@ -338,14 +338,14 @@ class Cache:
                 for entity in self.data:
                     if type(entity) != dict:
                         return False
-                    compulsory_keys = ["name", "type", "wikidata_id", "gnd_id", "furtherNames"]
+                    compulsory_keys = ["name", "type", "description", "wikidata_id", "gnd_id", "furtherNames"]
                     for key in list(entity.keys()):
                         if key not in compulsory_keys:
                             return False
                     for key in compulsory_keys:
                         if key not in list(entity.keys()):
                             return False
-                    if type(entity[compulsory_keys[4]]) != list:
+                    if type(entity[compulsory_keys[5]]) != list:
                         return False
                     for key in compulsory_keys[:-1]:
                         if type(entity[key]) != str:
