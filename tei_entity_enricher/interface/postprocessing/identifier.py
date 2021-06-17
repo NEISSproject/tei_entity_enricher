@@ -1,10 +1,10 @@
-from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from typing import Union, List, Tuple, Dict
+from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from tei_entity_enricher.interface.postprocessing.wikidata_connector import (
     WikidataConnector,
 )
+from tei_entity_enricher.interface.postprocessing.io import Cache
 from tei_entity_enricher import __version__
-from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 class Identifier:
@@ -19,11 +19,14 @@ class Identifier:
             contains a list of tuples, which themself consists of a name and a type string
         show_printmessages:
             show class internal printmessages on runtime or not
-        current_result_data:
-            buffer to save and print current query results"""
+        current_wikidata_query_result_data:
+            buffer to save and print current wikidata_query() results
+        current_suggest_result_data:
+            buffer to save and print current suggest() results"""
         self.input: Union[List[Tuple[str, str]], None] = input
         self.show_printmessages: bool = show_printmessages
-        self.current_result_data: Union[dict, None] = None
+        self.current_wikidata_query_result_data: Union[dict, None] = None
+        self.current_suggest_result_data: Union[dict, None] = None
 
     def check_entity_library_by_names_and_type(
         self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
@@ -86,6 +89,7 @@ class Identifier:
         if no reference to a active library instance is given in query_entity_library,
         no entity library query is executed
 
+        entity library query result:
         {
             ('Berlin', 'place'): [
                 {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
@@ -93,6 +97,7 @@ class Identifier:
             ]
         }
 
+        wikidata query result:
         {
             ('Berlin', 'place'): [
                 4,
@@ -108,6 +113,7 @@ class Identifier:
             ]
         }
 
+        output:
         {
             ('Berlin', 'place'): [
                 {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
@@ -136,19 +142,11 @@ class Identifier:
         # create output
         output_dict = {}
         if query_entity_library is not None:
-            # wenn beides, entity library check und wikidata check, durchgeführt wurden
+            # if both, entity library check and wikidata check, were executed
             if entity_library_has_data:
                 if wikidata_result_has_data:
-                    # wenn beide, entity library check und wikidata check, jeweils mindestens eine entität geliefert haben
-                    # HIER WEITER
-                    # todo: rendundanzcheck: prüfen, ob die wikidata-suche entitäten gefunden hat, die auch von der entity library-suche ausgegeben werden
-                    pass
-                else:
-                    # wenn nur entity library check mindestens eine entität geliefert hat
-                    output_dict = query_entity_library_result
-            else:
-                if wikidata_result_has_data:
-                    # wenn nur wikidata check mindestens eine entität geliefert hat
+                    # if both, entity library check and wikidata check, suggested any entities
+                    wikidata_output_dict = {}
                     _temp_el = EntityLibrary(show_printmessages=False)
                     for key in query_wikidata_result:
                         entity_list_in_query_wikidata_result = []
@@ -161,22 +159,69 @@ class Identifier:
                             )
                             entity_list_in_query_wikidata_result.append(
                                 {
-                                    "name": subkey["label"],
+                                    "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
                                     "furtherNames": [],
                                     "type": key[1],
-                                    "description": subkey["description"],
-                                    "wikidata_id": subkey["id"],
+                                    "description": subkey.get("description", "No description delivered"),
+                                    "wikidata_id": subkey.get("id", ""),
+                                    "gnd_id": _gnd_id_to_add,
+                                }
+                            )
+                        wikidata_output_dict[key] = entity_list_in_query_wikidata_result
+                    redundancy_test_list = []
+                    for tuple in query_entity_library_result:
+                        check_cache = Cache(query_entity_library_result[tuple])
+                        for entity in wikidata_output_dict[tuple]:
+                            _temp_check_result_tuple = check_cache.check_for_redundancy(
+                                usecase="EntityLibrary", wikidata_id=entity["wikidata_id"], gnd_id=entity["gnd_id"]
+                            )
+                            if _temp_check_result_tuple[0] == True:
+                                redundancy_test_list.append(entity["wikidata_id"])
+                            if _temp_check_result_tuple[1] == True:
+                                redundancy_test_list.append(entity["gnd_id"])
+                        for item in redundancy_test_list:
+                            wikidata_output_dict[tuple] = list(
+                                filter(
+                                    lambda x: (x.get("wikidata_id") != item) and (x.get("gnd_id") != item),
+                                    wikidata_output_dict[tuple],
+                                )
+                            )
+                        query_entity_library_result[tuple].extend(wikidata_output_dict[tuple])
+                        output_dict[tuple] = query_entity_library_result[tuple]
+                else:
+                    # if only entity library check suggested any entities
+                    output_dict = query_entity_library_result
+            else:
+                if wikidata_result_has_data:
+                    # if only wikidata check suggested any entities
+                    _temp_el = EntityLibrary(show_printmessages=False)
+                    for key in query_wikidata_result:
+                        entity_list_in_query_wikidata_result = []
+                        for subkey in query_wikidata_result[key][1]["search"]:
+                            _gnd_retrieve_attempt_result = _temp_el.get_gnd_id_of_wikidata_entity(subkey["id"])
+                            _gnd_id_to_add = (
+                                _gnd_retrieve_attempt_result[0]["o"]["value"]
+                                if len(_gnd_retrieve_attempt_result) > 0
+                                else ""
+                            )
+                            entity_list_in_query_wikidata_result.append(
+                                {
+                                    "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
+                                    "furtherNames": [],
+                                    "type": key[1],
+                                    "description": subkey.get("description", "No description delivered"),
+                                    "wikidata_id": subkey.get("id", ""),
                                     "gnd_id": _gnd_id_to_add,
                                 }
                             )
                         output_dict[key] = entity_list_in_query_wikidata_result
                 else:
-                    # wenn keine, weder entity library noch wikidata, entitäten geliefert haben
+                    # if none of the two checks, entity library and wikidata, suggested any entities
                     output_dict = {}
         else:
-            # wenn nur der wikidata check durchgeführt wurde
+            # if only wikidata check was executed
             if wikidata_result_has_data:
-                # wenn der wikidata check mindestens eine entität geliefert hat
+                # if wikidata check suggested any entities
                 _temp_el = EntityLibrary(show_printmessages=False)
                 for key in query_wikidata_result:
                     entity_list_in_query_wikidata_result = []
@@ -199,14 +244,10 @@ class Identifier:
                         )
                     output_dict[key] = entity_list_in_query_wikidata_result
             else:
-                # wenn der wikidata check keine entitäten geliefert hat
+                # if wikidata check suggested no entities
                 output_dict = {}
+        self.current_suggest_result_data = output_dict
         return output_dict
-
-        """
-        HIER WEITER
-        """
-        # beide möglichen ergebnisse zu einem dict zusammensetzen (nach überschneidungen via wikidata_id schauen, einheitliches format erzeugen)
 
     def wikidata_query(
         self,
@@ -216,7 +257,7 @@ class Identifier:
         wikidata_web_api_limit: str = "50",
         check_connectivity: bool = False,
     ) -> Union[Dict[Tuple[str, str], list], bool]:
-        """starts wikidata query and saves results in self.current_result_data
+        """starts wikidata query and saves results in self.current_wikidata_query_result_data
 
         filter_for_precise_spelling:
             variable determines wheather only exact matches
@@ -238,15 +279,38 @@ class Identifier:
             self.show_printmessages,
         )
         result = c.get_wikidata_search_results(filter_for_precise_spelling, filter_for_correct_type)
-        self.current_result_data = result
+        self.current_wikidata_query_result_data = result
         return result
 
-    def summarize_current_results(self) -> int:
+    def summarize_current_wikidata_query_results(self) -> None:
         """prints found entities (entity name and description) to all tuples in self.input list,
-        to deliver a human readable overview over self.current_result_data"""
-        for key in self.current_result_data:
-            print(f"{key}: {self.current_result_data[key][0]}")
-            for hit in self.current_result_data[key][1]["search"]:
+        to deliver a human readable overview over self.current_wikidata_query_result_data"""
+        for key in self.current_wikidata_query_result_data:
+            print(f"{key}: {self.current_wikidata_query_result_data[key][0]}")
+            for hit in self.current_wikidata_query_result_data[key][1]["search"]:
                 wikidataId = hit.get("id", "No wikidata id delivered")
                 descr = hit.get("description", "No description delivered")
                 print(f"----- {descr} -- {wikidataId}")
+
+    def summarize_current_suggest_results(self) -> None:
+        """prints found entities (entity name and description) to all tuples in self.input list,
+        to deliver a human readable overview over self.current_suggest_result_data"""
+        for key in self.current_suggest_result_data:
+            print(f"{key}: {len(self.current_suggest_result_data[key])}")
+            for entity in self.current_suggest_result_data[key]:
+                wikidataId = entity.get("wikidata_id", "No wikidata id delivered")
+                descr = entity.get("description", "No description delivered")
+                print(f"----- {descr} -- {wikidataId}")
+
+
+if __name__ == "__main__":
+
+    def test():
+        input = [("Berlin", "place"), ("Steven Spielberg", "person"), ("UNO", "organisation")]
+        i = Identifier(input)
+        el = EntityLibrary(use_default_data_file=True)
+        suggestions = i.suggest(el)
+        print(suggestions)
+        i.summarize_current_suggest_results()
+
+    test()

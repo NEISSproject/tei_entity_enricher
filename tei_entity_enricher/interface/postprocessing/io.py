@@ -266,13 +266,14 @@ class Cache:
             'gnd_id2_key2': 'gnd_id2_val2'}
         }
         usecase: EntityLibrary:
-        checks a dict in self.data for an existing wikidata_id and gnd_id,
+        checks all dicts in self.data (list of dicts) for an existing wikidata_id and gnd_id,
         a specific dict structure is presupposed:
         [
             {
                 'name': 'entityName1',
                 'furtherNames': [],
                 'type': 'entityType',
+                'description': '',
                 'wikidata_id': 'Q1234',
                 'gnd_id': '12345678'
             },
@@ -280,11 +281,12 @@ class Cache:
                 'name': 'entityName2',
                 'furtherNames': [],
                 'type': 'entityType',
+                'description': '',
                 'wikidata_id': 'Q12345',
                 'gnd_id': '123456789'
             }
         ]
-        this check is used in FileWriter class as part
+        this check is used in Identifier class (usecase EntityLibrary) and in FileWriter class as part
         of a merging process of an existing json file and new json data
         (in the usecases of GndConnector or EntityLibrary),
         which should be added to the file:

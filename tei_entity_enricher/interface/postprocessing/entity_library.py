@@ -276,6 +276,9 @@ class EntityLibrary:
             entity_unchanged = entity.copy()
             if (entity["wikidata_id"] == "") and (entity["gnd_id"] == ""):
                 if add_first_suggested_wikidata_entity_if_no_id_was_given == False:
+                    return_messages.append(
+                        f"{entity_unchanged} ignored due to add_first_suggested_wikidata_entity_if_no_id_was_given parameter setting"
+                    )
                     continue
                 else:
                     input_tuple = (entity["name"], entity["type"])
