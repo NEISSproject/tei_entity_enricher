@@ -68,13 +68,17 @@ class TEIManPP:
     def tei_edit_specific_entity(self, tag_entry, tr):
         col1, col2 = st.beta_columns(2)
         with col1:
-            tag_entry["name"] = st.text_input(
-                "Editable Tag Name",
-                tag_entry["name"],
-                key="tmp_edit_ent_name",
-                help="Here you can change the name of the tag.",
-            )
-            tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
+            tag_entry["delete"]=st.checkbox("Remove this tag from the TEI-File",tag_entry["delete"],key="tmp_edit_del_tag",help="Set this checkbox if you want to remove this tag from the TEI-File.")
+            if tag_entry["delete"]:
+                st.write("This tag will be removed when saving the current changes.")
+            else:
+                tag_entry["name"] = st.text_input(
+                    "Editable Tag Name",
+                    tag_entry["name"],
+                    key="tmp_edit_ent_name",
+                    help="Here you can change the name of the tag.",
+                )
+                tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
         with col2:
             st.markdown("### Textcontent of the tag:")
             if "pure_tagcontent" in tag_entry.keys():
@@ -106,21 +110,23 @@ class TEIManPP:
         self.state.tmp_teifile = st.text_input(
             "Choose a TEI File:",
             self.state.tmp_teifile or "",
-            key="tnp_tei_file",
+            key="tmp_tei_file",
         )
         # self.state.tmp_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
         # if self.state.tmp_teifile or self.state.tmp_open_teifile:
         if st.button("Search Matching Entities in TEI-File:"):
+            self.state.tmp_last_save_path=None
             if self.state.tmp_teifile or self.state.tmp_open_teifile:
                 tei = tei_writer.TEI_Writer(
                     self.state.tmp_teifile, openfile=self.state.tmp_open_teifile, tr=selected_tr
                 )
                 self.state.tmp_current_search_text_tree = tei.get_text_tree()
                 self.state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
+                self.state.tmp_tr_from_last_search=selected_tr
                 self.state.tmp_current_loop_element = 1
                 if len(self.state.tmp_matching_tag_list) > 0:
-
-                    self.enrich_search_list_with_pure_tagcontent(selected_tr)
+                    self.state.tmp_teifile_save = self.state.tmp_teifile
+                    self.enrich_search_list(self.state.tmp_tr_from_last_search)
                     if self.state.pp_el_object:
                         self.enrich_search_list_with_link_suggestions()
             else:
@@ -128,7 +134,9 @@ class TEIManPP:
                 self.state.tmp_matching_tag_list = []
                 st.warning("Please select a TEI file to be searched for entities.")
 
-        if self.state.tmp_matching_tag_list is None:
+        if self.state.tmp_last_save_path:
+            st.success(f"Changes are succesfully saved to {self.state.tmp_last_save_path}")
+        elif self.state.tmp_matching_tag_list is None:
             st.info("Use the search button to loop through a TEI file for the entities specified above.")
         elif len(self.state.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
@@ -147,9 +155,21 @@ class TEIManPP:
                 self.state.tmp_current_loop_element,
             )
             self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1] = self.tei_edit_specific_entity(
-                self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1], selected_tr
+                self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1], self.state.tmp_tr_from_last_search
             )
-
+            col1,col2=st.beta_columns([0.1,0.9])
+            with col1:
+                save_button_result=st.button("Save to",key="tmp_edit_save_changes_button",help="Save the current changes to the the specified path.")
+            with col2:
+                self.state.tmp_teifile_save = st.text_input(
+                    "Path to save the changes to:",
+                    self.state.tmp_teifile_save or "",
+                    key="tmp_tei_file_save",
+                )
+            if save_button_result:
+                self.save_manual_changes_to_tei(self.state.tmp_teifile,self.state.tmp_teifile_save,self.state.tmp_matching_tag_list,self.state.tmp_tr_from_last_search)
+                self.state.tmp_matching_tag_list=None
+                self.state.tmp_last_save_path=self.state.tmp_teifile_save
             # st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
 
     def get_surrounded_text(self, id, sliding_window, tr):
@@ -216,8 +236,9 @@ class TEIManPP:
                 tag_list = [[self.state.tmp_sd_search_tag, self.state.tmp_sd_search_tag_attr_dict]]
         return tag_list
 
-    def enrich_search_list_with_pure_tagcontent(self, tr):
+    def enrich_search_list(self, tr):
         for tag in self.state.tmp_matching_tag_list:
+            tag["delete"] = False
             if "tagcontent" in tag.keys():
                 tag["pure_tagcontent"] = tei_writer.get_pure_text_of_tree_element(tag["tagcontent"], tr)
 
@@ -226,6 +247,13 @@ class TEIManPP:
         # for tag in self.state.tmp_matching_tag_list:
         #    entitylist.append(tuple())
         # Identifier()
+
+    def save_manual_changes_to_tei(self,loadpath,savepath,changed_tag_list,tr):
+        tei = tei_writer.TEI_Writer(
+                    loadpath, tr=tr
+                )
+        tei.include_changes_of_tag_list(changed_tag_list)
+        tei.write_back_to_file(savepath)
 
     def show(self):
         st.subheader("Manual TEI Postprocessing")
