@@ -34,12 +34,13 @@ class TEIManPP:
             end = -2
         else:
             end = -1
-        attr_list = tagbegin[len(tagname) + 2 : end].split(" ")
-        for element in attr_list:
-            if "=" in element:
-                attr_value = element.split("=")
-                entry_dict["Attributes"].append(attr_value[0])
-                entry_dict["Values"].append(attr_value[1][1:-1])
+        if " " in tagbegin:
+            attr_list = tagbegin[tagbegin.find(" ") + 1 : end].split(" ")
+            for element in attr_list:
+                if "=" in element:
+                    attr_value = element.split("=")
+                    entry_dict["Attributes"].append(attr_value[0])
+                    entry_dict["Values"].append(attr_value[1][1:-1])
         answer = editable_multi_column_table(entry_dict, None, openentrys=20)
         new_tagbegin = "<" + tagname
         attrdict = {}
@@ -48,7 +49,10 @@ class TEIManPP:
                 st.warning(f'Multiple definitions of the attribute {answer["Attributes"][i]} are not supported.')
             attrdict[answer["Attributes"][i]] = answer["Values"][i]
             new_tagbegin = new_tagbegin + " " + answer["Attributes"][i] + '="' + answer["Values"][i] + '"'
-        new_tagbegin = new_tagbegin + ">"
+        if end==-2:
+            new_tagbegin = new_tagbegin + "/>"
+        else:
+            new_tagbegin = new_tagbegin + ">"
         return new_tagbegin
 
     def show_sd_search_attr_value_def(self, attr_value_dict, name):
@@ -79,6 +83,8 @@ class TEIManPP:
                     help="Here you can change the name of the tag.",
                 )
                 tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
+                if "tagend" in tag_entry.keys():
+                    tag_entry["tagend"]="</"+tag_entry["name"]+">"
         with col2:
             st.markdown("### Textcontent of the tag:")
             if "pure_tagcontent" in tag_entry.keys():
@@ -167,9 +173,12 @@ class TEIManPP:
                     key="tmp_tei_file_save",
                 )
             if save_button_result:
-                self.save_manual_changes_to_tei(self.state.tmp_teifile,self.state.tmp_teifile_save,self.state.tmp_matching_tag_list,self.state.tmp_tr_from_last_search)
-                self.state.tmp_matching_tag_list=None
-                self.state.tmp_last_save_path=self.state.tmp_teifile_save
+                if self.validate_manual_changes_before_saving(self.state.tmp_matching_tag_list):
+                    self.save_manual_changes_to_tei(self.state.tmp_teifile,self.state.tmp_teifile_save,self.state.tmp_matching_tag_list,self.state.tmp_tr_from_last_search)
+                    self.state.tmp_matching_tag_list=None
+                    self.state.tmp_last_save_path=self.state.tmp_teifile_save
+                else:
+                    self.state.avoid_rerun()
             # st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
 
     def get_surrounded_text(self, id, sliding_window, tr):
@@ -247,6 +256,10 @@ class TEIManPP:
         # for tag in self.state.tmp_matching_tag_list:
         #    entitylist.append(tuple())
         # Identifier()
+
+    def validate_manual_changes_before_saving(self,changed_tag_list):
+        val=True
+        return val
 
     def save_manual_changes_to_tei(self,loadpath,savepath,changed_tag_list,tr):
         tei = tei_writer.TEI_Writer(
