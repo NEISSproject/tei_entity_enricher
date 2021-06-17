@@ -150,12 +150,15 @@ class TEINERPostprocessing:
                 if el_add_missing_ids_button == True:
                     if pp_el_library_object.data_file is not None:
                         messages = pp_el_library_object.add_missing_id_numbers()
-                        for message in messages:
-                            with el_misc_message_placeholder.beta_container():
-                                st.info(message)
-                        el_file_view_placeholder.empty()
-                        with el_file_view_placeholder:
-                            st.json(pp_el_library_object.data)
+                        with el_misc_message_placeholder.beta_container():
+                            for message in messages:
+                                if "changed" in message:
+                                    st.success(message)
+                                else:
+                                    st.info(message)
+                        # el_file_view_placeholder.empty()
+                        # with el_file_view_placeholder:
+                        #     st.json(pp_el_library_object.data)
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
