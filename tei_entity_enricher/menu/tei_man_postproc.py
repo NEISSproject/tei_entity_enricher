@@ -147,19 +147,22 @@ class TEIManPP:
         elif len(self.state.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
         else:
-            self.state.tmp_current_loop_element = st.slider(
-                f"Matching tags in the TEI file (found {str(len(self.state.tmp_matching_tag_list))} entries) ",
-                1,
-                len(self.state.tmp_matching_tag_list),
-                self.state.tmp_current_loop_element if self.state.tmp_current_loop_element else 1,
-                key="tmp_loop_slider",
-            )
-            self.state.tmp_current_loop_element = st.number_input(
-                "Goto Search Result with Index:",
-                1,
-                len(self.state.tmp_matching_tag_list),
-                self.state.tmp_current_loop_element,
-            )
+            if len(self.state.tmp_matching_tag_list)==1:
+                st.write("One tag in the TEI-File matches the search conditions.")
+            else:
+                self.state.tmp_current_loop_element = st.slider(
+                    f"Matching tags in the TEI file (found {str(len(self.state.tmp_matching_tag_list))} entries) ",
+                    1,
+                    len(self.state.tmp_matching_tag_list),
+                    self.state.tmp_current_loop_element if self.state.tmp_current_loop_element else 1,
+                    key="tmp_loop_slider",
+                )
+                self.state.tmp_current_loop_element = st.number_input(
+                    "Goto Search Result with Index:",
+                    1,
+                    len(self.state.tmp_matching_tag_list),
+                    self.state.tmp_current_loop_element,
+                )
             self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1] = self.tei_edit_specific_entity(
                 self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1], self.state.tmp_tr_from_last_search
             )
