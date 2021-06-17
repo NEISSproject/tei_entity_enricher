@@ -15,6 +15,7 @@ import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
+from tei_entity_enricher.util.components import dir_selector
 
 
 class TEINERGroundtruthBuilder:
