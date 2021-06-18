@@ -541,30 +541,30 @@ class TEI_Writer:
     def _include_changes_of_tag_dict_for_tree_element(self, contentlist, tag_dict):
         for contentindex in range(len(contentlist)):
             if isinstance(contentlist[contentindex], list):
-                contentlist[contentindex] = self._include_changes_of_tag_dict_for_tree_element(contentlist[contentindex], tag_dict
-                                                                                               )
+                contentlist[contentindex] = self._include_changes_of_tag_dict_for_tree_element(
+                    contentlist[contentindex], tag_dict
+                )
             elif isinstance(contentlist[contentindex], dict):
                 if contentlist[contentindex]["tag_id"] in tag_dict.keys():
                     if tag_dict[contentlist[contentindex]["tag_id"]]["delete"]:
                         if "tagcontent" in contentlist[contentindex].keys():
-                            contentlist[contentindex]=tag_dict[contentlist[contentindex]["tag_id"]]["tagcontent"]
+                            contentlist[contentindex] = tag_dict[contentlist[contentindex]["tag_id"]]["tagcontent"]
                         else:
-                            contentlist[contentindex]=[""]
+                            contentlist[contentindex] = [""]
                     else:
-                        contentlist[contentindex]=tag_dict[contentlist[contentindex]["tag_id"]]
+                        contentlist[contentindex] = tag_dict[contentlist[contentindex]["tag_id"]]
                 if isinstance(contentlist[contentindex], dict) and "tagcontent" in contentlist[contentindex].keys():
                     contentlist[contentindex]["tagcontent"] = self._include_changes_of_tag_dict_for_tree_element(
                         contentlist[contentindex]["tagcontent"], tag_dict
                     )
         return contentlist
 
-    def include_changes_of_tag_list(self,tag_list):
-        tag_dict={}
+    def include_changes_of_tag_list(self, tag_list):
+        tag_dict = {}
         for tag_element in tag_list:
-            tag_dict[tag_element["tag_id"]]=tag_element
+            tag_dict[tag_element["tag_id"]] = tag_element
         self._include_changes_of_tag_dict_for_tree_element(self._text_tree, tag_dict)
         self.refresh_text_by_tree()
-
 
 
 def extract_attributes_and_values(tag, tagbegin):
@@ -666,7 +666,6 @@ def parse_xml_to_text(text):
     new_text = " ".join(new_text.split())
     new_text = new_text.replace("<br/>", "\n\n")
     return new_text
-
 
 
 if __name__ == "__main__":

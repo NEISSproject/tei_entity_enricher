@@ -247,10 +247,12 @@ class TEIManPP:
                     len(self.state.tmp_matching_tag_list),
                     self.state.tmp_current_loop_element,
                 )
+            st.markdown("### Modify manually!")
             self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1] = self.tei_edit_specific_entity(
                 self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1],
                 self.state.tmp_tr_from_last_search,
             )
+            st.markdown("### Save the changes!")
             col1, col2 = st.beta_columns([0.1, 0.9])
             with col1:
                 save_button_result = st.button(
@@ -364,6 +366,37 @@ class TEIManPP:
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True
+        search_result_number = 0
+        for tag_entry in changed_tag_list:
+            search_result_number += 1
+            if "delete" not in tag_entry.keys() or not tag_entry["delete"]:
+                if tag_entry["name"] is None or tag_entry["name"] == "":
+                    val = False
+                    st.error(
+                        f"Save is not allowed. See search result {search_result_number}. A Tag Name is not allowed to be empty!"
+                    )
+                entry_dict = {}
+                if tag_entry["tagbegin"].endswith("/>"):
+                    end = -2
+                else:
+                    end = -1
+                if " " in tag_entry["tagbegin"]:
+                    attr_list = tag_entry["tagbegin"][tag_entry["tagbegin"].find(" ") + 1 : end].split(" ")
+                    for element in attr_list:
+                        if "=" in element:
+                            attr_value = element.split("=")
+                            entry_dict[attr_value[0]] = attr_value[1][1:-1]
+                for attr in entry_dict.keys():
+                    if attr is None or attr == "":
+                        val = False
+                        st.error(
+                            f"Save is not allowed. See search result {search_result_number}. You cannot define a value ({entry_dict[attr]}) for an empty attribute name!"
+                        )
+                    if entry_dict[attr] is None or entry_dict[attr] == "":
+                        val = False
+                        st.error(
+                            f"Save is not allowed. See search result {search_result_number}. You cannot define a attribute ({attr}) without a value!"
+                        )
         return val
 
     def save_manual_changes_to_tei(self, loadpath, savepath, changed_tag_list, tr):

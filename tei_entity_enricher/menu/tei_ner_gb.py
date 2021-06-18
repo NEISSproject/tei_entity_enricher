@@ -449,9 +449,9 @@ class TEINERGroundtruthBuilder:
         if self.state.tng_selected_display_tng_name:
             cur_sel_tng = self.tngdict[self.state.tng_selected_display_tng_name]
             if cur_sel_tng[self.tng_attr_template]:
-                cur_folder=self.template_tng_Folder
+                cur_folder = self.template_tng_Folder
             else:
-                cur_folder=self.tng_Folder
+                cur_folder = self.tng_Folder
             self.show_statistics_to_saved_groundtruth(
                 os.path.join(cur_folder, cur_sel_tng[self.tng_attr_name].replace(" ", "_")),
                 cur_sel_tng[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],

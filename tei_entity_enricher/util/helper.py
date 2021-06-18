@@ -159,10 +159,12 @@ def numbers_lists_entry_widget(
         lists_state.latex(state_failed)
         return []
 
-def replace_empty_string(input_string,replace_string="-"):
-    if input_string is None or input_string=="":
-        input_string=replace_string
+
+def replace_empty_string(input_string, replace_string="-"):
+    if input_string is None or input_string == "":
+        input_string = replace_string
     return input_string
+
 
 def text_entry_with_check(string: str, name: str, check_fn: callable, help=None):
     string_field, string_state = st.beta_columns([10, 1])

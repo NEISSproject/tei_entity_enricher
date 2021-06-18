@@ -216,7 +216,7 @@
     },
     "train": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/test_workdir/lists/conll_small_val.lst"
+        "tei_entity_enricher/tei_entity_enricher/templates/trainer/template_wd/templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0
@@ -225,7 +225,7 @@
     },
     "val": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/test_workdir/lists/conll_small_val.lst"
+        "tei_entity_enricher/tei_entity_enricher/templates/trainer/template_wd/templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0
