@@ -8,6 +8,7 @@ from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
     get_listoutput,
+    replace_empty_string,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
@@ -22,6 +23,9 @@ class TEIManPP:
             "By TEI Read NER Entity Mapping",
             "By self-defined Tag configuration",
         ]
+        self.tmp_link_choose_option_gnd = "GND id"
+        self.tmp_link_choose_option_wikidata = "Wikidata id"
+        self.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
         self.entity_library = entity_library  # get_entity_library()
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
@@ -83,7 +87,12 @@ class TEIManPP:
                 if "=" in element:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
-        entry_dict["ref"] = suggestion["wikidata_id"]
+        if self.state.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
+            link_to_add = suggestion["wikidata_id"]
+        else:
+            # default gnd
+            link_to_add = "http://d-nb.info/gnd/" + suggestion["gnd_id"]
+        entry_dict["ref"] = link_to_add
         new_tagbegin = "<" + tag_entry["name"]
         for attr in entry_dict.keys():
             new_tagbegin = new_tagbegin + " " + attr + '="' + entry_dict[attr] + '"'
@@ -135,15 +144,26 @@ class TEIManPP:
                 tag_entry["ls_search_type"] if "ls_search_type" in tag_entry.keys() else tag_entry["name"],
                 help="Define a search type for which link suggestions should be done!",
             )
-            if st.button("Search link suggestions"):
+            col1, col2 = st.beta_columns(2)
+            if col1.button("Search link suggestions"):
                 input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
                 link_identifier = Identifier(input=[input_tuple])
-                result = link_identifier.suggest(self.entity_library,)
+                result = link_identifier.suggest(
+                    self.entity_library,
+                )
                 tag_entry["link_suggestions"] = result[input_tuple]
             if "link_suggestions" in tag_entry.keys():
                 suggestion_id = 0
-                if len(tag_entry["link_suggestions"])>0:
-                    scol1, scol2,scol3, scol4,scol5, scol6 = st.beta_columns(6)
+                if len(tag_entry["link_suggestions"]) > 0:
+                    self.state.tmp_link_choose_option = col2.selectbox(
+                        "Choose links from",
+                        self.tmp_link_choose_options,
+                        self.tmp_link_choose_options.index(self.state.tmp_link_choose_option)
+                        if self.state.tmp_link_choose_option
+                        else self.tmp_link_choose_options.index(self.tmp_link_choose_option_gnd),
+                        help='Define the source where links should be added from when pressing an "Add link"-Button',
+                    )
+                    scol1, scol2, scol3, scol4, scol5, scol6 = st.beta_columns(6)
                     scol1.markdown("### Name")
                     scol2.markdown("### Further Names")
                     scol3.markdown("### Description")
@@ -151,11 +171,13 @@ class TEIManPP:
                     scol5.markdown("### GND_id")
                     scol6.markdown("### Use Suggestion")
                     for suggestion in tag_entry["link_suggestions"]:
-                        scol1.write(suggestion["name"])
-                        scol2.write(get_listoutput(suggestion["furtherNames"]))
-                        scol3.write(suggestion["description"])
-                        scol4.write(suggestion["wikidata_id"])
-                        scol5.write(suggestion["gnd_id"])
+                        # workaround: new column definition because of unique row height
+                        scol1, scol2, scol3, scol4, scol5, scol6 = st.beta_columns(6)
+                        scol1.markdown(replace_empty_string(suggestion["name"]))
+                        scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
+                        scol3.markdown(replace_empty_string(suggestion["description"]))
+                        scol4.markdown(replace_empty_string(suggestion["wikidata_id"]))
+                        scol5.markdown(replace_empty_string(suggestion["gnd_id"]))
                         suggestion_id += 1
                         if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
