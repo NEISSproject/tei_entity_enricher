@@ -3,11 +3,28 @@ import logging
 import json
 
 from streamlit_ace import st_ace
+from typing import Union
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
+from tei_entity_enricher.interface.postprocessing.io import FileReader, Cache
+from tei_entity_enricher.util.exceptions import BadFormat
 import tei_entity_enricher.menu.tei_man_postproc as tmp
 from tei_entity_enricher.util.helper import state_failed, state_ok, transform_arbitrary_text_to_markdown
 
 logger = logging.getLogger(__name__)
+
+
+class EntityLibraryLastEditorState:
+    """class only used to save the ace editor content of the last run
+    to be able to compare the current with the last state"""
+
+    def __init__(self) -> None:
+        self.content: str = None
+
+    def set_content(self, content) -> None:
+        self.content: str = content
+
+    def reset(self) -> None:
+        self.content = None
 
 
 class EntityLibraryGuiFilepath:
@@ -31,6 +48,39 @@ def get_entity_library():
 @st.cache(allow_output_mutation=True)
 def get_filepath():
     return EntityLibraryGuiFilepath()
+
+
+@st.cache(allow_output_mutation=True)
+def get_last_editor_state():
+    return EntityLibraryLastEditorState()
+
+
+def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
+    # valid json check
+    fr = FileReader(file=ace_editor_content, internal_call=True, show_printmessages=False)
+    try:
+        fr_result = fr.loadfile_json()
+    except BadFormat:
+        return "Editor content is no valid json."
+    # valid entity library check
+    ca = Cache(fr_result)
+    ca_el_structure_result = ca.check_json_structure(usecase="EntityLibrary")
+    if ca_el_structure_result == False:
+        return "Editor content does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
+    # redundancy check
+    ca_el_redundancy_result = True
+    for entity in ca.data:
+        data_without_entity = [i for i in ca.data if not (i == entity)]
+        _temp_cache = Cache(data_without_entity)
+        _temp_ca_el_redundancy_result_tuple = _temp_cache.check_for_redundancy(
+            usecase="EntityLibrary", wikidata_id=entity["wikidata_id"], gnd_id=entity["gnd_id"]
+        )
+        if any(_temp_ca_el_redundancy_result_tuple):
+            ca_el_redundancy_result = False
+            break
+    if ca_el_redundancy_result == False:
+        return "Editor content contains a redundancy issue; a wikidata or gnd id is assigned to more than one entity."
+    return True
 
 
 ## offenes problem: csv.DictReader kann keine UploadedFiles-Instanzen händeln, obwohl es das laut Dokumentation und Erfahrungsberichten tun sollte
@@ -58,6 +108,7 @@ class TEINERPostprocessing:
         pp_el_filepath_object.set_filepath(
             pp_el_library_object.default_data_file
         ) if pp_el_filepath_object.filepath is None else None
+        pp_el_last_editor_state: EntityLibraryLastEditorState = get_last_editor_state()
         # basic layout: header, entity library container
         st.subheader("Entity Library")
         el_container = st.beta_expander(label="Entity Library", expanded=True)
@@ -112,6 +163,7 @@ class TEINERPostprocessing:
                 el_init_message_placeholder = st.empty()
                 el_misc_message_placeholder = st.empty()
                 el_file_view_placeholder = st.empty()
+                el_file_view_message_placeholder = st.empty()
                 # processes triggered by init button
                 if el_init_button == True:
                     if pp_el_library_object.data_file is None:
@@ -157,21 +209,31 @@ class TEINERPostprocessing:
                                     st.success(message)
                                 else:
                                     st.info(message)
-                        # el_file_view_placeholder.empty()
-                        # with el_file_view_placeholder:
-                        #     st.json(pp_el_library_object.data)
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
                     el_init_message_placeholder.success("Entity library is activated.")
+                    editor_init_content = (
+                        json.dumps(pp_el_library_object.data, indent=4)
+                        if pp_el_last_editor_state.content is None
+                        else pp_el_last_editor_state.content
+                    )
                     with el_file_view_placeholder:
-                        # st.json(pp_el_library_object.data)
-                        editor_content = st_ace(
-                            value=json.dumps(pp_el_library_object.data, indent=4),
-                            height=500,
-                            language="json",
-                            readonly=False,
-                        )
+                        editor_content = st_ace(value=editor_init_content, height=500, language="json", readonly=False)
+                    if pp_el_last_editor_state.content is None:
+                        pp_el_last_editor_state.content = editor_content
+                    if (editor_content) and (editor_content != pp_el_last_editor_state.content):
+                        el_editor_content_check_result = el_editor_content_check(editor_content)
+                        if type(el_editor_content_check_result) == str:
+                            with el_file_view_message_placeholder:
+                                st.info(f"Error: {el_editor_content_check_result}")
+                        else:
+                            pp_el_library_object.data = json.loads(editor_content)
+                            pp_el_last_editor_state.content = editor_content
+                            with el_file_view_message_placeholder:
+                                st.success(
+                                    "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
+                                )
             # basic layout: add entities subcontainer
             el_add_entities_from_file_subcontainer = st.beta_container()
             with el_add_entities_from_file_subcontainer:
@@ -215,11 +277,11 @@ class TEINERPostprocessing:
                                             st.success(message)
                                         else:
                                             st.info(message)
+                            pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
                             el_file_view_placeholder.empty()
                             with el_file_view_placeholder:
-                                # st.json(pp_el_library_object.data)
                                 editor_content = st_ace(
-                                    value=json.dumps(pp_el_library_object.data, indent=4),
+                                    value=pp_el_last_editor_state.content,
                                     height=500,
                                     language="json",
                                     readonly=False,

@@ -317,7 +317,7 @@ class Identifier:
 if __name__ == "__main__":
 
     def test(with_wikidata_query: bool = True):
-        input = [("Berlin", "place"), ("Steven Spielberg", "person"), ("UNO", "organisation")]
+        input = [("Berlin", "place"), ("Steven Spielberg", "person"), ("UNO", "organisation"), ("Steve", "person")]
         i = Identifier(input)
         el = EntityLibrary(use_default_data_file=True)
         suggestions = i.suggest(el, with_wikidata_query)
