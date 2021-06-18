@@ -15,14 +15,15 @@ ON_POSIX = "posix" in sys.builtin_module_names
 
 
 @st.cache(allow_output_mutation=True)
-def get_manager():
-    return TrainManager()
+def get_manager(workdir):
+    return TrainManager(workdir)
 
 
 class TrainManager:
-    def __init__(self):
+    def __init__(self, work_dir):
         print("Manager is beeing Initialized")
         self.trainer_params = None
+        self.work_dir = work_dir
         self.process: subprocess.Popen[str] = None
         self.outs_str = ""
         self.errs_str = ""
@@ -30,14 +31,28 @@ class TrainManager:
         self.std_queue: Queue = None
         self.error_queue: Queue = None
         self._log_content: str = ""
+        self._progress_content: str = ""
+        self._current_epoch: str = ""
 
     def set_params(self, trainer_params):
         self.trainer_params = trainer_params
 
     def start(self):
         if not self.process:
+            # self.process = subprocess.Popen(
+            #     ["bash", "ner_trainer/loop_sleep.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            # )
             self.process = subprocess.Popen(
-                ["bash", "ner_trainer/loop_sleep.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                [
+                    "tfaip-train-from-params",
+                    "trainer_params.json",
+                    "--trainer.progress_bar_mode=2",
+                    "--trainer.progbar_delta_time=1",
+                ],
+                cwd=self.work_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
             )
             self.std_queue = Queue()
             self.error_queue = Queue()
@@ -75,18 +90,26 @@ class TrainManager:
         return True if self.process is not None else False
 
     def read_progress(self):
-        line = b"empty"
         try:
             while True:
-                line = self.std_queue.get_nowait()  # or q.get(timeout=.1)
+                line = self.std_queue.get_nowait().decode("utf-8")  # or q.get(timeout=.1)
+                if str(line).startswith("Epoch"):
+                    self._current_epoch = line
+                elif str(line).startswith("Field"):
+                    pass
+                elif line != "":
+                    self._progress_content = line
+                # logging.info(f"progress line: {self._progress_content}")
         except Empty:
             pass
-        return line.decode("ascii").strip("\n")
+
+        return f"{self._current_epoch}step:{self._progress_content}"
 
     def log_content(self):
         try:
             while True:
-                self._log_content += self.error_queue.get_nowait().decode("ascii")  # or q.get(timeout=.1)
+                self._log_content += self.error_queue.get_nowait().decode("utf-8")  # or q.get(timeout=.1)
+                # logging.info(f"log content: {self._log_content}")
         except Empty:
             pass
         return self._log_content

@@ -4,9 +4,9 @@ import os
 import shutil
 
 import streamlit as st
+from streamlit_ace import st_ace
 
 from tei_entity_enricher.util import config_io
-from tei_entity_enricher.util.components import file_selector, file_selector_expander, dir_selector_expander
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
@@ -34,6 +34,7 @@ class NERTrainer(object):
         self.state = state
         self.training_state = None
         self.trainer_params_json = None
+        self.selected_train_list = None
         if self.workdir() != 0:
             return
         with remember_cwd():
@@ -46,12 +47,25 @@ class NERTrainer(object):
                 if self.data_configuration() != 0:
                     st.error("Failed to run data_configuration")
                     return
+            # assert len(self.trainer_params_json["gen"]["train"]["lists"]) == 1, "Only one list is supported!"
+            # self.trainer_params_json["gen"]["train"]["lists"][0] = file_selector_expander(
+            #     target=f'train.lists: {self.trainer_params_json["gen"]["train"]["lists"][0]}',
+            #     init_file=self.trainer_params_json["gen"]["train"]["lists"][0],
+            # )
+            if st.button(f'Save trainer_params to config: {os.path.join(self._workdir_path, "trainer_params.json")}'):
+                with open(os.path.join(self._workdir_path, "trainer_params.json"), "w") as fp_tp:
+                    json.dump(self.trainer_params_json, fp_tp)
+                logger.info(f'trainer params saved to: {os.path.join(self._workdir_path, "trainer_params.json")}')
+                st.experimental_rerun()
 
-            train_manager = get_manager()
+            # Manage Training Process
+            # if not self.prelaunch_check():
+            #     return
+            train_manager = get_manager(workdir=self._workdir_path)
+            st.text("Train Manager")
             if st.button("Set trainer params"):
                 train_manager.set_params(self.trainer_params_json)
                 logger.info("trainer params set!")
-            st.text("Train Manager")
             b1, b2, b3, b4 = st.beta_columns(4)
             if b1.button("Start"):
                 train_manager.start()
@@ -71,12 +85,25 @@ class NERTrainer(object):
                 with st.beta_expander("Train log", expanded=True):
                     log_str = train_manager.log_content()
                     # logger.info(log_str)
-                    st.text(log_str)
-            print(os.getcwd())
-            selected_file = file_selector_expander(folder_path=os.getcwd())
-            st.text(selected_file)
-            selected_dir = dir_selector_expander(folder_path=os.getcwd())
-            st.text(selected_dir)
+                    # streamlit_ace.LANGUAGES
+                    st_ace(
+                        log_str,
+                        language="powershell",
+                        auto_update=True,
+                        readonly=True,
+                        height=300,
+                        wrap=True,
+                        font_size=12,
+                    )
+                    # st.text(log_str)
+            # print(os.getcwd())
+            # selected_file = file_selector_expander(folder_path=os.getcwd())
+            # st.text(selected_file)
+            # selected_dir = dir_selector_expander(folder_path=os.getcwd())
+            # st.text(selected_dir)
+
+    # def prelaunch_check(self):
+    #     self.trainer_params_json
 
     def load_trainer_params(self):
         if not os.path.isfile("trainer_params.json"):
@@ -84,6 +111,12 @@ class NERTrainer(object):
             shutil.copy(
                 os.path.join(module_path, "templates", "trainer", "trainer_params.json"),
                 os.getcwd(),
+            )
+        if not os.path.isdir("templates"):
+            logger.info("copy template_wd from templates")
+            shutil.copytree(
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates"),
+                os.path.join(os.getcwd(), "templates"),
             )
         self.trainer_params_json = config_io.get_config("trainer_params.json")
         return 0
@@ -196,7 +229,7 @@ class NERTrainer(object):
                 config_io.set_config({"workdir": self._workdir_path, "config_path": start_config_path}, allow_new=True)
                 if not os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
                     shutil.copy(
-                        os.path.join(module_path, "templates", "trainer", "test_workdir", "trainer_params.json"),
+                        os.path.join(module_path, "templates", "trainer", "template_wd", "trainer_params.json"),
                         self._workdir_path,
                     )
             else:
