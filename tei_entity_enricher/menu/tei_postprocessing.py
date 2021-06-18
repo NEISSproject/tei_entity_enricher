@@ -1,7 +1,8 @@
 import streamlit as st
 import logging
+import json
 
-# from streamlit_ace import st_ace
+from streamlit_ace import st_ace
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 import tei_entity_enricher.menu.tei_man_postproc as tmp
 from tei_entity_enricher.util.helper import state_failed, state_ok, transform_arbitrary_text_to_markdown
@@ -75,7 +76,13 @@ class TEINERPostprocessing:
                     value=False,
                     help="If selected, a default library file will be created in the given filepath.",
                 )
-                el_col_init_button, el_col_quit_button, el_col_save_button, el_col_export_button = st.beta_columns(4)
+                (
+                    el_col_init_button,
+                    el_col_quit_button,
+                    el_col_save_button,
+                    el_col_export_button,
+                    el_col_add_missing_ids_button,
+                ) = st.beta_columns(5)
                 with el_col_init_button:
                     el_init_button_placeholder = st.empty()
                 with el_col_quit_button:
@@ -84,6 +91,8 @@ class TEINERPostprocessing:
                     el_save_button_placeholder = st.empty()
                 with el_col_export_button:
                     el_export_button_placeholder = st.empty()
+                with el_col_add_missing_ids_button:
+                    el_add_missing_ids_button_placeholder = st.empty()
                 el_init_button = el_init_button_placeholder.button(
                     label="Initialize", key="init", help="Initialize the library from filepath."
                 )
@@ -95,6 +104,10 @@ class TEINERPostprocessing:
                 )
                 el_export_button = el_export_button_placeholder.button(
                     label="Export", help="Export the current library state to another filepath (Not yet available)."
+                )
+                el_add_missing_ids_button = el_add_missing_ids_button_placeholder.button(
+                    label="Add missing IDs",
+                    help="If an ID is missing in any entity, it will be retrieved on basis of the given information (For the moment: If no id is given at all, no addition atempt is executed due to uncertainess when trying to identify an entity on basis of a name only).",
                 )
                 el_init_message_placeholder = st.empty()
                 el_misc_message_placeholder = st.empty()
@@ -134,19 +147,31 @@ class TEINERPostprocessing:
                     if pp_el_library_object.data_file is not None:
                         pp_el_library_object.data = None
                         pp_el_library_object.data_file = None
+                # processes triggered by add ids button
+                if el_add_missing_ids_button == True:
+                    if pp_el_library_object.data_file is not None:
+                        messages = pp_el_library_object.add_missing_id_numbers()
+                        with el_misc_message_placeholder.beta_container():
+                            for message in messages:
+                                if "changed" in message:
+                                    st.success(message)
+                                else:
+                                    st.info(message)
+                        # el_file_view_placeholder.empty()
+                        # with el_file_view_placeholder:
+                        #     st.json(pp_el_library_object.data)
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
                     el_init_message_placeholder.success("Entity library is activated.")
                     with el_file_view_placeholder:
-                        st.json(pp_el_library_object.data)
-                        # editor_content = st_ace(
-                        #     value=pp_el_library_object.data,
-                        #     height=500,
-                        #     language=None,
-                        #     readonly=False,
-                        #     wrap=True,
-                        # )
+                        # st.json(pp_el_library_object.data)
+                        editor_content = st_ace(
+                            value=json.dumps(pp_el_library_object.data, indent=4),
+                            height=500,
+                            language="json",
+                            readonly=False,
+                        )
             # basic layout: add entities subcontainer
             el_add_entities_from_file_subcontainer = st.beta_container()
             with el_add_entities_from_file_subcontainer:
@@ -174,7 +199,7 @@ class TEINERPostprocessing:
                                     pp_el_library_object.add_entities_from_file(file=uploaded_file)
                                 )
                                 logger.info(
-                                    f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}. is el_add_entities_from_file_single_file_result[0] == 0?: {el_add_entities_from_file_single_file_result[0] == 0}"
+                                    f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}."
                                 )
                                 if type(el_add_entities_from_file_single_file_result) == str:
                                     result_messages.append(
@@ -192,16 +217,13 @@ class TEINERPostprocessing:
                                             st.info(message)
                             el_file_view_placeholder.empty()
                             with el_file_view_placeholder:
-                                st.json(pp_el_library_object.data)
-                            # el_file_editor_placeholder.empty()
-                            # with el_file_editor_placeholder:
-                            #     editor_content = st_ace(
-                            #         value=pp_el_library_object.data,
-                            #         height=500,
-                            #         language=None,
-                            #         readonly=False,
-                            #         wrap=True,
-                            #     )
+                                # st.json(pp_el_library_object.data)
+                                editor_content = st_ace(
+                                    value=json.dumps(pp_el_library_object.data, indent=4),
+                                    height=500,
+                                    language="json",
+                                    readonly=False,
+                                )
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(self.state)
+        tmp.TEIManPP(self.state, entity_library=pp_el_library_object)

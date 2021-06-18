@@ -15,6 +15,7 @@ import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
+from tei_entity_enricher.util.components import dir_selector
 
 
 class TEINERGroundtruthBuilder:
@@ -22,7 +23,7 @@ class TEINERGroundtruthBuilder:
         self.state = state
 
         self.tng_Folder = "TNG"
-        # self.template_tng_Folder = os.path.join(module_path, 'templates', self.tnm_Folder)
+        self.template_tng_Folder = os.path.join(module_path, "templates", self.tng_Folder)
         self.tng_Folder = os.path.join(local_save_path, self.tng_Folder)
         self.tng_attr_name = "name"
         self.tng_attr_tr = "tr"
@@ -30,6 +31,7 @@ class TEINERGroundtruthBuilder:
         self.tng_attr_lang = "lang"
         self.tng_attr_ratio = "ratio"
         self.tng_attr_shuffle_type = "shuffle_type"
+        self.tng_attr_template = "template"
         self.tng_gt_type_train = "train"
         self.tng_gt_type_dev = "dev"
         self.tng_gt_type_test = "test"
@@ -47,6 +49,7 @@ class TEINERGroundtruthBuilder:
         }
 
         makedir_if_necessary(self.tng_Folder)
+        makedir_if_necessary(self.template_tng_Folder)
 
         self.refresh_tng_list()
 
@@ -58,6 +61,18 @@ class TEINERGroundtruthBuilder:
 
     def refresh_tng_list(self):
         self.tnglist = []
+        for gt_folder in sorted(os.listdir(self.template_tng_Folder)):
+            if os.path.isdir(os.path.join(self.template_tng_Folder, gt_folder)) and os.path.isfile(
+                os.path.join(self.template_tng_Folder, gt_folder, os.path.basename(gt_folder) + ".json")
+            ):
+                with open(
+                    os.path.join(
+                        self.template_tng_Folder,
+                        gt_folder,
+                        os.path.basename(gt_folder) + ".json",
+                    )
+                ) as f:
+                    self.tnglist.append(json.load(f))
         for gt_folder in sorted(os.listdir(self.tng_Folder)):
             if os.path.isdir(os.path.join(self.tng_Folder, gt_folder)) and os.path.isfile(
                 os.path.join(self.tng_Folder, gt_folder, os.path.basename(gt_folder) + ".json")
@@ -72,8 +87,11 @@ class TEINERGroundtruthBuilder:
                     self.tnglist.append(json.load(f))
 
         self.tngdict = {}
+        self.editable_tng_names = []
         for tng in self.tnglist:
             self.tngdict[tng[self.tng_attr_name]] = tng
+            if not tng[self.tng_attr_template]:
+                self.editable_tng_names.append(tng[self.tng_attr_name])
 
     def get_spacy_lm(self, lang):
         if not spacy.util.is_package(self.lang_dict[lang]):
@@ -103,6 +121,7 @@ class TEINERGroundtruthBuilder:
         return val
 
     def build_groundtruth(self, build_config, folder_path):
+        build_config[self.tng_attr_template] = False
         progressoutput = st.success("Prepare Groundtruth building...")
         save_folder = os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))
         makedir_if_necessary(save_folder)
@@ -260,14 +279,15 @@ class TEINERGroundtruthBuilder:
     def build_ner_statistics(self, directory):
         tag_collect = {}
         for filename in os.listdir(directory):
-            with open(os.path.join(directory, filename)) as f:
-                training_data = json.load(f)
-            for i in range(len(training_data)):
-                for j in range(len(training_data[i])):
-                    if training_data[i][j][1] in tag_collect.keys():
-                        tag_collect[training_data[i][j][1]] += 1
-                    else:
-                        tag_collect[training_data[i][j][1]] = 1
+            if filename.endswith(".json"):
+                with open(os.path.join(directory, filename)) as f:
+                    training_data = json.load(f)
+                for i in range(len(training_data)):
+                    for j in range(len(training_data[i])):
+                        if training_data[i][j][1] in tag_collect.keys():
+                            tag_collect[training_data[i][j][1]] += 1
+                        else:
+                            tag_collect[training_data[i][j][1]] = 1
         return {k: v for k, v in sorted(tag_collect.items(), key=lambda item: item[1])}
 
     def show_statistics_to_saved_groundtruth(self, directory, entity_list):
@@ -384,13 +404,17 @@ class TEINERGroundtruthBuilder:
             st.experimental_rerun()
 
     def show_del_environment(self):
-        selected_gt_name = st.selectbox("Select a groundtruth to delete!", list(self.tngdict.keys()))
+        selected_gt_name = st.selectbox("Select a groundtruth to delete!", self.editable_tng_names)
         if st.button("Delete Selected Groundtruth"):
             self.delete_groundtruth(self.tngdict[selected_gt_name])
 
     def build_tng_tablestring(self):
-        tablestring = "Name | TEI Reader Config | TEI Read NER Entity Mapping | Language | Shuffle Type | Partition Ratio \n -----|-------|-------|-------|-------|-------"
+        tablestring = "Name | TEI Reader Config | TEI Read NER Entity Mapping | Language | Shuffle Type | Partition Ratio | Template \n -----|-------|-------|-------|-------|-------|-------"
         for tng in self.tnglist:
+            if tng[self.tng_attr_template]:
+                template = "yes"
+            else:
+                template = "no"
             if self.shuffle_options_dict[tng[self.tng_attr_shuffle_type]]:
                 shuffle_type = "by file"
             else:
@@ -409,6 +433,8 @@ class TEINERGroundtruthBuilder:
                 + shuffle_type
                 + " | "
                 + partition_ratio
+                + " | "
+                + template
             )
         return tablestring
 
@@ -422,8 +448,12 @@ class TEINERGroundtruthBuilder:
         )
         if self.state.tng_selected_display_tng_name:
             cur_sel_tng = self.tngdict[self.state.tng_selected_display_tng_name]
+            if cur_sel_tng[self.tng_attr_template]:
+                cur_folder=self.template_tng_Folder
+            else:
+                cur_folder=self.tng_Folder
             self.show_statistics_to_saved_groundtruth(
-                os.path.join(self.tng_Folder, cur_sel_tng[self.tng_attr_name].replace(" ", "_")),
+                os.path.join(cur_folder, cur_sel_tng[self.tng_attr_name].replace(" ", "_")),
                 cur_sel_tng[self.tng_attr_tnm][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_entitylist],
             )
 

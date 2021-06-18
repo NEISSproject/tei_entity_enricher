@@ -182,7 +182,7 @@ class WikidataConnector:
         self,
         filter_for_precise_spelling: bool = True,
         filter_for_correct_type: bool = True,
-    ) -> Union[Dict[str, list], bool]:
+    ) -> Union[Dict[Tuple[str, str], list], bool]:
         """sends a entity query to wikidata web api using input strings of self.input
         and returns a dict with input strings as keys and a list as values,
         which consists of the number of search hits and the returned data object
@@ -257,7 +257,7 @@ class WikidataConnector:
                     if self.check_wikidata_entity_type(search_list_element["id"], string_tuple[1]) == True:
                         correct_type.append(search_list_element)
                 filereader_result["search"] = correct_type
-            result_dict[string_tuple[0]] = [
+            result_dict[string_tuple] = [
                 len(filereader_result["search"]),
                 filereader_result,
             ]

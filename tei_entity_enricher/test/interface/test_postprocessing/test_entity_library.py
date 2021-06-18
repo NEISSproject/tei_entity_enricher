@@ -37,7 +37,16 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
         for el in self.get_entity_library():
             self.assertEqual(
                 el.add_entities(
-                    data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": "123"}]
+                    data=[
+                        {
+                            "name": "Test",
+                            "furtherNames": [],
+                            "type": "test",
+                            "description": "",
+                            "wikidata_id": "Q123",
+                            "gnd_id": "123",
+                        }
+                    ]
                 ),
                 (1, 0),
                 "a tuple of integers (1, 0) should be returned because a new entity should has been successfully added to entity library and no entity has been filtered out",
@@ -45,7 +54,16 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
             self.assertEqual(
                 type(
                     el.add_entities(
-                        data=[{"name": "Test", "furtherNames": "", "type": "test", "wikidata_id": "", "gnd_id": ""}]
+                        data=[
+                            {
+                                "name": "Test",
+                                "furtherNames": "",
+                                "type": "test",
+                                "description": "",
+                                "wikidata_id": "",
+                                "gnd_id": "",
+                            }
+                        ]
                     )
                 ),
                 str,
@@ -54,7 +72,16 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
             self.assertEqual(
                 type(
                     el.add_entities(
-                        data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "Q123", "gnd_id": ""}]
+                        data=[
+                            {
+                                "name": "Test",
+                                "furtherNames": [],
+                                "type": "test",
+                                "description": "",
+                                "wikidata_id": "Q123",
+                                "gnd_id": "",
+                            }
+                        ]
                     )
                 ),
                 str,
@@ -63,7 +90,16 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
             self.assertEqual(
                 type(
                     el.add_entities(
-                        data=[{"name": "Test", "furtherNames": [], "type": "test", "wikidata_id": "", "gnd_id": "123"}]
+                        data=[
+                            {
+                                "name": "Test",
+                                "furtherNames": [],
+                                "type": "test",
+                                "description": "",
+                                "wikidata_id": "",
+                                "gnd_id": "123",
+                            }
+                        ]
                     )
                 ),
                 str,

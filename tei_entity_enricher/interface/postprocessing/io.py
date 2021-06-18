@@ -132,7 +132,7 @@ class FileReader:
         if self.file is not None:
             if transform_for_entity_library_import == True:
                 result = []
-                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt
+                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt (falls file eine UploadedFile ist)
                 csv_reader = csv.DictReader(self.file)
                 for row in csv_reader:
                     new_row = {}
@@ -266,13 +266,14 @@ class Cache:
             'gnd_id2_key2': 'gnd_id2_val2'}
         }
         usecase: EntityLibrary:
-        checks a dict in self.data for an existing wikidata_id and gnd_id,
+        checks all dicts in self.data (list of dicts) for an existing wikidata_id and gnd_id,
         a specific dict structure is presupposed:
         [
             {
                 'name': 'entityName1',
                 'furtherNames': [],
                 'type': 'entityType',
+                'description': '',
                 'wikidata_id': 'Q1234',
                 'gnd_id': '12345678'
             },
@@ -280,11 +281,12 @@ class Cache:
                 'name': 'entityName2',
                 'furtherNames': [],
                 'type': 'entityType',
+                'description': '',
                 'wikidata_id': 'Q12345',
                 'gnd_id': '123456789'
             }
         ]
-        this check is used in FileWriter class as part
+        this check is used in Identifier class (usecase EntityLibrary) and in FileWriter class as part
         of a merging process of an existing json file and new json data
         (in the usecases of GndConnector or EntityLibrary),
         which should be added to the file:
@@ -338,14 +340,14 @@ class Cache:
                 for entity in self.data:
                     if type(entity) != dict:
                         return False
-                    compulsory_keys = ["name", "type", "wikidata_id", "gnd_id", "furtherNames"]
+                    compulsory_keys = ["name", "type", "description", "wikidata_id", "gnd_id", "furtherNames"]
                     for key in list(entity.keys()):
                         if key not in compulsory_keys:
                             return False
                     for key in compulsory_keys:
                         if key not in list(entity.keys()):
                             return False
-                    if type(entity[compulsory_keys[4]]) != list:
+                    if type(entity[compulsory_keys[5]]) != list:
                         return False
                     for key in compulsory_keys[:-1]:
                         if type(entity[key]) != str:
