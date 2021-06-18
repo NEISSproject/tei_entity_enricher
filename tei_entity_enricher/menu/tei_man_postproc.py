@@ -366,13 +366,15 @@ class TEIManPP:
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True
-        search_result_number=0
+        search_result_number = 0
         for tag_entry in changed_tag_list:
-            search_result_number+=1
+            search_result_number += 1
             if "delete" not in tag_entry.keys() or not tag_entry["delete"]:
-                if tag_entry["name"] is None or tag_entry["name"]=="":
-                    val=False
-                    st.error(f'Save is not allowed. See search result {search_result_number}. A Tag Name is not allowed to be empty!')
+                if tag_entry["name"] is None or tag_entry["name"] == "":
+                    val = False
+                    st.error(
+                        f"Save is not allowed. See search result {search_result_number}. A Tag Name is not allowed to be empty!"
+                    )
                 entry_dict = {}
                 if tag_entry["tagbegin"].endswith("/>"):
                     end = -2
@@ -385,12 +387,16 @@ class TEIManPP:
                             attr_value = element.split("=")
                             entry_dict[attr_value[0]] = attr_value[1][1:-1]
                 for attr in entry_dict.keys():
-                    if attr is None or attr=="":
-                        val=False
-                        st.error(f'Save is not allowed. See search result {search_result_number}. You cannot define a value ({entry_dict[attr]}) for an empty attribute name!')
-                    if entry_dict[attr] is None or entry_dict[attr]=="":
-                        val=False
-                        st.error(f'Save is not allowed. See search result {search_result_number}. You cannot define a attribute ({attr}) without a value!')
+                    if attr is None or attr == "":
+                        val = False
+                        st.error(
+                            f"Save is not allowed. See search result {search_result_number}. You cannot define a value ({entry_dict[attr]}) for an empty attribute name!"
+                        )
+                    if entry_dict[attr] is None or entry_dict[attr] == "":
+                        val = False
+                        st.error(
+                            f"Save is not allowed. See search result {search_result_number}. You cannot define a attribute ({attr}) without a value!"
+                        )
         return val
 
     def save_manual_changes_to_tei(self, loadpath, savepath, changed_tag_list, tr):

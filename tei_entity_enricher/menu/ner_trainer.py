@@ -53,7 +53,7 @@ class NERTrainer(object):
             #     init_file=self.trainer_params_json["gen"]["train"]["lists"][0],
             # )
             if st.button(f'Save trainer_params to config: {os.path.join(self._workdir_path, "trainer_params.json")}'):
-                with open(os.path.join(self._workdir_path, "trainer_params.json"), "w") as fp_tp:
+                with open("trainer_params.json", "w") as fp_tp:
                     json.dump(self.trainer_params_json, fp_tp)
                 logger.info(f'trainer params saved to: {os.path.join(self._workdir_path, "trainer_params.json")}')
                 st.experimental_rerun()
@@ -61,12 +61,12 @@ class NERTrainer(object):
             # Manage Training Process
             # if not self.prelaunch_check():
             #     return
-            train_manager = get_manager(workdir=self._workdir_path)
+            train_manager = get_manager(workdir=os.getcwd())
             st.text("Train Manager")
             if st.button("Set trainer params"):
                 train_manager.set_params(self.trainer_params_json)
                 logger.info("trainer params set!")
-            b1, b2, b3, b4 = st.beta_columns(4)
+            b1, b2, b3, b4, process_status = st.beta_columns([2, 2, 2, 2, 6])
             if b1.button("Start"):
                 train_manager.start()
             if b2.button("Stop"):
@@ -75,6 +75,7 @@ class NERTrainer(object):
                 train_manager.clear_process()
             if b4.button("refresh"):
                 logger.info("refresh streamlit")
+            train_manager.process_state(st_element=process_status)
 
             if train_manager.has_process():
                 with st.beta_expander("Epoch progress", expanded=True):
@@ -207,7 +208,9 @@ class NERTrainer(object):
             return 0
 
     def workdir(self):
-        start_config_path = os.path.join(module_path, "templates", "trainer", "start_config.state")
+        start_config_path = os.path.join(
+            "tei_entity_enricher", "tei_entity_enricher", "templates", "trainer", "start_config.state"
+        )
         start_config = config_io.get_config(start_config_path)
         st_workdir_path, st_wdp_status = st.beta_columns([10, 1])
 
@@ -238,5 +241,5 @@ class NERTrainer(object):
         return 0
 
     def save_train_params(self):
-        with open(os.path.join(self._workdir_path, "trainer_params.json"), "w") as fp:
+        with open("trainer_params.json", "w") as fp:
             json.dump(self.trainer_params_json, fp, indent=2)

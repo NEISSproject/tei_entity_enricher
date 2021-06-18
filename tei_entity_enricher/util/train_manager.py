@@ -79,9 +79,22 @@ class TrainManager:
         if return_code is not None:
             st.info("Process has stopped.")
 
+    def process_state(self, st_element=st):
+        if self.process is not None:
+            if self.process.poll() is None:
+                st_element.info("running...")
+            elif self.process.poll() == 0:
+                st_element.success("finished successful :-)")
+            else:
+                st_element.error(f"process finished with error code: {self.process.poll()}")
+        else:
+            st_element.info(f"process is empty")
+
     def clear_process(self):
         if self.process.poll() is not None:
             self._log_content = ""
+            self._current_epoch = ""
+            self._progress_content = ""
             self.process = None
         else:
             st.warning("Stop process before clearing it.")

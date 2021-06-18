@@ -1,0 +1,4 @@
+{
+  "workdir": "ner_trainer",
+  "config_path": "tei_entity_enricher/tei_entity_enricher/templates/trainer/start_config.state"
+}
