@@ -40,9 +40,8 @@ class EntityLibrary:
         self.data_file: Union[str, None] = self.default_data_file if self.use_default_data_file == True else data_file
         self.show_printmessages: bool = show_printmessages
         self.data: Union[list, None] = None
-        if self.data_file is not None:
-            if self.load_library() == True:
-                print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
+        if (self.data_file is not None) and (self.load_library() == True):
+            print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
 
@@ -358,5 +357,5 @@ class EntityLibrary:
         sparql.setReturnFormat(JSON)
         result = sparql.query().convert()
         return result["results"]["bindings"]
-        # if there is no result, bindings is an empty list
+        # if there is no result, the returned value is an empty list
         # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]

@@ -1,7 +1,8 @@
 import streamlit as st
 import logging
+import json
 
-# from streamlit_ace import st_ace
+from streamlit_ace import st_ace
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 import tei_entity_enricher.menu.tei_man_postproc as tmp
 from tei_entity_enricher.util.helper import state_failed, state_ok, transform_arbitrary_text_to_markdown
@@ -164,14 +165,13 @@ class TEINERPostprocessing:
                     el_filepath_state_col.latex(state_ok)
                     el_init_message_placeholder.success("Entity library is activated.")
                     with el_file_view_placeholder:
-                        st.json(pp_el_library_object.data)
-                        # editor_content = st_ace(
-                        #     value=pp_el_library_object.data,
-                        #     height=500,
-                        #     language=None,
-                        #     readonly=False,
-                        #     wrap=True,
-                        # )
+                        # st.json(pp_el_library_object.data)
+                        editor_content = st_ace(
+                            value=json.dumps(pp_el_library_object.data, indent=4),
+                            height=500,
+                            language="json",
+                            readonly=False,
+                        )
             # basic layout: add entities subcontainer
             el_add_entities_from_file_subcontainer = st.beta_container()
             with el_add_entities_from_file_subcontainer:
@@ -217,16 +217,13 @@ class TEINERPostprocessing:
                                             st.info(message)
                             el_file_view_placeholder.empty()
                             with el_file_view_placeholder:
-                                st.json(pp_el_library_object.data)
-                            # el_file_editor_placeholder.empty()
-                            # with el_file_editor_placeholder:
-                            #     editor_content = st_ace(
-                            #         value=pp_el_library_object.data,
-                            #         height=500,
-                            #         language=None,
-                            #         readonly=False,
-                            #         wrap=True,
-                            #     )
+                                # st.json(pp_el_library_object.data)
+                                editor_content = st_ace(
+                                    value=json.dumps(pp_el_library_object.data, indent=4),
+                                    height=500,
+                                    language="json",
+                                    readonly=False,
+                                )
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(self.state,entity_library=pp_el_library_object)
+        tmp.TEIManPP(self.state, entity_library=pp_el_library_object)
