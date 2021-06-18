@@ -22,11 +22,18 @@ class Identifier:
         current_wikidata_query_result_data:
             buffer to save and print current wikidata_query() results
         current_suggest_result_data:
-            buffer to save and print current suggest() results"""
+            buffer to save and print current suggest() results
+        entity_types:
+            list of entity types currently used in ntee, retrieved from sparql_queries.json"""
         self.input: Union[List[Tuple[str, str]], None] = input
         self.show_printmessages: bool = show_printmessages
         self.current_wikidata_query_result_data: Union[dict, None] = None
         self.current_suggest_result_data: Union[dict, None] = None
+        self.entity_types: List[str] = self.get_entity_type_list()
+
+    def get_entity_type_list(self) -> List[str]:
+        wikidata_con = WikidataConnector(check_connectivity=False, show_printmessages=False)
+        return list(wikidata_con.wikidata_sparql_queries.keys())
 
     def check_entity_library_by_names_and_type(
         self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
@@ -76,6 +83,7 @@ class Identifier:
     def suggest(
         self,
         query_entity_library: Union[EntityLibrary, None] = None,
+        do_wikidata_query: bool = True,
         wikidata_filter_for_precise_spelling: bool = True,
         wikidata_filter_for_correct_type: bool = True,
         wikidata_web_api_language: str = "de",
@@ -131,14 +139,17 @@ class Identifier:
                 query_entity_library_result[tuple] = tuple_result_list
             entity_library_has_data = self.check_entity_library_result_has_data(query_entity_library_result)
         query_wikidata_result = {}
-        query_wikidata_result = self.wikidata_query(
-            wikidata_filter_for_precise_spelling,
-            wikidata_filter_for_correct_type,
-            wikidata_web_api_language,
-            wikidata_web_api_limit,
-            check_connectivity_to_wikidata,
+        if do_wikidata_query == True:
+            query_wikidata_result = self.wikidata_query(
+                wikidata_filter_for_precise_spelling,
+                wikidata_filter_for_correct_type,
+                wikidata_web_api_language,
+                wikidata_web_api_limit,
+                check_connectivity_to_wikidata,
+            )
+        wikidata_result_has_data = (
+            self.check_wikidata_result_has_data(query_wikidata_result) if do_wikidata_query == True else False
         )
-        wikidata_result_has_data = self.check_wikidata_result_has_data(query_wikidata_result)
         # create output
         output_dict = {}
         if query_entity_library is not None:
@@ -305,12 +316,12 @@ class Identifier:
 
 if __name__ == "__main__":
 
-    def test():
+    def test(with_wikidata_query: bool = True):
         input = [("Berlin", "place"), ("Steven Spielberg", "person"), ("UNO", "organisation")]
         i = Identifier(input)
         el = EntityLibrary(use_default_data_file=True)
-        suggestions = i.suggest(el)
+        suggestions = i.suggest(el, with_wikidata_query)
         print(suggestions)
         i.summarize_current_suggest_results()
 
-    test()
+    test(with_wikidata_query=True)
