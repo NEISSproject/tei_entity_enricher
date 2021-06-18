@@ -9,18 +9,19 @@ from tei_entity_enricher.util.helper import (
     transform_xml_to_markdown,
     transform_arbitrary_text_to_latex,
 )
-
-# from tei_entity_enricher.interface.postprocessing.identifier import Identifier
+from tei_entity_enricher.interface.postprocessing.identifier import Identifier
+#from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
 
 
 class TEIManPP:
-    def __init__(self, state, show_menu=True):
+    def __init__(self, state, show_menu=True, entity_library=None):
         self.state = state
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
             "By TEI Read NER Entity Mapping",
             "By self-defined Tag configuration",
         ]
+        self.entity_library = entity_library#get_entity_library()
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.tnm = tnm_map.TEINERMap(state, show_menu=False)

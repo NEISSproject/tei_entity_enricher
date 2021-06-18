@@ -229,4 +229,4 @@ class TEINERPostprocessing:
                             #     )
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(self.state)
+        tmp.TEIManPP(self.state,entity_library=pp_el_library_object)
