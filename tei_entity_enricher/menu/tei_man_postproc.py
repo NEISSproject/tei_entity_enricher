@@ -7,10 +7,11 @@ from tei_entity_enricher.util.components import editable_multi_column_table
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
-    transform_arbitrary_text_to_latex,
+    get_listoutput,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
-#from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
+
+# from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
 
 
 class TEIManPP:
@@ -21,7 +22,7 @@ class TEIManPP:
             "By TEI Read NER Entity Mapping",
             "By self-defined Tag configuration",
         ]
-        self.entity_library = entity_library#get_entity_library()
+        self.entity_library = entity_library  # get_entity_library()
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.tnm = tnm_map.TEINERMap(state, show_menu=False)
@@ -50,7 +51,7 @@ class TEIManPP:
                 st.warning(f'Multiple definitions of the attribute {answer["Attributes"][i]} are not supported.')
             attrdict[answer["Attributes"][i]] = answer["Values"][i]
             new_tagbegin = new_tagbegin + " " + answer["Attributes"][i] + '="' + answer["Values"][i] + '"'
-        if end==-2:
+        if end == -2:
             new_tagbegin = new_tagbegin + "/>"
         else:
             new_tagbegin = new_tagbegin + ">"
@@ -70,10 +71,37 @@ class TEIManPP:
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
+    def add_suggestion_link_to_tag_entry(self, suggestion, tag_entry):
+        entry_dict = {}
+        if tag_entry["tagbegin"].endswith("/>"):
+            end = -2
+        else:
+            end = -1
+        if " " in tag_entry["tagbegin"]:
+            attr_list = tag_entry["tagbegin"][tag_entry["tagbegin"].find(" ") + 1 : end].split(" ")
+            for element in attr_list:
+                if "=" in element:
+                    attr_value = element.split("=")
+                    entry_dict[attr_value[0]] = attr_value[1][1:-1]
+        entry_dict["ref"] = suggestion["wikidata_id"]
+        new_tagbegin = "<" + tag_entry["name"]
+        for attr in entry_dict.keys():
+            new_tagbegin = new_tagbegin + " " + attr + '="' + entry_dict[attr] + '"'
+        if end == -2:
+            new_tagbegin = new_tagbegin + "/>"
+        else:
+            new_tagbegin = new_tagbegin + ">"
+        tag_entry["tagbegin"] = new_tagbegin
+
     def tei_edit_specific_entity(self, tag_entry, tr):
         col1, col2 = st.beta_columns(2)
         with col1:
-            tag_entry["delete"]=st.checkbox("Remove this tag from the TEI-File",tag_entry["delete"],key="tmp_edit_del_tag",help="Set this checkbox if you want to remove this tag from the TEI-File.")
+            tag_entry["delete"] = st.checkbox(
+                "Remove this tag from the TEI-File",
+                tag_entry["delete"],
+                key="tmp_edit_del_tag",
+                help="Set this checkbox if you want to remove this tag from the TEI-File.",
+            )
             if tag_entry["delete"]:
                 st.write("This tag will be removed when saving the current changes.")
             else:
@@ -85,7 +113,7 @@ class TEIManPP:
                 )
                 tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
                 if "tagend" in tag_entry.keys():
-                    tag_entry["tagend"]="</"+tag_entry["name"]+">"
+                    tag_entry["tagend"] = "</" + tag_entry["name"] + ">"
         with col2:
             st.markdown("### Textcontent of the tag:")
             if "pure_tagcontent" in tag_entry.keys():
@@ -100,6 +128,39 @@ class TEIManPP:
                     self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1]["tag_id"], 250, tr
                 )
             )
+        if "pure_tagcontent" in tag_entry.keys():
+            st.markdown("### Search for link suggestions")
+            tag_entry["ls_search_type"] = st.text_input(
+                "Link suggestion search type",
+                tag_entry["ls_search_type"] if "ls_search_type" in tag_entry.keys() else tag_entry["name"],
+                help="Define a search type for which link suggestions should be done!",
+            )
+            if st.button("Search link suggestions"):
+                input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
+                link_identifier = Identifier(input=[input_tuple])
+                result = link_identifier.suggest(self.entity_library,)
+                tag_entry["link_suggestions"] = result[input_tuple]
+            if "link_suggestions" in tag_entry.keys():
+                suggestion_id = 0
+                if len(tag_entry["link_suggestions"])>0:
+                    scol1, scol2,scol3, scol4,scol5, scol6 = st.beta_columns(6)
+                    scol1.markdown("### Name")
+                    scol2.markdown("### Further Names")
+                    scol3.markdown("### Description")
+                    scol4.markdown("### Wikidata_Id")
+                    scol5.markdown("### GND_id")
+                    scol6.markdown("### Use Suggestion")
+                    for suggestion in tag_entry["link_suggestions"]:
+                        scol1.write(suggestion["name"])
+                        scol2.write(get_listoutput(suggestion["furtherNames"]))
+                        scol3.write(suggestion["description"])
+                        scol4.write(suggestion["wikidata_id"])
+                        scol5.write(suggestion["gnd_id"])
+                        suggestion_id += 1
+                        if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
+                            self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
+                else:
+                    st.write("No link suggestions found!")
         return tag_entry
 
     def tei_edit_environment(self):
@@ -122,19 +183,19 @@ class TEIManPP:
         # self.state.tmp_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
         # if self.state.tmp_teifile or self.state.tmp_open_teifile:
         if st.button("Search Matching Entities in TEI-File:"):
-            self.state.tmp_last_save_path=None
+            self.state.tmp_last_save_path = None
             if self.state.tmp_teifile or self.state.tmp_open_teifile:
                 tei = tei_writer.TEI_Writer(
                     self.state.tmp_teifile, openfile=self.state.tmp_open_teifile, tr=selected_tr
                 )
                 self.state.tmp_current_search_text_tree = tei.get_text_tree()
                 self.state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
-                self.state.tmp_tr_from_last_search=selected_tr
+                self.state.tmp_tr_from_last_search = selected_tr
                 self.state.tmp_current_loop_element = 1
                 if len(self.state.tmp_matching_tag_list) > 0:
                     self.state.tmp_teifile_save = self.state.tmp_teifile
                     self.enrich_search_list(self.state.tmp_tr_from_last_search)
-                    if self.state.pp_el_object:
+                    if self.entity_library:
                         self.enrich_search_list_with_link_suggestions()
             else:
                 self.state.avoid_rerun()
@@ -148,7 +209,7 @@ class TEIManPP:
         elif len(self.state.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
         else:
-            if len(self.state.tmp_matching_tag_list)==1:
+            if len(self.state.tmp_matching_tag_list) == 1:
                 st.write("One tag in the TEI-File matches the search conditions.")
             else:
                 self.state.tmp_current_loop_element = st.slider(
@@ -165,11 +226,16 @@ class TEIManPP:
                     self.state.tmp_current_loop_element,
                 )
             self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1] = self.tei_edit_specific_entity(
-                self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1], self.state.tmp_tr_from_last_search
+                self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1],
+                self.state.tmp_tr_from_last_search,
             )
-            col1,col2=st.beta_columns([0.1,0.9])
+            col1, col2 = st.beta_columns([0.1, 0.9])
             with col1:
-                save_button_result=st.button("Save to",key="tmp_edit_save_changes_button",help="Save the current changes to the the specified path.")
+                save_button_result = st.button(
+                    "Save to",
+                    key="tmp_edit_save_changes_button",
+                    help="Save the current changes to the the specified path.",
+                )
             with col2:
                 self.state.tmp_teifile_save = st.text_input(
                     "Path to save the changes to:",
@@ -178,9 +244,14 @@ class TEIManPP:
                 )
             if save_button_result:
                 if self.validate_manual_changes_before_saving(self.state.tmp_matching_tag_list):
-                    self.save_manual_changes_to_tei(self.state.tmp_teifile,self.state.tmp_teifile_save,self.state.tmp_matching_tag_list,self.state.tmp_tr_from_last_search)
-                    self.state.tmp_matching_tag_list=None
-                    self.state.tmp_last_save_path=self.state.tmp_teifile_save
+                    self.save_manual_changes_to_tei(
+                        self.state.tmp_teifile,
+                        self.state.tmp_teifile_save,
+                        self.state.tmp_matching_tag_list,
+                        self.state.tmp_tr_from_last_search,
+                    )
+                    self.state.tmp_matching_tag_list = None
+                    self.state.tmp_last_save_path = self.state.tmp_teifile_save
                 else:
                     self.state.avoid_rerun()
             # st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
@@ -258,17 +329,23 @@ class TEIManPP:
     def enrich_search_list_with_link_suggestions(self):
         entitylist = []
         # for tag in self.state.tmp_matching_tag_list:
-        #    entitylist.append(tuple())
-        # Identifier()
+        #    if "pure_tagcontent" in tag.keys():
+        #        input_tuple=tag["pure_tagcontent"],"person"
+        #        entitylist.append(input_tuple)
+        # link_identifier=Identifier(input=entitylist)
+        # result=link_identifier.suggest(self.entity_library)
+        # cur_el_index=0
+        # for tag in self.state.tmp_matching_tag_list:
+        #    if "pure_tagcontent" in tag.keys():
+        #        tag["link_suggestions"]=result[entitylist[cur_el_index]]
+        #        cur_el_index+=1
 
-    def validate_manual_changes_before_saving(self,changed_tag_list):
-        val=True
+    def validate_manual_changes_before_saving(self, changed_tag_list):
+        val = True
         return val
 
-    def save_manual_changes_to_tei(self,loadpath,savepath,changed_tag_list,tr):
-        tei = tei_writer.TEI_Writer(
-                    loadpath, tr=tr
-                )
+    def save_manual_changes_to_tei(self, loadpath, savepath, changed_tag_list, tr):
+        tei = tei_writer.TEI_Writer(loadpath, tr=tr)
         tei.include_changes_of_tag_list(changed_tag_list)
         tei.write_back_to_file(savepath)
 
