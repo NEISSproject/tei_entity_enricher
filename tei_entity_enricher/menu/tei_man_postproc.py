@@ -299,7 +299,7 @@ class TEIManPP:
         col1, col2 = st.beta_columns(2)
         with col1:
             self.state.tmp_search_options = st.radio(
-                "Shuffle Options",
+                "Search Options",
                 self.search_options,
                 self.search_options.index(self.state.tmp_search_options) if self.state.tmp_search_options else 0,
             )
