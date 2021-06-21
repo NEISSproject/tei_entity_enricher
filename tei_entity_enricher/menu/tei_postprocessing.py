@@ -204,6 +204,7 @@ class TEINERPostprocessing:
                 if el_add_missing_ids_button == True:
                     if pp_el_library_object.data_file is not None:
                         messages = pp_el_library_object.add_missing_id_numbers()
+                        pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
                         with el_misc_message_placeholder.beta_container():
                             for message in messages:
                                 if "changed" in message:
