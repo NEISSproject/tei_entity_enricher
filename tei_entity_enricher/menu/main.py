@@ -54,6 +54,16 @@ class Main:
             tuple(pages.keys()).index(self.state.page) if self.state.page else int(args.start_state),
         )
 
+        st.sidebar.markdown("### Funded by")
+        # Include EU Logos
+        eu_fonds = Image.open(os.path.join(module_path, "images", "logo_EU_Fonds.png"))
+        st.sidebar.image(eu_fonds)
+        colesf, colbm = st.sidebar.beta_columns(2)
+        eu_esf = Image.open(os.path.join(module_path, "images", "logo_EU_ESF.png"))
+        colesf.image(eu_esf)
+        mv_bm = Image.open(os.path.join(module_path, "images", "logo_MV_BM.png"))
+        colbm.image(mv_bm)
+
         # Display the selected page with the session state
         pages[self.state.page]()
 
