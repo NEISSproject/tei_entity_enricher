@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid
+from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed
 
 
 def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1):
@@ -140,3 +141,33 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
             abs_path, sub_level=sub_level + 1 if sub_level < max_level else sub_level, max_level=max_level
         )
     return os.path.join(folder_path, selected_dirname)
+
+
+def small_dir_selector(state, label=None, value=local_save_path, key="", help=None):
+    col1, col2 = st.beta_columns([10, 1])
+    dirpath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    if os.path.isdir(dirpath):
+        col2.latex(state_ok)
+    else:
+        col2.latex(state_failed)
+    col3, col4, col5 = st.beta_columns([25, 25, 50])
+    if col3.button("..", key=key + "_level_up", help="Go one directory up."):
+        dirpath = os.path.dirname(dirpath)
+        setattr(state, key + "_chosen_subdir", None)
+    subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
+    if len(subdirlist) > 0:
+        setattr(
+            state,
+            key + "_chosen_subdir",
+            col5.selectbox(
+                "Subdirectories:",
+                subdirlist,
+                subdirlist.index(getattr(state, key + "_chosen_subdir"))
+                if getattr(state, key + "_chosen_subdir")
+                else 0,
+            ),
+        )
+        if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen directory."):
+            dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
+            setattr(state, key + "_chosen_subdir", None)
+    return dirpath

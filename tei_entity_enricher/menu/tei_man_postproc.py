@@ -3,12 +3,13 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
-from tei_entity_enricher.util.components import editable_multi_column_table
+from tei_entity_enricher.util.components import editable_multi_column_table, small_dir_selector
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
     get_listoutput,
     replace_empty_string,
+    local_save_path
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
