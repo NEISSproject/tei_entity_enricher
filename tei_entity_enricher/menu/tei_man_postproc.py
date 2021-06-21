@@ -26,6 +26,7 @@ class TEIManPP:
         self.tmp_link_choose_option_gnd = "GND id"
         self.tmp_link_choose_option_wikidata = "Wikidata id"
         self.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
+        self.tmp_base_ls_search_type_options=["without specified type"]
         self.entity_library = entity_library  # get_entity_library()
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
@@ -139,23 +140,48 @@ class TEIManPP:
             )
         if "pure_tagcontent" in tag_entry.keys():
             st.markdown("### Search for link suggestions")
-            tag_entry["ls_search_type"] = st.text_input(
-                "Link suggestion search type",
-                tag_entry["ls_search_type"] if "ls_search_type" in tag_entry.keys() else tag_entry["name"],
+            input_tuple = tag_entry["pure_tagcontent"], ""
+            link_identifier = Identifier(input=[input_tuple])
+            search_type_list=[]
+            search_type_list.extend(self.tmp_base_ls_search_type_options)
+            search_type_list.extend(link_identifier.entity_types)
+            tag_entry["ls_search_type"] = st.selectbox(
+                label="Link suggestion search type",
+                options=search_type_list,
+                index=search_type_list.index(tag_entry["ls_search_type"])
+                if "ls_search_type" in tag_entry.keys()
+                else 0,
+                key="tmp_ls_search_type_sel_box",
                 help="Define a search type for which link suggestions should be done!",
             )
-            col1, col2 = st.beta_columns(2)
-            if col1.button("Search link suggestions"):
-                input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
-                link_identifier = Identifier(input=[input_tuple])
-                result = link_identifier.suggest(
-                    self.entity_library,
-                )
-                tag_entry["link_suggestions"] = result[input_tuple]
+            input_tuple = tag_entry["pure_tagcontent"],tag_entry["ls_search_type"]
+            link_identifier.input=[input_tuple]
+            # tag_entry["ls_search_type"] = st.text_input(
+            #    "Link suggestion search type",
+            #    tag_entry["ls_search_type"] if "ls_search_type" in tag_entry.keys() else tag_entry["name"],
+            #    help="Define a search type for which link suggestions should be done!",
+            # )
+            col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
+            simple_search = col1.button(
+                "Simple Search",
+                key="tmp_ls_simple_search",
+                help="Searches for link suggestions only in the currently loaded entity library.",
+            )
+            full_search = col2.button(
+                "Full Search",
+                key="tmp_ls_full_search",
+                help="Searches for link suggestions in the currently loaded entity library and in the web (e.g. from wikidata).",
+            )
+            if simple_search or full_search:
+                result = link_identifier.suggest(self.entity_library, do_wikidata_query=full_search,wikidata_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"])==0))
+                if input_tuple in result.keys():
+                    tag_entry["link_suggestions"] = result[input_tuple]
+                else:
+                    tag_entry["link_suggestions"] = []
             if "link_suggestions" in tag_entry.keys():
                 suggestion_id = 0
                 if len(tag_entry["link_suggestions"]) > 0:
-                    self.state.tmp_link_choose_option = col2.selectbox(
+                    self.state.tmp_link_choose_option = col3.selectbox(
                         "Choose links from",
                         self.tmp_link_choose_options,
                         self.tmp_link_choose_options.index(self.state.tmp_link_choose_option)
@@ -204,7 +230,11 @@ class TEIManPP:
         )
         # self.state.tmp_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
         # if self.state.tmp_teifile or self.state.tmp_open_teifile:
-        if st.button("Search Matching Entities in TEI-File:"):
+        if st.button(
+            "Search Matching Entities in TEI-File:",
+            key="tmp_search_entities",
+            help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
+        ):
             self.state.tmp_last_save_path = None
             if self.state.tmp_teifile or self.state.tmp_open_teifile:
                 tei = tei_writer.TEI_Writer(
