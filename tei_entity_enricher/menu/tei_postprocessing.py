@@ -228,14 +228,24 @@ class TEINERPostprocessing:
                         el_editor_content_check_result = el_editor_content_check(editor_content)
                         if type(el_editor_content_check_result) == str:
                             with el_file_view_message_placeholder:
-                                st.info(f"Error: {el_editor_content_check_result}")
+                                with st.beta_container():
+                                    st.info(f"Error: {el_editor_content_check_result}")
+                                    st.button(
+                                        label="Rerun first before manually editing entity library again",
+                                        help="At the moment the postprocessing page has be reloaded after a manual edit of the current entity library, before a manual edit can be executed again. Otherwise the second changes will be lost.",
+                                    )
                         else:
                             pp_el_library_object.data = json.loads(editor_content)
                             pp_el_last_editor_state.content = editor_content
                             with el_file_view_message_placeholder:
-                                st.success(
-                                    "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
-                                )
+                                with st.beta_container():
+                                    st.success(
+                                        "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
+                                    )
+                                    st.button(
+                                        label="Rerun first before manually editing entity library again",
+                                        help="At the moment the postprocessing page has be reloaded after a manual edit of the current entity library, before a manual edit can be executed again. Otherwise the second changes will be lost.",
+                                    )
             # basic layout: add entities subcontainer
             el_add_entities_from_file_subcontainer = st.beta_container()
             with el_add_entities_from_file_subcontainer:
