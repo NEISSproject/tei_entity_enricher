@@ -359,3 +359,10 @@ class EntityLibrary:
         return result["results"]["bindings"]
         # if there is no result, the returned value is an empty list
         # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
+
+    def reset(self):
+        self.data_file = None
+        self.use_default_data_file = False
+        self.show_printmessages = True
+        self.data_file = None
+        self.data = None

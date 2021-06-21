@@ -197,8 +197,9 @@ class TEINERPostprocessing:
                 # processes triggered by quit button
                 if el_quit_button == True:
                     if pp_el_library_object.data_file is not None:
-                        pp_el_library_object.data = None
-                        pp_el_library_object.data_file = None
+                        pp_el_library_object.reset()
+                        pp_el_filepath_object.reset()
+                        pp_el_last_editor_state.reset()
                 # processes triggered by add ids button
                 if el_add_missing_ids_button == True:
                     if pp_el_library_object.data_file is not None:
@@ -220,6 +221,7 @@ class TEINERPostprocessing:
                     )
                     with el_file_view_placeholder:
                         editor_content = st_ace(value=editor_init_content, height=500, language="json", readonly=False)
+                        logger.info(editor_content)
                     if pp_el_last_editor_state.content is None:
                         pp_el_last_editor_state.content = editor_content
                     if (editor_content) and (editor_content != pp_el_last_editor_state.content):
@@ -278,6 +280,7 @@ class TEINERPostprocessing:
                                         else:
                                             st.info(message)
                             pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
+                            # update ace-editor-content (empty placeholder and create new instance)
                             el_file_view_placeholder.empty()
                             with el_file_view_placeholder:
                                 editor_content = st_ace(
