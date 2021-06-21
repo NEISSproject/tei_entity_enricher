@@ -149,11 +149,14 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
     if os.path.isdir(dirpath):
         col2.latex(state_ok)
         col3, col4, col5 = st.beta_columns([25, 25, 50])
-        if col3.button("..", key=key + "_level_up", help="Go one directory up."):
+        if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             dirpath = os.path.dirname(dirpath)
             setattr(state, key + "_chosen_subdir", None)
         subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
         if len(subdirlist) > 0:
+            if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
+                dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
+                setattr(state, key + "_chosen_subdir", None)
             setattr(
                 state,
                 key + "_chosen_subdir",
@@ -165,9 +168,6 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
                     else 0,
                 ),
             )
-            if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen directory."):
-                dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
-                setattr(state, key + "_chosen_subdir", None)
     else:
         col2.latex(state_failed)
         setattr(state, key + "_chosen_subdir", None)
