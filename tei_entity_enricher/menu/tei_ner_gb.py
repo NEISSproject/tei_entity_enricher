@@ -15,7 +15,7 @@ import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
-from tei_entity_enricher.util.components import dir_selector
+from tei_entity_enricher.util.components import small_dir_selector
 
 
 class TEINERGroundtruthBuilder:
@@ -381,9 +381,15 @@ class TEINERGroundtruthBuilder:
                 self.state.tng_test_percentage,
                 "% for the test set.",
             )
-        self.state.tng_teifile_folder = st.text_input(
-            "Choose a Folder containing only TEI Files to build the groundtruth from:",
-            self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
+        #self.state.tng_teifile_folder = st.text_input(
+        #    "Choose a Folder containing only TEI Files to build the groundtruth from:",
+        #    self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
+        #    key="tng_tei_file_folder",
+        #)
+        self.state.tng_teifile_folder = small_dir_selector(
+            self.state,
+            label="Choose a Folder containing only TEI Files to build the groundtruth from:",
+            value=self.state.tng_teifile_folder if self.state.tng_teifile_folder else local_save_path,
             key="tng_tei_file_folder",
         )
         tng_dict[self.tng_attr_ratio] = {

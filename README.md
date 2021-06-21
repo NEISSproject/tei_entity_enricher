@@ -10,3 +10,14 @@ ntee-start
 ### Run tests
 activate virtualenv
 pytest -v tei-entity-enricher/tei-entity-enricher/test
+
+### Install ner_trainer
+activate virtualenv
+
+`cd <project_dir>`
+
+`git clone https://github.com/NEISSproject/tf2_neiss_nlp.git`
+
+`pip install tf2_neiss_nlp` (this will install tfaip and other dependencies)
+
+
