@@ -6,7 +6,7 @@ from tei_entity_enricher.util.helper import (
     get_listoutput,
     transform_arbitrary_text_to_markdown,
 )
-from tei_entity_enricher.util.components import editable_single_column_table
+from tei_entity_enricher.util.components import editable_single_column_table, small_file_selector
 from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
@@ -262,10 +262,29 @@ class TEIReader:
                 key="tr_test",
             )
             config = self.configdict[self.state.tr_test_selected_config_name]
-            # self.state.teifile = st.text_input("Choose a TEI File:", self.state.teifile or "", key="tr_test_tei_file")
-            self.state.tr_open_teifile = st.file_uploader("Choose a TEI-File", key="tr_test_file_upload")
-            if self.state.teifile or self.state.tr_open_teifile:
-                tei = tp.TEIFile(self.state.teifile, config, openfile=self.state.tr_open_teifile)
+            self.state.tr_teifile = small_file_selector(
+                self.state,
+                label="Choose a TEI-File",
+                value=self.state.tr_teifile if self.state.tr_teifile else local_save_path,
+                key="tr_test_choose_tei",
+                help="Choose a TEI file for testing the chosen TEI Reader Config",
+            )
+            if st.button(
+                "Test TEI Reader Config",
+                key="tr_Button_Test",
+                help="Test TEI Reader Config on the chosen Config and TEI-File.",
+            ):
+                self.state.avoid_rerun()
+                if os.path.isfile(self.state.tr_teifile):
+                    self.state.tr_last_test_dict = {
+                        "teifile": self.state.tr_teifile,
+                        "tr": config,
+                    }
+                else:
+                    st.error(f"The chosen path {self.state.tr_teifile} is not a file!")
+                    self.state.tr_last_test_dict = {}
+            if self.state.tr_last_test_dict and len(self.state.tr_last_test_dict.keys()) > 0:
+                tei = tp.TEIFile(self.state.tr_last_test_dict["teifile"], self.state.tr_last_test_dict["tr"])
                 st.subheader("Text Content:")
                 st.markdown(transform_arbitrary_text_to_markdown(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
