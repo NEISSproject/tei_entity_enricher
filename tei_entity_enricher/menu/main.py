@@ -4,27 +4,20 @@ import streamlit as st
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.util.SessionState import _get_state
-from PIL import Image
-import os
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
 import tei_entity_enricher.menu.tei_ner_gb as tng
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 import tei_entity_enricher.menu.tei_postprocessing as pp
-from tei_entity_enricher.util.helper import module_path
+from tei_entity_enricher.util.helper import load_images
 
 logger = logging.getLogger(__name__)
-
 
 class Main:
     def __init__(self, args):
         self.state = None
         self.show(args)
-
-    # def decode_arguments(self, args):
-    #     for key_value in args:
-    #         if
 
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
@@ -43,8 +36,9 @@ class Main:
         heading_frame.latex("\\text{\Huge{N-TEE}}")
         st.sidebar.latex("\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}")
 
+        neiss_logo, eu_fonds, eu_esf, mv_bm = load_images()
+
         # Include NEISS Logo
-        neiss_logo = Image.open(os.path.join(module_path, "images", "neiss_logo_nn_pentagon01b2.png"))
         logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
@@ -53,6 +47,13 @@ class Main:
             tuple(pages.keys()),
             tuple(pages.keys()).index(self.state.page) if self.state.page else int(args.start_state),
         )
+
+        st.sidebar.markdown("### Funded by")
+        # Include EU Logos
+        st.sidebar.image(eu_fonds)
+        colesf, colbm = st.sidebar.beta_columns(2)
+        colesf.image(eu_esf)
+        colbm.image(mv_bm)
 
         # Display the selected page with the session state
         pages[self.state.page]()

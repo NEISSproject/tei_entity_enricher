@@ -11,7 +11,7 @@ from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, Fi
 class FileReader:
     def __init__(
         self,
-        file: Union[UploadedFile, None] = None,
+        file: Union[UploadedFile, str, None] = None,
         filepath: Union[str, None] = None,
         origin: Union[str, None] = None,
         internal_call: bool = False,
@@ -20,6 +20,8 @@ class FileReader:
         """loads json, beacon, csv and tsv files from local file system or web source,
         used in GndConnector, WikidataConnector, FileWriter and EntityLibrary classes
 
+        file:
+            passed file or file content, can be of type UploadedFile or string
         filepath:
             path to file to read
         origin:
@@ -31,7 +33,7 @@ class FileReader:
         loadfile_types:
             dict to map file extensions to loading methods, can be used from outside
             to execute the requiredloading function"""
-        self.file: Union[UploadedFile, None] = file
+        self.file: Union[UploadedFile, str, None] = file
         self.filepath: Union[str, None] = filepath
         self.origin: Union[str, None] = origin
         self.internal_call: bool = internal_call
@@ -48,7 +50,10 @@ class FileReader:
         it can return a json object or a string 'empty' (in case a file in self.filepath was found, but is empty)"""
         if self.file is not None:
             try:
-                imported_data = json.load(self.file)
+                if type(self.file) == str:
+                    imported_data = json.loads(self.file)
+                else:
+                    imported_data = json.load(self.file)
             except json.decoder.JSONDecodeError:
                 raise BadFormat(self.file, "FileReader", "loadfile_json()")
             return imported_data
@@ -286,7 +291,8 @@ class Cache:
                 'gnd_id': '123456789'
             }
         ]
-        this check is used in Identifier class (usecase EntityLibrary) and in FileWriter class as part
+        this check is used in Postprocessing GUI for editor input checks,
+        in Identifier class (usecase EntityLibrary) and in FileWriter class as part
         of a merging process of an existing json file and new json data
         (in the usecases of GndConnector or EntityLibrary),
         which should be added to the file:

@@ -10,7 +10,7 @@ from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_latex,
     latex_color_list,
 )
-from tei_entity_enricher.util.components import editable_multi_column_table
+from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_gb as gb
@@ -368,15 +368,36 @@ class TEINERMap:
             #    self.state.tnm_teifile or "",
             #    key="tnm_test_tei_file",
             # )
-            self.state.tnm_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
+            # self.state.tnm_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
+            self.state.tnm_teifile = small_file_selector(
+                self.state,
+                label="Choose a TEI-File",
+                value=self.state.tnm_teifile if self.state.tnm_teifile else local_save_path,
+                key="tnm_test_choos_TEI",
+                help="Choose a TEI file for testing the chosen TEI Read Entity Mapping",
+            )
             # if self.state.tnm_open_teifile:
             #    st.write(self.state.tnm_open_teifile.getvalue().decode("utf-8"))
-            if self.state.tnm_teifile or self.state.tnm_open_teifile:
+            if st.button(
+                "Test TEI Read Entity Mapping",
+                key="tnm_Button_Test",
+                help="Test TEI Read Entity Mapping on the chosen Mapping and TEI-File.",
+            ):
+                self.state.avoid_rerun()
+                if os.path.isfile(self.state.tnm_teifile):
+                    self.state.tnm_last_test_dict = {
+                        "teifile": self.state.tnm_teifile,
+                        "tr": config,
+                        "tnm": self.tnm_attr_entity_dict,
+                    }
+                else:
+                    st.error(f"The chosen path {self.state.tnm_teifile} is not a file!")
+                    self.state.tnm_last_test_dict = {}
+            if self.state.tnm_last_test_dict and len(self.state.tnm_last_test_dict.keys()) > 0:
                 tei = tp.TEIFile(
-                    self.state.tnm_teifile,
-                    config,
-                    entity_dict=mapping[self.tnm_attr_entity_dict],
-                    openfile=self.state.tnm_open_teifile,
+                    self.state.tnm_last_test_dict["teifile"],
+                    self.state.tnm_last_test_dict["tr"],
+                    entity_dict=mapping[self.state.tnm_last_test_dict["tnm"]],
                 )
                 col1, col2 = st.beta_columns([0.2, 0.8])
                 statistics = tei.get_statistics()
@@ -459,7 +480,6 @@ class TEINERMap:
                                 show_entity_names=tnm_test_note_show_entity_name,
                             )
                         )
-                # st.markdown('Das ist **Konrad _(pers)_**')
 
     def build_tnm_tablestring(self):
         tablestring = "Name | NER Task | Template \n -----|-------|-------"

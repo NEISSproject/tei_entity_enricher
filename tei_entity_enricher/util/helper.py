@@ -1,6 +1,7 @@
 import os
 import logging
 import contextlib
+from PIL import Image
 
 import streamlit as st
 
@@ -238,3 +239,11 @@ def model_dir_entry_widget(
 
 def transform_arbitrary_text_to_latex(text):
     return text.replace("\n", "\n\n")
+
+@st.cache(allow_output_mutation=True)
+def load_images():
+    neiss_logo = Image.open(os.path.join(module_path, "images", "neiss_logo_nn_pentagon01b2.png"))
+    eu_fonds = Image.open(os.path.join(module_path, "images", "logo_EU_Fonds.png"))
+    eu_esf = Image.open(os.path.join(module_path, "images", "logo_EU_ESF.png"))
+    mv_bm = Image.open(os.path.join(module_path, "images", "logo_MV_BM.png"))
+    return neiss_logo, eu_fonds, eu_esf, mv_bm
