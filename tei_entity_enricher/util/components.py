@@ -178,3 +178,45 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
         ):
             dirpath = local_save_path
     return dirpath
+
+
+def small_file_selector(state, label=None, value=local_save_path, key="", help=None):
+    col1, col2 = st.beta_columns([10, 1])
+    filepath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    if os.path.isfile(filepath) or os.path.isdir(filepath):
+        if os.path.isfile(filepath):
+            col2.latex(state_ok)
+        else:
+            col2.latex(state_uncertain)
+            st.warning("You have currently chosen a folder, but you have to choose a file here.")
+        col3, col4, col5 = st.beta_columns([25, 25, 50])
+        if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
+            filepath = os.path.dirname(filepath)
+            setattr(state, key + "_chosen_subelement", None)
+        if os.path.isdir(filepath):
+            subdirlist = os.listdir(filepath)
+            if len(subdirlist) > 0:
+                setattr(
+                    state,
+                    key + "_chosen_subelement",
+                    col5.selectbox(
+                        "Subelements:",
+                        subdirlist,
+                        subdirlist.index(getattr(state, key + "_chosen_subelement"))
+                        if getattr(state, key + "_chosen_subelement")
+                        else 0,
+                    ),
+                )
+                if col4.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."):
+                    filepath = os.path.join(filepath, getattr(state, key + "_chosen_subelement"))
+                    setattr(state, key + "_chosen_subelement", None)
+    else:
+        col2.latex(state_failed)
+        setattr(state, key + "_chosen_subelement", None)
+        col3, col4 = st.beta_columns([30, 70])
+        col4.error(f"The path {filepath} is not a valid path.")
+        if col3.button(
+            "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
+        ):
+            filepath = local_save_path
+    return filepath
