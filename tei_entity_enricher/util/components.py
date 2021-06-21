@@ -171,8 +171,10 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
     else:
         col2.latex(state_failed)
         setattr(state, key + "_chosen_subdir", None)
-        col3, col4 = st.beta_columns([30,70])
-        col4.error(f'The path {dirpath} is not a folder.')
-        if col3.button("Reset to standard folder",key=key+"_reset_button",help=f'Reset folder to {local_save_path}'):
-            dirpath=local_save_path
+        col3, col4 = st.beta_columns([30, 70])
+        col4.error(f"The path {dirpath} is not a folder.")
+        if col3.button(
+            "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
+        ):
+            dirpath = local_save_path
     return dirpath
