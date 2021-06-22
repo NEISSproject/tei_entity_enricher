@@ -9,6 +9,7 @@ from tei_entity_enricher.util.helper import (
     transform_xml_to_markdown,
     get_listoutput,
     replace_empty_string,
+    add_markdown_link_if_not_None,
     local_save_path,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
@@ -90,7 +91,7 @@ class TEIManPP:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
         if self.state.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
-            link_to_add = suggestion["wikidata_id"]
+            link_to_add = "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"]
         else:
             # default gnd
             link_to_add = "http://d-nb.info/gnd/" + suggestion["gnd_id"]
@@ -139,7 +140,9 @@ class TEIManPP:
                     self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1]["tag_id"], 250, tr
                 )
             )
-        if "pure_tagcontent" in tag_entry.keys():
+        if self.entity_library.data is None:
+            st.info("If you want to do search for link suggestions you have to initialize an Entity Library at first.")
+        elif "pure_tagcontent" in tag_entry.keys():
             st.markdown("### Search for link suggestions")
             input_tuple = tag_entry["pure_tagcontent"], ""
             link_identifier = Identifier(input=[input_tuple])
@@ -163,15 +166,19 @@ class TEIManPP:
             #    help="Define a search type for which link suggestions should be done!",
             # )
             col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
-            simple_search = col1.button(
-                "Simple Search",
-                key="tmp_ls_simple_search",
-                help="Searches for link suggestions only in the currently loaded entity library.",
-            )
-            full_search = col2.button(
-                "Full Search",
+            #simple_search = col1.button(
+            #    "Simple Search",
+            #    key="tmp_ls_simple_search",
+            #    help="Searches for link suggestions only in the currently loaded entity library.",
+            #)
+            if "link_suggestions" not in tag_entry.keys():
+                simple_search=True
+            else:
+                simple_search=False
+            full_search = col1.button(
+                "Additional web Search",
                 key="tmp_ls_full_search",
-                help="Searches for link suggestions in the currently loaded entity library and in the web (e.g. from wikidata).",
+                help="Searches for link suggestions in the currently loaded entity library and additionaly in the web (e.g. from wikidata).",
             )
             if simple_search or full_search:
                 result = link_identifier.suggest(
@@ -207,8 +214,8 @@ class TEIManPP:
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
-                        scol4.markdown(replace_empty_string(suggestion["wikidata_id"]))
-                        scol5.markdown(replace_empty_string(suggestion["gnd_id"]))
+                        scol4.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["wikidata_id"],"https://www.wikidata.org/wiki/"+suggestion["wikidata_id"])))
+                        scol5.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["gnd_id"],"http://d-nb.info/gnd/"+suggestion["gnd_id"])))
                         suggestion_id += 1
                         if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
