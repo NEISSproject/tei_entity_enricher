@@ -139,7 +139,9 @@ class TEIManPP:
                     self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1]["tag_id"], 250, tr
                 )
             )
-        if "pure_tagcontent" in tag_entry.keys():
+        if self.entity_library.data is None:
+            st.info("If you want to do search for link suggestions you have to initialize an Entity Library at first.")
+        elif "pure_tagcontent" in tag_entry.keys():
             st.markdown("### Search for link suggestions")
             input_tuple = tag_entry["pure_tagcontent"], ""
             link_identifier = Identifier(input=[input_tuple])
