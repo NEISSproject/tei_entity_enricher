@@ -166,15 +166,19 @@ class TEIManPP:
             #    help="Define a search type for which link suggestions should be done!",
             # )
             col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
-            simple_search = col1.button(
-                "Simple Search",
-                key="tmp_ls_simple_search",
-                help="Searches for link suggestions only in the currently loaded entity library.",
-            )
-            full_search = col2.button(
-                "Full Search",
+            #simple_search = col1.button(
+            #    "Simple Search",
+            #    key="tmp_ls_simple_search",
+            #    help="Searches for link suggestions only in the currently loaded entity library.",
+            #)
+            if "link_suggestions" not in tag_entry.keys():
+                simple_search=True
+            else:
+                simple_search=False
+            full_search = col1.button(
+                "Additional web Search",
                 key="tmp_ls_full_search",
-                help="Searches for link suggestions in the currently loaded entity library and in the web (e.g. from wikidata).",
+                help="Searches for link suggestions in the currently loaded entity library and additionaly in the web (e.g. from wikidata).",
             )
             if simple_search or full_search:
                 result = link_identifier.suggest(
