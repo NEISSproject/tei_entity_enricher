@@ -9,6 +9,7 @@ from tei_entity_enricher.util.helper import (
     transform_xml_to_markdown,
     get_listoutput,
     replace_empty_string,
+    add_markdown_link_if_not_None,
     local_save_path,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
@@ -90,7 +91,7 @@ class TEIManPP:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
         if self.state.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
-            link_to_add = suggestion["wikidata_id"]
+            link_to_add = "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"]
         else:
             # default gnd
             link_to_add = "http://d-nb.info/gnd/" + suggestion["gnd_id"]
@@ -209,8 +210,8 @@ class TEIManPP:
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
-                        scol4.markdown(replace_empty_string(suggestion["wikidata_id"]))
-                        scol5.markdown(replace_empty_string(suggestion["gnd_id"]))
+                        scol4.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["wikidata_id"],"https://www.wikidata.org/wiki/"+suggestion["wikidata_id"])))
+                        scol5.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["gnd_id"],"http://d-nb.info/gnd/"+suggestion["gnd_id"])))
                         suggestion_id += 1
                         if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
