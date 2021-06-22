@@ -137,8 +137,9 @@ class FileReader:
         if self.file is not None:
             if transform_for_entity_library_import == True:
                 result = []
-                # HIER WEITER: self.file wird so noch nicht zu einem Text umgewandelt (falls file eine UploadedFile ist)
-                csv_reader = csv.DictReader(self.file)
+                csv_reader = csv.DictReader(
+                    self.file.getvalue().decode("utf-8").splitlines(), delimiter=delimiting_character
+                )
                 for row in csv_reader:
                     new_row = {}
                     new_furtherNames = []
@@ -147,13 +148,15 @@ class FileReader:
                             new_furtherNames.append(row[key])
                             continue
                         new_row[key.lower()] = row[key]
+                    new_furtherNames = [i for i in new_furtherNames if i is not None]
                     new_row["furtherNames"] = new_furtherNames
                     result.append(new_row)
                 return result
             else:
                 result = []
-                # HIER WEITER: self.file wird so wahrscheinlich noch nicht zu einem Text umgewandelt
-                csv_reader = csv.reader(self.file)
+                csv_reader = csv.reader(
+                    self.file.getvalue().decode("utf-8").splitlines(), delimiter=delimiting_character
+                )
                 for row in csv_reader:
                     result.append(row)
                 return result
@@ -175,6 +178,7 @@ class FileReader:
                                     new_furtherNames.append(row[key])
                                     continue
                                 new_row[key.lower()] = row[key]
+                            new_furtherNames = [i for i in new_furtherNames if i is not None]
                             new_row["furtherNames"] = new_furtherNames
                             result.append(new_row)
                         return result
@@ -205,6 +209,7 @@ class FileReader:
                                 new_furtherNames.append(row[key])
                                 continue
                             new_row[key.lower().strip()] = row[key]
+                        new_furtherNames = [i for i in new_furtherNames if i is not None]
                         new_row["furtherNames"] = new_furtherNames
                         result.append(new_row)
                 except:

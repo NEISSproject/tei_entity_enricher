@@ -281,7 +281,7 @@ class EntityLibrary:
                     continue
                 else:
                     input_tuple = (entity["name"], entity["type"])
-                    wikidata_connector = WikidataConnector([input_tuple])
+                    wikidata_connector = WikidataConnector(input=[input_tuple], wikidata_web_api_limit="5")
                     wikidata_connector_result = wikidata_connector.get_wikidata_search_results()
                     if wikidata_connector_result[input_tuple][0] > 0:
                         wikidata_id_of_first_suggested_entity = wikidata_connector_result[input_tuple][1]["search"][0][

@@ -27,6 +27,28 @@ class EntityLibraryLastEditorState:
         self.content = None
 
 
+class EntitiyLibraryButtonStates:
+    """class only to be able to save button states over multiple reruns"""
+
+    def __init__(self) -> None:
+        # self.button_dict = {
+        #     "add_missing_ids": self.add_missing_ids
+        # }
+        # self.reset()
+        self.add_missing_ids = False
+
+    # def set_button_state(self, button, value) -> None:
+    #     self.button_dict.get(button) = value
+
+    def reset_button(self, button) -> None:
+        # self.button_dict.get(button) = False
+        self.add_missing_ids = False
+
+    # def reset(self) -> None:
+    #     for key in self.button_dict:
+    #         self.button_dict.get(key) = False
+
+
 class EntityLibraryGuiFilepath:
     """class only used to save filepath to cache"""
 
@@ -53,6 +75,11 @@ def get_filepath():
 @st.cache(allow_output_mutation=True)
 def get_last_editor_state():
     return EntityLibraryLastEditorState()
+
+
+@st.cache(allow_output_mutation=True)
+def get_button_states():
+    return EntitiyLibraryButtonStates()
 
 
 def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
@@ -109,6 +136,7 @@ class TEINERPostprocessing:
             pp_el_library_object.default_data_file
         ) if pp_el_filepath_object.filepath is None else None
         pp_el_last_editor_state: EntityLibraryLastEditorState = get_last_editor_state()
+        pp_el_button_states: EntitiyLibraryButtonStates = get_button_states()
         # basic layout: header, entity library container
         st.subheader("Entity Library")
         el_container = st.beta_expander(label="Entity Library", expanded=True)
@@ -158,8 +186,9 @@ class TEINERPostprocessing:
                 )
                 el_add_missing_ids_button = el_add_missing_ids_button_placeholder.button(
                     label="Add missing IDs",
-                    help="If an ID is missing in any entity, it will be retrieved on basis of the given information (For the moment: If no id is given at all, no addition atempt is executed due to uncertainess when trying to identify an entity on basis of a name only).",
+                    help="If an ID is missing in any entity, it will be retrieved on basis of the given information. If no id is given at all, it is possible to add the ids of the first match of a wikidata query.",
                 )
+                el_add_missing_ids_menu_placeholder = st.empty()
                 el_init_message_placeholder = st.empty()
                 el_misc_message_placeholder = st.empty()
                 el_file_view_placeholder = st.empty()
@@ -201,16 +230,29 @@ class TEINERPostprocessing:
                         pp_el_filepath_object.reset()
                         pp_el_last_editor_state.reset()
                 # processes triggered by add ids button
-                if el_add_missing_ids_button == True:
+                if el_add_missing_ids_button == True or pp_el_button_states.add_missing_ids == True:
                     if pp_el_library_object.data_file is not None:
-                        messages = pp_el_library_object.add_missing_id_numbers()
-                        pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
-                        with el_misc_message_placeholder.beta_container():
-                            for message in messages:
-                                if "changed" in message:
-                                    st.success(message)
-                                else:
-                                    st.info(message)
+                        pp_el_button_states.add_missing_ids = True
+                        with el_add_missing_ids_menu_placeholder.beta_container():
+                            checkbox_state = st.checkbox(
+                                label="Try to identify entities without any ids",
+                                value=False,
+                                help="When activated, for every entity in entity library, which has no id data at all, the first proper id will be added to this entity.",
+                            )
+                            proceed_button = st.button(
+                                label="Proceed",
+                                help="Start process, in which ids will be assigned for the entities in entity library.",
+                            )
+                            if proceed_button == True:
+                                messages = pp_el_library_object.add_missing_id_numbers(checkbox_state)
+                                pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
+                                with el_misc_message_placeholder.beta_container():
+                                    for message in messages:
+                                        if "changed" in message:
+                                            st.success(message)
+                                        else:
+                                            st.info(message)
+                                pp_el_button_states.add_missing_ids = False
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
@@ -221,7 +263,9 @@ class TEINERPostprocessing:
                         else pp_el_last_editor_state.content
                     )
                     with el_file_view_placeholder:
-                        editor_content = st_ace(value=editor_init_content, height=500, language="json", readonly=False)
+                        editor_content = st_ace(
+                            value=editor_init_content, height=500, language="json", readonly=False, key="first"
+                        )
                         logger.info(editor_content)
                     if pp_el_last_editor_state.content is None:
                         pp_el_last_editor_state.content = editor_content
@@ -299,7 +343,14 @@ class TEINERPostprocessing:
                                     height=500,
                                     language="json",
                                     readonly=False,
+                                    key="second",
                                 )
+                            with el_file_view_message_placeholder:
+                                with st.beta_container():
+                                    st.button(
+                                        label="Rerun first before manually editing entity library again",
+                                        help="At the moment the postprocessing page has be reloaded after an edit of the current entity library.",
+                                    )
 
         ## 2. Manual TEI Postprocessing
         tmp.TEIManPP(self.state, entity_library=pp_el_library_object)
