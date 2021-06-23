@@ -185,6 +185,7 @@ class TEIManPP:
                     self.entity_library,
                     do_wikidata_query=full_search,
                     wikidata_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"]) == 0),
+                    entity_library_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"]) == 0),
                 )
                 if input_tuple in result.keys():
                     tag_entry["link_suggestions"] = result[input_tuple]
