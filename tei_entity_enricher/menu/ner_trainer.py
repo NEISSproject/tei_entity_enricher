@@ -1,18 +1,16 @@
-import json
 import logging
 import os
 import shutil
 
 import streamlit as st
+import tei_entity_enricher.menu.ner_task_def as ner_task
+import tei_entity_enricher.menu.tei_ner_gb as gb
 from streamlit_ace import st_ace
 from tei_entity_enricher.menu.menu_base import MenuBase
-
 from tei_entity_enricher.util import config_io
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
-    state_failed,
-    state_uncertain,
     file_lists_entry_widget,
     numbers_lists_entry_widget,
     model_dir_entry_widget,
@@ -20,10 +18,7 @@ from tei_entity_enricher.util.helper import (
     check_dir_ask_make,
     remember_cwd,
 )
-from tei_entity_enricher.util.components import small_dir_selector
 from tei_entity_enricher.util.train_manager import get_manager
-import tei_entity_enricher.menu.ner_task_def as ner_task
-import tei_entity_enricher.menu.tei_ner_gb as gb
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +26,7 @@ logger = logging.getLogger(__name__)
 class NERTrainer(MenuBase):
     def __init__(self, state, show_menu=True, **kwargs):
         super().__init__(state, show_menu)
-        self._workdir_path = os.getcwd()
+        self._wd = os.getcwd()
         self.state = state
         self.training_state = None
         self.trainer_params_json = None
@@ -65,7 +60,7 @@ class NERTrainer(MenuBase):
         return True
 
     def _train_manager(self):
-        train_manager = get_manager(workdir=self._workdir_path)
+        train_manager = get_manager(workdir=self._wd)
         with st.beta_container():
             st.text("Train Manager")
             if st.button("Set trainer params"):
@@ -113,7 +108,7 @@ class NERTrainer(MenuBase):
         # TODO Optional an bieten Listen aus Folder automatisch auszuwählen oder Listen wie bisher aus je ein oder mehreren Listfiles zu wählen.
         data_config_check = []
         with remember_cwd():
-            os.chdir(self._workdir_path)
+            os.chdir(self._wd)
             with st.beta_expander("Train configuration"):
 
                 logger.info("load trainer params")
@@ -172,7 +167,7 @@ class NERTrainer(MenuBase):
         data_config_check = []
 
         with remember_cwd():
-            os.chdir(self._workdir_path)
+            os.chdir(self._wd)
 
             logger.info("load trainer params")
             if self.load_trainer_params() != 0:
@@ -220,13 +215,11 @@ class NERTrainer(MenuBase):
                 return -1
             else:
                 logger.info("data configuration successful")
-                if st.button(
-                    f'Save trainer_params to config: {os.path.join(self._workdir_path, "trainer_params.json")}'
-                ):
+                if st.button(f'Save trainer_params to config: {os.path.join(self._wd, "trainer_params.json")}'):
                     if self.save_train_params() != 0:
                         st.error("Failed to save trainer_params.json")
                         logger.error("Failed to save trainer_params.json")
-                    logger.info(f'trainer params saved to: {os.path.join(self._workdir_path, "trainer_params.json")}')
+                    logger.info(f'trainer params saved to: {os.path.join(self._wd, "trainer_params.json")}')
                     st.experimental_rerun()
                 return 0
 
@@ -252,37 +245,37 @@ class NERTrainer(MenuBase):
                 )
             return -1
 
-        self._workdir_path = os.path.join(os.getcwd(), "ner_trainer")
-        if not os.path.isdir(self._workdir_path):
+        self._wd = os.path.join(os.getcwd(), "ner_trainer")
+        if not os.path.isdir(self._wd):
             st.error(
-                f"The working directory for ner_trainer does not exist yet. Do you want to create the directory: {self._workdir_path}?"
+                f"The working directory for ner_trainer does not exist yet. Do you want to create the directory: {self._wd}?"
             )
-            if st.button(f"Create: {self._workdir_path}"):
-                if not os.path.isdir(self._workdir_path):
-                    os.makedirs(self._workdir_path)
+            if st.button(f"Create: {self._wd}"):
+                if not os.path.isdir(self._wd):
+                    os.makedirs(self._wd)
             return -1
 
-        if not os.path.isfile(os.path.join(self._workdir_path, "trainer_params.json")):
+        if not os.path.isfile(os.path.join(self._wd, "trainer_params.json")):
             shutil.copy(
                 os.path.join(module_path, "templates", "trainer", "template_wd", "trainer_params.json"),
-                self._workdir_path,
+                self._wd,
             )
-        if not os.path.isdir(os.path.join(self._workdir_path, "templates")):
+        if not os.path.isdir(os.path.join(self._wd, "templates")):
             shutil.copytree(
                 os.path.join(module_path, "templates", "trainer", "template_wd", "templates"),
-                os.path.join(self._workdir_path, "templates"),
+                os.path.join(self._wd, "templates"),
             )
 
         return 0
 
     def load_trainer_params(self):
         with remember_cwd():
-            os.chdir(self._workdir_path)
+            os.chdir(self._wd)
             self.trainer_params_json = config_io.get_config("trainer_params.json")
         return 0
 
     def save_train_params(self):
         with remember_cwd():
-            os.chdir(self._workdir_path)
+            os.chdir(self._wd)
             config_io.set_config(self.trainer_params_json)
         return 0
