@@ -12,7 +12,7 @@
   "val_every_n": 1,
   "lav_every_n": 0,
   "lav_min_epoch": 0,
-  "output_dir": "ner_trainer/models_ner/bert_default",
+  "output_dir": "models_ner/bert_default",
   "write_checkpoints": true,
   "export_best": true,
   "export_final": true,
@@ -65,8 +65,8 @@
       "rel_pos_enc": false,
       "rate": 0.1,
       "bert_graph": "BERT",
-      "pretrained_bert": "ner_trainer/models_pretrained/bertmlmrelwwm/best/encoder_only/",
-      "tags_fn_": "/home/jochen/devel/projects/aip2_ner/data/tags/germeval_wp.txt",
+      "pretrained_bert": "models_pretrained/bertmlmrelwwm/best/encoder_only/",
+      "tags_fn_": "",
       "target_vocab_size": 29990,
       "oov_id_": 24,
       "use_hf_model_": false,
@@ -115,8 +115,8 @@
         "processors": [],
         "__cls__": "tfaip.data.pipeline.processor.params:SequentialProcessorPipelineParams"
       },
-      "resource_base_path": "/home/jochen/devel/projects/aip2_ner",
-      "tokenizer": "data/tokenizer/tokenizer_de.subwords",
+      "resource_base_path": "",
+      "tokenizer": "templates/tokenizer/tokenizer_de.subwords",
       "add_types": [],
       "magnitude": 3,
       "noise": "uniform",
@@ -135,7 +135,7 @@
       "pad_token_id_": 0,
       "tok_vocab_size_": 29987,
       "whole_word_attention": true,
-      "tags": "data/tags/germeval_wp.txt",
+      "tags": "templates/tags/germeval_wp.txt",
       "tokenizer_range": "sentence_v3",
       "bet_tagging": false,
       "wordwise_output": false,
@@ -143,7 +143,7 @@
       "__cls__": "tfaip_scenario.nlp.data.ner_params:NERDataParams"
     },
     "evaluator": {
-      "tags_fn": "/home/jochen/devel/projects/aip2_ner/data/tags/germeval_wp.txt",
+      "tags_fn": "templates/tags/germeval_wp.txt",
       "__cls__": "tfaip_scenario.nlp.util.ner_eval:NEREvaluatorParams"
     },
     "export_net_config": true,
@@ -152,7 +152,7 @@
     "additional_serve_dir": "additional",
     "trainer_params_filename": "trainer_params.json",
     "scenario_params_filename": "scenario_params.json",
-    "scenario_base_path": "/home/jochen/devel/projects/aip2_ner/tf2_aip/tfaip_scenario/nlp/ner/scenario.py",
+    "scenario_base_path": "../tf2_neiss_nlp/tfaip_scenario/nlp/ner/scenario.py",
     "scenario_id": "tfaip_scenario.nlp.ner.scenario:Scenario",
     "id": "ge_bertmlmrelwwm_debug_list_tfaip_scenario.nlp.ner.scenario:Scenario_2021-05-05",
     "tfaip_commit_hash": "3a80c3217c2498d4098dbcb0c8795fbcbad4a1f1",
@@ -216,7 +216,7 @@
     },
     "train": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/template_wd/templates/lists/conll_small_val.lst"
+        "templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0
@@ -225,7 +225,7 @@
     },
     "val": {
       "lists": [
-        "tei_entity_enricher/tei_entity_enricher/templates/trainer/template_wd/templates/lists/conll_small_val.lst"
+        "templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0

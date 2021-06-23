@@ -166,15 +166,15 @@ class TEIManPP:
             #    help="Define a search type for which link suggestions should be done!",
             # )
             col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
-            #simple_search = col1.button(
+            # simple_search = col1.button(
             #    "Simple Search",
             #    key="tmp_ls_simple_search",
             #    help="Searches for link suggestions only in the currently loaded entity library.",
-            #)
-            if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"])==0:
-                simple_search=True
+            # )
+            if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
+                simple_search = True
             else:
-                simple_search=False
+                simple_search = False
             full_search = col1.button(
                 "Additional web Search",
                 key="tmp_ls_full_search",
@@ -185,7 +185,9 @@ class TEIManPP:
                     self.entity_library,
                     do_wikidata_query=full_search,
                     wikidata_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"]) == 0),
-                    entity_library_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"]) == 0),
+                    entity_library_filter_for_correct_type=(
+                        not search_type_list.index(tag_entry["ls_search_type"]) == 0
+                    ),
                 )
                 if input_tuple in result.keys():
                     tag_entry["link_suggestions"] = result[input_tuple]
@@ -215,8 +217,21 @@ class TEIManPP:
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
-                        scol4.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["wikidata_id"],"https://www.wikidata.org/wiki/"+suggestion["wikidata_id"])))
-                        scol5.markdown(replace_empty_string(add_markdown_link_if_not_None(suggestion["gnd_id"],"http://d-nb.info/gnd/"+suggestion["gnd_id"])))
+                        scol4.markdown(
+                            replace_empty_string(
+                                add_markdown_link_if_not_None(
+                                    suggestion["wikidata_id"],
+                                    "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"],
+                                )
+                            )
+                        )
+                        scol5.markdown(
+                            replace_empty_string(
+                                add_markdown_link_if_not_None(
+                                    suggestion["gnd_id"], "http://d-nb.info/gnd/" + suggestion["gnd_id"]
+                                )
+                            )
+                        )
                         suggestion_id += 1
                         if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)

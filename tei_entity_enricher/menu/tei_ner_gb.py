@@ -381,11 +381,11 @@ class TEINERGroundtruthBuilder:
                 self.state.tng_test_percentage,
                 "% for the test set.",
             )
-        #self.state.tng_teifile_folder = st.text_input(
+        # self.state.tng_teifile_folder = st.text_input(
         #    "Choose a Folder containing only TEI Files to build the groundtruth from:",
         #    self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
         #    key="tng_tei_file_folder",
-        #)
+        # )
         self.state.tng_teifile_folder = small_dir_selector(
             self.state,
             label="Choose a Folder containing only TEI Files to build the groundtruth from:",

@@ -160,10 +160,12 @@ def numbers_lists_entry_widget(
         lists_state.latex(state_failed)
         return []
 
-def add_markdown_link_if_not_None(text,link):
-    if text is None or text=="":
+
+def add_markdown_link_if_not_None(text, link):
+    if text is None or text == "":
         return text
-    return "["+text+"]("+link+")"
+    return "[" + text + "](" + link + ")"
+
 
 def replace_empty_string(input_string, replace_string="-"):
     if input_string is None or input_string == "":
@@ -243,6 +245,7 @@ def model_dir_entry_widget(
 
 def transform_arbitrary_text_to_latex(text):
     return text.replace("\n", "\n\n")
+
 
 @st.cache(allow_output_mutation=True)
 def load_images():

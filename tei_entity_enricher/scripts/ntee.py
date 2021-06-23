@@ -5,6 +5,7 @@ import os
 import sys
 
 import tei_entity_enricher.menu.main as main_menu
+from tei_entity_enricher.util.helper import module_path
 
 this_file = os.path.abspath(__file__)
 
@@ -28,6 +29,9 @@ def run():
 
 
 def main():
+    assert module_path == os.path.join(
+        os.getcwd(), "tei_entity_enricher", "tei_entity_enricher"
+    ), "Please run ntee-start from the directory which contains the git repos 'tei_entity_enricher'."
     parser = argparse.ArgumentParser(description="The n-tee app")
 
     parser.add_argument(

@@ -148,7 +148,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
     dirpath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
         col2.latex(state_ok)
-        ret_state=state_ok
+        ret_state = state_ok
         col3, col4, col5 = st.beta_columns([25, 25, 50])
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             dirpath = os.path.dirname(dirpath)
@@ -171,7 +171,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             )
     else:
         col2.latex(state_failed)
-        ret_state=state_failed
+        ret_state = state_failed
         setattr(state, key + "_chosen_subdir", None)
         col3, col4 = st.beta_columns([30, 70])
         col4.error(f"The path {dirpath} is not a folder.")
@@ -190,10 +190,10 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
             col2.latex(state_ok)
-            ret_state=state_ok
+            ret_state = state_ok
         else:
             col2.latex(state_uncertain)
-            ret_state=state_uncertain
+            ret_state = state_uncertain
             st.warning("You have currently chosen a folder, but you have to choose a file here.")
         col3, col4, col5 = st.beta_columns([25, 25, 50])
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
@@ -218,7 +218,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
                     setattr(state, key + "_chosen_subelement", None)
     else:
         col2.latex(state_failed)
-        ret_state=state_failed
+        ret_state = state_failed
         setattr(state, key + "_chosen_subelement", None)
         col3, col4 = st.beta_columns([30, 70])
         col4.error(f"The path {filepath} is not a valid path.")
