@@ -143,11 +143,12 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
     return os.path.join(folder_path, selected_dirname)
 
 
-def small_dir_selector(state, label=None, value=local_save_path, key="", help=None):
+def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.beta_columns([10, 1])
     dirpath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
         col2.latex(state_ok)
+        ret_state=state_ok
         col3, col4, col5 = st.beta_columns([25, 25, 50])
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             dirpath = os.path.dirname(dirpath)
@@ -170,6 +171,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             )
     else:
         col2.latex(state_failed)
+        ret_state=state_failed
         setattr(state, key + "_chosen_subdir", None)
         col3, col4 = st.beta_columns([30, 70])
         col4.error(f"The path {dirpath} is not a folder.")
@@ -177,17 +179,21 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
             dirpath = local_save_path
+    if return_state:
+        return dirpath, ret_state
     return dirpath
 
 
-def small_file_selector(state, label=None, value=local_save_path, key="", help=None):
+def small_file_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.beta_columns([10, 1])
     filepath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
             col2.latex(state_ok)
+            ret_state=state_ok
         else:
             col2.latex(state_uncertain)
+            ret_state=state_uncertain
             st.warning("You have currently chosen a folder, but you have to choose a file here.")
         col3, col4, col5 = st.beta_columns([25, 25, 50])
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
@@ -212,6 +218,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
                     setattr(state, key + "_chosen_subelement", None)
     else:
         col2.latex(state_failed)
+        ret_state=state_failed
         setattr(state, key + "_chosen_subelement", None)
         col3, col4 = st.beta_columns([30, 70])
         col4.error(f"The path {filepath} is not a valid path.")
@@ -219,4 +226,6 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
             filepath = local_save_path
+    if return_state:
+        return filepath, ret_state
     return filepath
