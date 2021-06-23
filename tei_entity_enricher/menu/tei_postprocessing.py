@@ -1,14 +1,21 @@
 import streamlit as st
 import logging
 import json
+import os
 
 from streamlit_ace import st_ace
 from typing import Union
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
-from tei_entity_enricher.interface.postprocessing.io import FileReader, Cache
+from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.exceptions import BadFormat
 import tei_entity_enricher.menu.tei_man_postproc as tmp
-from tei_entity_enricher.util.helper import state_failed, state_ok, transform_arbitrary_text_to_markdown
+from tei_entity_enricher.util.helper import (
+    state_failed,
+    state_ok,
+    transform_arbitrary_text_to_markdown,
+    local_save_path,
+    makedir_if_necessary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +43,15 @@ class EntitiyLibraryButtonStates:
         # }
         # self.reset()
         self.add_missing_ids = False
+        self.export_el = False
 
     # def set_button_state(self, button, value) -> None:
     #     self.button_dict.get(button) = value
 
-    def reset_button(self, button) -> None:
+    def reset(self) -> None:
         # self.button_dict.get(button) = False
         self.add_missing_ids = False
+        self.export_el = False
 
     # def reset(self) -> None:
     #     for key in self.button_dict:
@@ -110,15 +119,6 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     return True
 
 
-## offenes problem: csv.DictReader kann keine UploadedFiles-Instanzen händeln, obwohl es das laut Dokumentation und Erfahrungsberichten tun sollte
-## fehlermeldung:
-#   "Error: iterator should return strings, not bytes (did you open the file in text mode?)"
-## stand:
-#   -code funktioniert mit durch open() bereitgestellten files;
-#   -UploadedFiles-klasse bietet read()-mthode an, deren einsatz erzeugt eine andere fehlermeldung:
-#       "Error: iterator should return strings, not int (did you open the file in text mode?)"
-
-
 class TEINERPostprocessing:
     def __init__(self, state, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
@@ -182,12 +182,13 @@ class TEINERPostprocessing:
                     label="Save", help="Save the current library state to filepath."
                 )
                 el_export_button = el_export_button_placeholder.button(
-                    label="Export", help="Export the current library state to another filepath (Not yet available)."
+                    label="Export", help="Export the current library state to another filepath."
                 )
                 el_add_missing_ids_button = el_add_missing_ids_button_placeholder.button(
                     label="Add missing IDs",
                     help="If an ID is missing in any entity, it will be retrieved on basis of the given information. If no id is given at all, it is possible to add the ids of the first match of a wikidata query.",
                 )
+                el_export_filepath_placeholder = st.empty()
                 el_add_missing_ids_menu_placeholder = st.empty()
                 el_init_message_placeholder = st.empty()
                 el_misc_message_placeholder = st.empty()
@@ -220,19 +221,51 @@ class TEINERPostprocessing:
                         else:
                             el_misc_message_placeholder.error("Could not save current state of entity library.")
                 # processes triggered by export button
-                if el_export_button == True:
+                if el_export_button == True or pp_el_button_states.export_el == True:
                     if pp_el_library_object.data_file is not None:
-                        pass
+                        pp_el_button_states.export_el = True
+                        pp_el_button_states.add_missing_ids = False
+                        with el_export_filepath_placeholder.beta_container():
+                            el_export_filepath_field_container = st.beta_container()
+                            el_export_filepath_field = el_export_filepath_field_container.text_input(
+                                label="Filepath",
+                                value=os.path.join(local_save_path, "config", "postprocessing", "export.json"),
+                                help="Enter the filepath to a json file, to which the entity library should be exported.",
+                            )
+                            el_export_overwrite_and_create_folder_checkbox = st.checkbox(
+                                label="Create folder if not found and overwrite existing file?",
+                                value=False,
+                                help="If selected, possibly not existant folders will be created according to the entered filepath value. Also the file will be overwritten, if one already exists in filepath.",
+                            )
+                            proceed_button = st.button(label="Proceed", help="Start export process.")
+                            if proceed_button == True:
+                                fw = FileWriter(data=pp_el_library_object.data, filepath=el_export_filepath_field)
+                                if_file_exists = (
+                                    "replace" if el_export_overwrite_and_create_folder_checkbox == True else "cancel"
+                                )
+                                if if_file_exists == "replace":
+                                    makedir_if_necessary(os.path.dirname(el_export_filepath_field))
+                                try:
+                                    fw_return_value = fw.writefile_json(do_if_file_exists=if_file_exists)
+                                except:
+                                    fw_return_value = False
+                                if fw_return_value == True:
+                                    el_misc_message_placeholder.success("Entity Library successfully exported.")
+                                else:
+                                    el_misc_message_placeholder.info("Entity Library export failed.")
+                                pp_el_button_states.export_el = False
                 # processes triggered by quit button
                 if el_quit_button == True:
                     if pp_el_library_object.data_file is not None:
                         pp_el_library_object.reset()
                         pp_el_filepath_object.reset()
                         pp_el_last_editor_state.reset()
+                        pp_el_button_states.reset()
                 # processes triggered by add ids button
                 if el_add_missing_ids_button == True or pp_el_button_states.add_missing_ids == True:
                     if pp_el_library_object.data_file is not None:
                         pp_el_button_states.add_missing_ids = True
+                        pp_el_button_states.export_el == False
                         with el_add_missing_ids_menu_placeholder.beta_container():
                             checkbox_state = st.checkbox(
                                 label="Try to identify entities without any ids",
