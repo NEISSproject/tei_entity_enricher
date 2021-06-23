@@ -35,22 +35,30 @@ class Identifier:
         wikidata_con = WikidataConnector(check_connectivity=False, show_printmessages=False)
         return list(wikidata_con.wikidata_sparql_queries.keys())
 
-    def check_entity_library_by_names_and_type(
-        self, input_tuple: tuple = None, loaded_library: EntityLibrary = None
+    def check_entity_library(
+        self, input_tuple: tuple = None, loaded_library: EntityLibrary = None, query_by_type: bool = True
     ) -> List[dict]:
-        """checks name, furtherNames and type values of loaded_library
+        """checks name, furtherNames and possibly type values of loaded_library
         for input_tuple and returns a list of entity dicts as value;
-        a found entity must be of the correct type and has to have the name
-        either in the name key or in the furtherNames key"""
+        a found entity must be of the correct type (this can be deactivated by query_by_type parameter)
+        and has to have the name either in the name key or in the furtherNames key"""
         searchstring_name = input_tuple[0]
         searchstring_type = input_tuple[1]
-        result_list = list(
-            filter(
-                lambda item: (item["type"] == searchstring_type)
-                and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"])),
-                loaded_library.data,
+        if query_by_type == True:
+            result_list = list(
+                filter(
+                    lambda item: (item["type"] == searchstring_type)
+                    and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"])),
+                    loaded_library.data,
+                )
             )
-        )
+        else:
+            result_list = list(
+                filter(
+                    lambda item: (item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"]),
+                    loaded_library.data,
+                )
+            )
         return result_list
 
     def check_query_results_with_wikidata_ids_of_entity_library(
@@ -83,6 +91,7 @@ class Identifier:
     def suggest(
         self,
         query_entity_library: Union[EntityLibrary, None] = None,
+        entity_library_filter_for_correct_type: bool = True,
         do_wikidata_query: bool = True,
         wikidata_filter_for_precise_spelling: bool = True,
         wikidata_filter_for_correct_type: bool = True,
@@ -135,7 +144,11 @@ class Identifier:
         entity_library_has_data = None
         if query_entity_library is not None:
             for tuple in self.input:
-                tuple_result_list = self.check_entity_library_by_names_and_type(tuple, query_entity_library)
+                tuple_result_list = self.check_entity_library(
+                    input_tuple=tuple,
+                    loaded_library=query_entity_library,
+                    query_by_type=entity_library_filter_for_correct_type,
+                )
                 query_entity_library_result[tuple] = tuple_result_list
             entity_library_has_data = self.check_entity_library_result_has_data(query_entity_library_result)
         query_wikidata_result = {}
