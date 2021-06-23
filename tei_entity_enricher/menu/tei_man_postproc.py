@@ -171,7 +171,7 @@ class TEIManPP:
             #    key="tmp_ls_simple_search",
             #    help="Searches for link suggestions only in the currently loaded entity library.",
             #)
-            if "link_suggestions" not in tag_entry.keys():
+            if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"])==0:
                 simple_search=True
             else:
                 simple_search=False
