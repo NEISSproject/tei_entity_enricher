@@ -69,7 +69,16 @@ class NERTrainer(object):
         return 0
 
     def data_conf_by_tei_gb(self, check_list):
-        st.write("GB")
+        self.state.nt_sel_tng_name = st.selectbox(
+            "Choose a Groundtruth",
+            tuple(self.tng.tngdict.keys()),
+            tuple(self.tng.tngdict.keys()).index(self.state.nt_sel_tng_name) if self.state.nt_sel_tng_name else 0,
+            key="nt_sel_tng",
+            help="Choose a TEI NER Groundtruth which you want to use for training.",
+        )
+        ntd_name=self.tng.tngdict[self.state.nt_sel_tng_name][self.tng.tng_attr_tnm]["ntd"][self.ntd.ntd_attr_name]
+        self.trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(ntd_name)
+        #TODO Listen automatisch bereits bei GT-Erstellung bilden und in Trainerparams schreiben (analog zu ntd-Verhalten)
 
     def data_conf_self_def(self, check_list):
         self.state.nt_sel_ntd_name = st.selectbox(
@@ -85,6 +94,7 @@ class NERTrainer(object):
             name="train.lists",
             help=", separated file names",
         )
+        #TODO Optional an bieten Listen aus Folder automatisch auszuwählen oder Listen wie bisher aus je ein oder mehreren Listfiles zu wählen.
         if train_lists:
             self.trainer_params_json["gen"]["train"]["lists"] = train_lists
             #self.save_train_params()
