@@ -143,6 +143,9 @@ class TEINERGroundtruthBuilder:
             random.shuffle(filelist)
 
         build_gb_progress_bar = st.progress(0)
+        trainfilelist = []
+        devfilelist = []
+        testfilelist = []
         for fileindex in range(len(filelist)):
             if filelist[fileindex].endswith(".xml"):
                 progressoutput.success(f"Process file {filelist[fileindex]}...")
@@ -158,8 +161,10 @@ class TEINERGroundtruthBuilder:
                     all_data.extend(raw_ner_data)
                 else:
                     if fileindex <= (build_config[self.tng_attr_ratio][self.tng_gt_type_test] / 100.0) * len(filelist):
+                        testfilepath = os.path.join(save_test_folder, filelist[fileindex] + ".json")
+                        testfilelist.append(testfilepath + "\n")
                         with open(
-                            os.path.join(save_test_folder, filelist[fileindex] + ".json"),
+                            testfilepath,
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
@@ -170,14 +175,18 @@ class TEINERGroundtruthBuilder:
                         )
                         / 100.0
                     ) * len(filelist):
+                        devfilepath = os.path.join(save_dev_folder, filelist[fileindex] + ".json")
+                        devfilelist.append(devfilepath + "\n")
                         with open(
-                            os.path.join(save_dev_folder, filelist[fileindex] + ".json"),
+                            devfilepath,
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
                     else:
+                        trainfilepath = os.path.join(save_train_folder, filelist[fileindex] + ".json")
+                        trainfilelist.append(trainfilepath + "\n")
                         with open(
-                            os.path.join(save_train_folder, filelist[fileindex] + ".json"),
+                            trainfilepath,
                             "w+",
                         ) as g:
                             json.dump(raw_ner_data, g)
@@ -201,27 +210,33 @@ class TEINERGroundtruthBuilder:
                     dev_list.append(all_data[data_index])
                 else:
                     train_list.append(all_data[data_index])
+            testfilepath = os.path.join(
+                save_test_folder,
+                self.tng_gt_type_test + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
+            )
+            testfilelist.append(testfilepath + "\n")
             with open(
-                os.path.join(
-                    save_test_folder,
-                    self.tng_gt_type_test + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
-                ),
+                testfilepath,
                 "w+",
             ) as g:
                 json.dump(test_list, g)
+            devfilepath = os.path.join(
+                save_dev_folder,
+                self.tng_gt_type_dev + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
+            )
+            devfilelist.append(devfilepath + "\n")
             with open(
-                os.path.join(
-                    save_dev_folder,
-                    self.tng_gt_type_dev + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
-                ),
+                devfilepath,
                 "w+",
             ) as g2:
                 json.dump(dev_list, g2)
+            trainfilepath = os.path.join(
+                save_train_folder,
+                self.tng_gt_type_train + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
+            )
+            trainfilelist.append(trainfilepath + "\n")
             with open(
-                os.path.join(
-                    save_train_folder,
-                    self.tng_gt_type_train + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".json",
-                ),
+                trainfilepath,
                 "w+",
             ) as h:
                 json.dump(train_list, h)
@@ -233,6 +248,30 @@ class TEINERGroundtruthBuilder:
             "w+",
         ) as h2:
             json.dump(build_config, h2)
+        with open(
+            os.path.join(
+                save_folder,
+                self.tng_gt_type_test + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".lst",
+            ),
+            "w+",
+        ) as htest:
+            htest.writelines(testfilelist)
+        with open(
+            os.path.join(
+                save_folder,
+                self.tng_gt_type_dev + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".lst",
+            ),
+            "w+",
+        ) as hdev:
+            hdev.writelines(devfilelist)
+        with open(
+            os.path.join(
+                save_folder,
+                self.tng_gt_type_train + "_" + build_config[self.tng_attr_name].replace(" ", "_") + ".lst",
+            ),
+            "w+",
+        ) as htrain:
+            htrain.writelines(trainfilelist)
         progressoutput.success(f"Groundtruth {build_config[self.tng_attr_name]} succesfully builded.")
         st.write(f"Statistics for {build_config[self.tng_attr_name]}")
         self.show_statistics_to_saved_groundtruth(
@@ -381,11 +420,11 @@ class TEINERGroundtruthBuilder:
                 self.state.tng_test_percentage,
                 "% for the test set.",
             )
-        #self.state.tng_teifile_folder = st.text_input(
+        # self.state.tng_teifile_folder = st.text_input(
         #    "Choose a Folder containing only TEI Files to build the groundtruth from:",
         #    self.state.tng_teifile_folder if self.state.tng_teifile_folder else "",
         #    key="tng_tei_file_folder",
-        #)
+        # )
         self.state.tng_teifile_folder = small_dir_selector(
             self.state,
             label="Choose a Folder containing only TEI Files to build the groundtruth from:",

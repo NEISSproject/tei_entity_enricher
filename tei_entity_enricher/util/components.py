@@ -165,7 +165,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
                     "Subdirectories:",
                     subdirlist,
                     subdirlist.index(getattr(state, key + "_chosen_subdir"))
-                    if getattr(state, key + "_chosen_subdir")
+                    if getattr(state, key + "_chosen_subdir") and getattr(state, key + "_chosen_subdir") in subdirlist
                     else 0,
                 ),
             )
@@ -209,7 +209,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
                         "Subelements:",
                         subdirlist,
                         subdirlist.index(getattr(state, key + "_chosen_subelement"))
-                        if getattr(state, key + "_chosen_subelement")
+                        if getattr(state, key + "_chosen_subelement") and getattr(state, key + "_chosen_subelement") in subdirlist
                         else 0,
                     ),
                 )
