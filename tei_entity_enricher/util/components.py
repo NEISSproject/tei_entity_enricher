@@ -143,7 +143,7 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
     return os.path.join(folder_path, selected_dirname)
 
 
-def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
+def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     col1, col2 = st.beta_columns([10, 1])
     dirpath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
@@ -179,6 +179,12 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
             dirpath = local_save_path
+        if ask_make and os.path.isdir(os.path.dirname(dirpath)):
+            make_dir = st.button(f"Create dir: {dirpath}")
+            if make_dir:
+                os.makedirs(dirpath)
+                st.experimental_rerun()
+
     if return_state:
         return dirpath, ret_state
     return dirpath
