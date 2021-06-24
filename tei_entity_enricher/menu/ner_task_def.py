@@ -49,11 +49,11 @@ class NERTaskDef:
             self.tnm = tei_map.TEINERMap(state, show_menu=False)
             self.show()
 
-    def get_tag_filepath_to_ntdname(self,name):
+    def get_tag_filepath_to_ntdname(self, name):
         if self.defdict[name][self.ntd_attr_template]:
-            ntd_tag_file=os.path.join(self.template_ntd_Folder,name.replace(" ", "_") + ".txt")
+            ntd_tag_file = os.path.join(self.template_ntd_Folder, name.replace(" ", "_") + ".txt")
         else:
-            ntd_tag_file=os.path.join(self.ntd_Folder,name.replace(" ", "_") + ".txt")
+            ntd_tag_file = os.path.join(self.ntd_Folder, name.replace(" ", "_") + ".txt")
         return ntd_tag_file
 
     def validate_and_saving_definition(self, definition, mode):
@@ -107,11 +107,11 @@ class NERTaskDef:
                 "w+",
             ) as f:
                 json.dump(definition, f)
-            blines=[]
-            ilines=[]
+            blines = []
+            ilines = []
             for entity in definition[self.ntd_attr_entitylist]:
-                blines.append('B-'+entity+'\n')
-                ilines.append('I-'+entity+'\n')
+                blines.append("B-" + entity + "\n")
+                ilines.append("I-" + entity + "\n")
             blines.extend(ilines)
             with open(
                 os.path.join(
