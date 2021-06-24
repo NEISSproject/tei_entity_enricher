@@ -513,3 +513,57 @@ class TEINERGroundtruthBuilder:
         tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
+
+    def get_filepath_to_gt_lists(self, name):
+        save_folder = os.path.join(self.tng_Folder, name.replace(" ", "_"))
+        makedir_if_necessary(save_folder)
+        testlistfilepath = os.path.join(
+            save_folder,
+            self.tng_gt_type_test + "_" + name.replace(" ", "_") + ".lst",
+        )
+        devlistfilepath = os.path.join(
+            save_folder,
+            self.tng_gt_type_dev + "_" + name.replace(" ", "_") + ".lst",
+        )
+        trainlistfilepath = os.path.join(
+            save_folder,
+            self.tng_gt_type_train + "_" + name.replace(" ", "_") + ".lst",
+        )
+        if self.tngdict[name][self.tng_attr_template]:
+            if not (
+                os.path.isfile(trainlistfilepath)
+                and os.path.isfile(devlistfilepath)
+                and os.path.isfile(testlistfilepath)
+            ):
+                templ_folder = os.path.join(self.template_tng_Folder, name.replace(" ", "_"))
+                save_test_folder = os.path.join(templ_folder, self.tng_gt_type_test)
+                save_dev_folder = os.path.join(templ_folder, self.tng_gt_type_dev)
+                save_train_folder = os.path.join(templ_folder, self.tng_gt_type_train)
+                testfilelist = [os.path.join(save_test_folder,filepath+'\n') for filepath in os.listdir(save_test_folder) if filepath.endswith(".json")]
+                devfilelist = [os.path.join(save_dev_folder,filepath+'\n') for filepath in os.listdir(save_dev_folder) if filepath.endswith(".json")]
+                trainfilelist = [os.path.join(save_train_folder,filepath+'\n') for filepath in os.listdir(save_train_folder) if filepath.endswith(".json")]
+                with open(
+                    os.path.join(
+                        save_folder,
+                        testlistfilepath,
+                    ),
+                    "w+",
+                ) as htest:
+                    htest.writelines(testfilelist)
+                with open(
+                    os.path.join(
+                        save_folder,
+                        devlistfilepath,
+                    ),
+                    "w+",
+                ) as hdev:
+                    hdev.writelines(devfilelist)
+                with open(
+                    os.path.join(
+                        save_folder,
+                        trainlistfilepath,
+                    ),
+                    "w+",
+                ) as htrain:
+                    htrain.writelines(trainfilelist)
+        return trainlistfilepath, devlistfilepath, testlistfilepath
