@@ -14,7 +14,7 @@ def get_config(config_path):
                 config_dict["config_path"] = config_path
                 return config_dict
         except:
-            logger.warning("Could not get config from the exiting file.")
+            logger.warning("Could not get config from the exiting file. Is it a corrupt json-file?")
     elif os.path.isdir(config_path):
         raise IOError(f"The path: {config_path} must not be a directory!")
     else:

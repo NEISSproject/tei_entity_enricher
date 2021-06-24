@@ -14,6 +14,7 @@ from tei_entity_enricher.util.helper import load_images
 
 logger = logging.getLogger(__name__)
 
+
 class Main:
     def __init__(self, args):
         self.state = None

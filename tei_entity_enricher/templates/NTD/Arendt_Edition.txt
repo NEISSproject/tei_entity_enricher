@@ -1,0 +1,12 @@
+B-person
+B-place
+B-ethnicity
+B-event
+B-organization
+B-language
+I-person
+I-place
+I-ethnicity
+I-event
+I-organization
+I-language
