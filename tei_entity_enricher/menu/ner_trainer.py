@@ -18,7 +18,7 @@ from tei_entity_enricher.util.helper import (
     check_dir_ask_make,
     remember_cwd,
 )
-from tei_entity_enricher.util.train_manager import get_manager
+from tei_entity_enricher.util.processmanger.train import get_train_process_manager
 
 logger = logging.getLogger(__name__)
 
@@ -60,31 +60,31 @@ class NERTrainer(MenuBase):
         return ""
 
     def _train_manager(self):
-        train_manager = get_manager(workdir=self._wd)
+        train_process_manager = get_train_process_manager(workdir=self._wd)
         with st.beta_container():
             st.text("Train Manager")
-            if st.button("Set trainer params"):
-                train_manager.set_params(self.trainer_params_json)
-                logger.info("trainer params set!")
+            # if st.button("Set trainer params"):
+            #     train_process_manager.set_params(self.trainer_params_json)
+            #     logger.info("trainer params set!")
             b1, b2, b3, b4, process_status = st.beta_columns([2, 2, 2, 2, 6])
             if b1.button("Start"):
-                train_manager.start()
+                train_process_manager.start()
             if b2.button("Stop"):
-                train_manager.stop()
+                train_process_manager.stop()
             if b3.button("Clear"):
-                train_manager.clear_process()
+                train_process_manager.clear_process()
             if b4.button("refresh"):
                 logger.info("refresh streamlit")
-            train_manager.process_state(st_element=process_status)
+            train_process_manager.process_state(st_element=process_status)
 
-            if train_manager.has_process():
+            if train_process_manager.has_process():
                 with st.beta_expander("Epoch progress", expanded=True):
-                    progress_str = train_manager.read_progress()
+                    progress_str = train_process_manager.read_progress()
                     logger.info(progress_str)
                     st.text(progress_str)
-            if train_manager.has_process():
+            if train_process_manager.has_process():
                 with st.beta_expander("Train log", expanded=True):
-                    log_str = train_manager.log_content()
+                    log_str = train_process_manager.log_content()
                     st_ace(
                         log_str,
                         language="powershell",
