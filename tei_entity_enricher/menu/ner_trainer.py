@@ -54,10 +54,10 @@ class NERTrainer(MenuBase):
 
         st.latex(state_ok)
 
-    def check(self, verbose: str = "none", **kwargs):
+    def check(self, verbose: str = "none", **kwargs) -> str:
         """verbose: 'none', 'console', 'streamlit'"""
         # TODO: make pre-training check
-        return True
+        return ""
 
     def _train_manager(self):
         train_manager = get_manager(workdir=self._wd)
@@ -96,17 +96,9 @@ class NERTrainer(MenuBase):
                     )
         return 0
 
-    def data_conf_self_def(self, check_list):
-        self.state.nt_sel_ntd_name = st.selectbox(
-            "Choose an NER Task",
-            tuple(self.ntd.defdict.keys()),
-            tuple(self.ntd.defdict.keys()).index(self.state.nt_sel_ntd_name) if self.state.nt_sel_ntd_name else 0,
-            key="nt_sel_ntd",
-            help="To specify which NER task you want to train choose an NER Task Entity Definition.",
-        )
-
-        # TODO Optional an bieten Listen aus Folder automatisch auszuwählen oder Listen wie bisher aus je ein oder mehreren Listfiles zu wählen.
+    def data_configuration(self) -> int:
         data_config_check = []
+
         with remember_cwd():
             os.chdir(self._wd)
             with st.beta_expander("Train configuration"):
@@ -117,55 +109,58 @@ class NERTrainer(MenuBase):
                     logger.error("Failed to load trainer_params.json")
                     return
 
-                train_lists = file_lists_entry_widget(
-                    self.trainer_params_json["gen"]["train"]["lists"],
-                    name="train.lists",
-                    help=", separated file names",
+                self.state.nt_train_option = st.radio(
+                    "Train configuration options",
+                    tuple(self.train_conf_options.keys()),
+                    tuple(self.train_conf_options.keys()).index(self.state.nt_train_option)
+                    if self.state.nt_train_option
+                    else 0,
+                    key="nt_train_option",
+                    help="Choose an option to define a train configuration.",
                 )
-                if train_lists:
-                    self.trainer_params_json["gen"]["train"]["lists"] = train_lists
 
-                if len(train_lists) > 1 or len(self.trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
-                    train_lists_ratio = numbers_lists_entry_widget(
-                        self.trainer_params_json["gen"]["train"]["list_ratios"],
-                        name="train.list_ratios",
-                        expect_amount=len(train_lists),
-                        help="e.g. '1.0, 2.0' must be same amount as file names",
-                    )
-                    if train_lists_ratio:
-                        self.trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
-                    else:
-                        data_config_check.append("train.list_ratios")
-                val_lists = file_lists_entry_widget(
-                    self.trainer_params_json["gen"]["val"]["lists"],
-                    name="val.lists",
-                    help=", separated file names",
+                self.train_conf_options[self.state.nt_train_option](data_config_check)
+
+                pretrained_model = model_dir_entry_widget(
+                    self.trainer_params_json["scenario"]["model"]["pretrained_bert"],
+                    name="model.pretrained_bert",
+                    expect_saved_model=True,
                 )
-                if val_lists:
-                    self.trainer_params_json["gen"]["val"]["lists"] = val_lists
+                if pretrained_model:
+                    self.trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
                     self.save_train_params()
                 else:
-                    data_config_check.append("val.lists")
-                if len(val_lists) > 1 or len(self.trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
-                    val_lists_ratio = numbers_lists_entry_widget(
-                        self.trainer_params_json["gen"]["val"]["list_ratios"],
-                        name="val.list_ratios",
-                        expect_amount=len(val_lists),
-                        help="e.g. '1.0, 2.0' must be same amount as file names",
-                    )
-                    if val_lists_ratio:
-                        self.trainer_params_json["gen"]["val"]["list_ratios"] = val_lists_ratio
-                        self.save_train_params()
-                    else:
-                        data_config_check.append("val.list_ratios")
+                    data_config_check.append("model.pretrained_bert")
 
-                self.trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(
-                    self.state.nt_sel_ntd_name
+                output_dir = text_entry_with_check(
+                    string=self.trainer_params_json["output_dir"],
+                    name="output_dir",
+                    check_fn=check_dir_ask_make,
                 )
+                if output_dir:
+                    self.trainer_params_json["output_dir"] = output_dir
+                    self.save_train_params()
+                else:
+                    data_config_check.append("output_dir")
 
-    def data_configuration(self):
-        data_config_check = []
+                if data_config_check:
+                    st.error(f"Fix {data_config_check} to continue!")
+                    logger.error(f"Fix {data_config_check} to continue!")
+                    return -1
+                else:
+                    logger.info("data configuration successful")
+                    if st.button(f'Save trainer_params to config: {os.path.join(self._wd, "trainer_params.json")}'):
+                        if self.save_train_params() != 0:
+                            st.error("Failed to save trainer_params.json")
+                            logger.error("Failed to save trainer_params.json")
+                        logger.info(f'trainer params saved to: {os.path.join(self._wd, "trainer_params.json")}')
+                        st.experimental_rerun()
+                    return 0
 
+    def data_conf_self_def(self, check_list):
+
+        # TODO Optional an bieten Listen aus Folder automatisch auszuwählen oder Listen wie bisher aus je ein oder mehreren Listfiles zu wählen.
+        data_config_check = check_list
         with remember_cwd():
             os.chdir(self._wd)
 
@@ -175,53 +170,59 @@ class NERTrainer(MenuBase):
                 logger.error("Failed to load trainer_params.json")
                 return
 
-            self.state.nt_train_option = st.radio(
-                "Train configuration options",
-                tuple(self.train_conf_options.keys()),
-                tuple(self.train_conf_options.keys()).index(self.state.nt_train_option)
-                if self.state.nt_train_option
-                else 0,
-                key="nt_train_option",
-                help="Choose an option to define a train configuration.",
+            train_lists = file_lists_entry_widget(
+                self.trainer_params_json["gen"]["train"]["lists"],
+                name="train.lists",
+                help=", separated file names",
             )
+            if train_lists:
+                self.trainer_params_json["gen"]["train"]["lists"] = train_lists
 
-            self.train_conf_options[self.state.nt_train_option](data_config_check)
-
-            pretrained_model = model_dir_entry_widget(
-                self.trainer_params_json["scenario"]["model"]["pretrained_bert"],
-                name="model.pretrained_bert",
-                expect_saved_model=True,
+            if len(train_lists) > 1 or len(self.trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
+                train_lists_ratio = numbers_lists_entry_widget(
+                    self.trainer_params_json["gen"]["train"]["list_ratios"],
+                    name="train.list_ratios",
+                    expect_amount=len(train_lists),
+                    help="e.g. '1.0, 2.0' must be same amount as file names",
+                )
+                if train_lists_ratio:
+                    self.trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
+                else:
+                    data_config_check.append("train.list_ratios")
+            val_lists = file_lists_entry_widget(
+                self.trainer_params_json["gen"]["val"]["lists"],
+                name="val.lists",
+                help=", separated file names",
             )
-            if pretrained_model:
-                self.trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
+            if val_lists:
+                self.trainer_params_json["gen"]["val"]["lists"] = val_lists
                 self.save_train_params()
             else:
-                data_config_check.append("model.pretrained_bert")
+                data_config_check.append("val.lists")
+            if len(val_lists) > 1 or len(self.trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
+                val_lists_ratio = numbers_lists_entry_widget(
+                    self.trainer_params_json["gen"]["val"]["list_ratios"],
+                    name="val.list_ratios",
+                    expect_amount=len(val_lists),
+                    help="e.g. '1.0, 2.0' must be same amount as file names",
+                )
+                if val_lists_ratio:
+                    self.trainer_params_json["gen"]["val"]["list_ratios"] = val_lists_ratio
+                    self.save_train_params()
+                else:
+                    data_config_check.append("val.list_ratios")
 
-            output_dir = text_entry_with_check(
-                string=self.trainer_params_json["output_dir"],
-                name="output_dir",
-                check_fn=check_dir_ask_make,
+            self.state.nt_sel_ntd_name = st.selectbox(
+                "Choose an NER Task",
+                tuple(self.ntd.defdict.keys()),
+                tuple(self.ntd.defdict.keys()).index(self.state.nt_sel_ntd_name) if self.state.nt_sel_ntd_name else 0,
+                key="nt_sel_ntd",
+                help="To specify which NER task you want to train choose an NER Task Entity Definition.",
             )
-            if output_dir:
-                self.trainer_params_json["output_dir"] = output_dir
-                self.save_train_params()
-            else:
-                data_config_check.append("output_dir")
 
-            if data_config_check:
-                st.error(f"Fix {data_config_check} to continue!")
-                logger.error(f"Fix {data_config_check} to continue!")
-                return -1
-            else:
-                logger.info("data configuration successful")
-                if st.button(f'Save trainer_params to config: {os.path.join(self._wd, "trainer_params.json")}'):
-                    if self.save_train_params() != 0:
-                        st.error("Failed to save trainer_params.json")
-                        logger.error("Failed to save trainer_params.json")
-                    logger.info(f'trainer params saved to: {os.path.join(self._wd, "trainer_params.json")}')
-                    st.experimental_rerun()
-                return 0
+            self.trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(
+                self.state.nt_sel_ntd_name
+            )
 
     def data_conf_by_tei_gb(self, check_list):
         self.state.nt_sel_tng_name = st.selectbox(

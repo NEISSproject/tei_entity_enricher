@@ -539,9 +539,21 @@ class TEINERGroundtruthBuilder:
                 save_test_folder = os.path.join(templ_folder, self.tng_gt_type_test)
                 save_dev_folder = os.path.join(templ_folder, self.tng_gt_type_dev)
                 save_train_folder = os.path.join(templ_folder, self.tng_gt_type_train)
-                testfilelist = [os.path.join(save_test_folder,filepath+'\n') for filepath in os.listdir(save_test_folder) if filepath.endswith(".json")]
-                devfilelist = [os.path.join(save_dev_folder,filepath+'\n') for filepath in os.listdir(save_dev_folder) if filepath.endswith(".json")]
-                trainfilelist = [os.path.join(save_train_folder,filepath+'\n') for filepath in os.listdir(save_train_folder) if filepath.endswith(".json")]
+                testfilelist = [
+                    os.path.join(save_test_folder, filepath + "\n")
+                    for filepath in os.listdir(save_test_folder)
+                    if filepath.endswith(".json")
+                ]
+                devfilelist = [
+                    os.path.join(save_dev_folder, filepath + "\n")
+                    for filepath in os.listdir(save_dev_folder)
+                    if filepath.endswith(".json")
+                ]
+                trainfilelist = [
+                    os.path.join(save_train_folder, filepath + "\n")
+                    for filepath in os.listdir(save_train_folder)
+                    if filepath.endswith(".json")
+                ]
                 with open(
                     os.path.join(
                         save_folder,
