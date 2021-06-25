@@ -18,7 +18,7 @@ from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 
 class TEIManPP:
-    def __init__(self, state, show_menu=True, entity_library=None):
+    def __init__(self, state, show_menu=True, entity_library=None, el_last_ed_state= None):
         self.state = state
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
@@ -30,6 +30,7 @@ class TEIManPP:
         self.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
         self.tmp_base_ls_search_type_options = ["without specified type"]
         self.entity_library = entity_library  # get_entity_library()
+        self.el_last_ed_state=el_last_ed_state
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.tnm = tnm_map.TEINERMap(state, show_menu=False)
@@ -204,16 +205,17 @@ class TEIManPP:
                         else self.tmp_link_choose_options.index(self.tmp_link_choose_option_gnd),
                         help='Define the source where links should be added from when pressing an "Add link"-Button',
                     )
-                    scol1, scol2, scol3, scol4, scol5, scol6 = st.beta_columns(6)
+                    scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.beta_columns(7)
                     scol1.markdown("### Name")
                     scol2.markdown("### Further Names")
                     scol3.markdown("### Description")
                     scol4.markdown("### Wikidata_Id")
                     scol5.markdown("### GND_id")
                     scol6.markdown("### Use Suggestion")
+                    scol7.markdown('### Entity Library')
                     for suggestion in tag_entry["link_suggestions"]:
                         # workaround: new column definition because of unique row height
-                        scol1, scol2, scol3, scol4, scol5, scol6 = st.beta_columns(6)
+                        scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.beta_columns(7)
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
@@ -233,8 +235,13 @@ class TEIManPP:
                             )
                         )
                         suggestion_id += 1
-                        if scol6.button("Add link as ref attribute!", key="tmp" + str(suggestion_id)):
+                        if scol6.button("Add link as ref attribute", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
+                        if scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id)):
+                            self.entity_library.add_entities([suggestion])
+                            self.entity_library.save_library()
+                            self.el_last_ed_state.reset()
+                            st.experimental_rerun()
                 else:
                     st.write("No link suggestions found!")
         return tag_entry
