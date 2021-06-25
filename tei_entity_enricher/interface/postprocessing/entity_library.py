@@ -269,7 +269,106 @@ class EntityLibrary:
             result = None
         return result
 
-    def add_missing_id_numbers(self, add_first_suggested_wikidata_entity_if_no_id_was_given: bool = False) -> List[str]:
+    def return_identification_suggestions_for_entity(
+        self,
+        input_entity: dict = None,
+        try_to_identify_entities_without_id_values: bool = False,
+        wikidata_query_match_limit: str = "5",
+    ) -> Union[Tuple[List[dict], int, str], Tuple[list, int, str]]:
+        """method for postprocessing gui to get missing ids or identification suggestions for a single entity;
+        returned tuple contains a list of entities, an integer value and a status message string;
+        if the integer equals 0, then the identification suggestion is save and it can be saved or ignored without
+        manually checking the result by user,
+        if the integer equals -1, then the user has to choose if the suggested entity/entities should be added to entity library;
+        if the returned list is empty, no suggestions was neccessary or could be made due to try_to_identify_entities_without_id_values parameter
+        setting or a lack of matching data in wikidata database or due to an connection error"""
+        if (input_entity["wikidata_id"] == "") and (input_entity["gnd_id"] == ""):
+            if try_to_identify_entities_without_id_values == False:
+                return ([], 0, "entity ignored due to try_to_identify_entities_without_id_values parameter setting")
+            else:
+                input_tuple = (input_entity["name"], input_entity["type"])
+                wikidata_connector = WikidataConnector(
+                    input=[input_tuple], wikidata_web_api_limit=wikidata_query_match_limit
+                )
+                wikidata_connector_result = wikidata_connector.get_wikidata_search_results()
+                if wikidata_connector_result[input_tuple][0] > 0:
+                    entity_list_in_query_wikidata_result = []
+                    for entity in wikidata_connector_result[input_tuple][1]["search"]:
+                        _gnd_retrieve_attempt_result = self.get_gnd_id_of_wikidata_entity(entity["id"])
+                        _gnd_id_to_add = (
+                            _gnd_retrieve_attempt_result[0]["o"]["value"]
+                            if len(_gnd_retrieve_attempt_result) > 0
+                            else ""
+                        )
+                        entity_list_in_query_wikidata_result.append(
+                            {
+                                "name": entity.get("label", f"No name delivered, search pattern was: {input_tuple[0]}"),
+                                "furtherNames": [],
+                                "type": input_tuple[1],
+                                "description": entity.get("description", "No description delivered"),
+                                "wikidata_id": entity.get("id", ""),
+                                "gnd_id": _gnd_id_to_add,
+                            }
+                        )
+                    return_value_len = len(entity_list_in_query_wikidata_result)
+                    if return_value_len > 1:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            -1,
+                            "multiple possible entities found in wikidata query",
+                        )
+                    elif return_value_len == 1:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            -1,
+                            "one possible entity found in wikidata query",
+                        )
+                    elif return_value_len == 0:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            0,
+                            "no possible entity found in wikidata query",
+                        )
+                    return return_value
+                else:
+                    return ([], 0, "no matching entities found in wikidata query")
+        if (input_entity["wikidata_id"] != "") and (input_entity["gnd_id"] == ""):
+            result_of_gnd_id_retrieval_attempt = self.get_gnd_id_of_wikidata_entity(input_entity["wikidata_id"])
+            gnd_id_of_first_suggested_entity = (
+                result_of_gnd_id_retrieval_attempt[0]["o"]["value"]
+                if len(result_of_gnd_id_retrieval_attempt) > 0
+                else ""
+            )
+            if gnd_id_of_first_suggested_entity != "":
+                returned_entity = input_entity.copy()
+                returned_entity["gnd_id"] = gnd_id_of_first_suggested_entity
+                return ([returned_entity], 0, f"gnd_id {gnd_id_of_first_suggested_entity} determined")
+            else:
+                return ([], 0, "no id data could be retrieved for entity")
+        if (input_entity["wikidata_id"] == "") and (input_entity["gnd_id"] != ""):
+            gnd_connector = GndConnector(input_entity["gnd_id"])
+            gnd_data = gnd_connector.get_gnd_data(["sameAs"])
+            filter_list_result = list(
+                filter(
+                    lambda item: "http://www.wikidata.org/entity/" in item["@id"],
+                    gnd_data[input_entity["gnd_id"]]["sameAs"],
+                )
+            )
+            if len(filter_list_result) == 1:
+                from_gnd_api_retrieved_wikidata_id = filter_list_result[0]["@id"][31:]
+                returned_entity = input_entity.copy()
+                returned_entity["wikidata_id"] = from_gnd_api_retrieved_wikidata_id
+                return ([returned_entity], 0, f"wikidata_id {from_gnd_api_retrieved_wikidata_id} determined")
+            else:
+                return ([], 0, "no id data could be retrieved for entity")
+        if (input_entity["wikidata_id"] != "") and (input_entity["gnd_id"] != ""):
+            return ([], 0, "entity is already identified")
+
+    def add_missing_id_numbers(
+        self,
+        add_first_suggested_wikidata_entity_if_no_id_was_given: bool = False,
+        wikidata_query_match_limit: str = "5",
+    ) -> Union[List[str], list]:
         return_messages = []
         for entity in self.data:
             entity_unchanged = entity.copy()
@@ -281,7 +380,9 @@ class EntityLibrary:
                     continue
                 else:
                     input_tuple = (entity["name"], entity["type"])
-                    wikidata_connector = WikidataConnector(input=[input_tuple], wikidata_web_api_limit="5")
+                    wikidata_connector = WikidataConnector(
+                        input=[input_tuple], wikidata_web_api_limit=wikidata_query_match_limit
+                    )
                     wikidata_connector_result = wikidata_connector.get_wikidata_search_results()
                     if wikidata_connector_result[input_tuple][0] > 0:
                         wikidata_id_of_first_suggested_entity = wikidata_connector_result[input_tuple][1]["search"][0][
