@@ -43,8 +43,7 @@ class ProcessManagerBase:
         if self.verbose >= 2:
             fn_dict[level][1](message)
 
-    @staticmethod
-    def process_command_list():
+    def process_command_list(self):
         return ["echo", "Hello World!"]
 
     def start(self):

@@ -24,8 +24,7 @@ class TrainProcessManager(ProcessManagerBase):
         super().clear_process()
         self._current_epoch = ""
 
-    @staticmethod
-    def process_command_list():
+    def process_command_list(self):
         return [
             "tfaip-train-from-params",
             "trainer_params.json",
