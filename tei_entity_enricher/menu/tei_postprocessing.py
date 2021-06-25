@@ -322,10 +322,12 @@ class TEINERPostprocessing:
                                 selectbox_result = []
                                 button_results = []
                                 if len(pp_el_add_missing_ids_query_results.data) > 0:
+                                    # load wikidata query results from cache
                                     cases_to_ignore = pp_el_add_missing_ids_query_results.data["cases_to_ignore"]
                                     identified_cases = pp_el_add_missing_ids_query_results.data["identified_cases"]
                                     cases_to_choose = pp_el_add_missing_ids_query_results.data["cases_to_choose"]
                                 else:
+                                    # wikidata query
                                     for entity in pp_el_library_object.data:
                                         _temp_result_entity_identification = (
                                             pp_el_library_object.return_identification_suggestions_for_entity(
@@ -337,7 +339,10 @@ class TEINERPostprocessing:
                                         if _len_temp_result == 0:
                                             cases_to_ignore.append(_temp_result_entity_identification)
                                         elif _len_temp_result == 1:
-                                            identified_cases.append(_temp_result_entity_identification)
+                                            if _temp_result_entity_identification[1] == 0:
+                                                identified_cases.append(_temp_result_entity_identification)
+                                            else:
+                                                cases_to_choose.append(_temp_result_entity_identification)
                                         elif _len_temp_result > 1:
                                             cases_to_choose.append(_temp_result_entity_identification)
                                     pp_el_add_missing_ids_query_results.data["cases_to_ignore"] = cases_to_ignore
@@ -354,7 +359,7 @@ class TEINERPostprocessing:
                                         for case in identified_cases:
                                             st.write(case[2])
                                         for index, case in enumerate(cases_to_choose):
-                                            description_list = [i["description"] for i in case[0]]
+                                            description_list = [i["description"] for i in case[0]].append("-- None --")
                                             selectbox_result.append(
                                                 st.selectbox(
                                                     label="Select an entity...",
@@ -367,7 +372,7 @@ class TEINERPostprocessing:
                                         for case in identified_cases:
                                             st.write("-")
                                         for index, case in enumerate(cases_to_choose):
-                                            button_results.append(st.button(label="Add selected entity"))
+                                            button_results.append(st.button(label="Open wikidata entity page"))
                                 # HIER WEITER
                                 # messages = pp_el_library_object.add_missing_id_numbers(checkbox_state)
                                 # pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
@@ -379,6 +384,7 @@ class TEINERPostprocessing:
                                 #             st.info(message)
 
                                 # erst nach select button click:
+                                # "-- None --"-Auswahl auslesen und entity nicht in entity library speichern
                                 # pp_el_button_states.add_missing_ids = False
                                 # pp_el_button_states.add_missing_ids_proceed = False
                                 # pp_el_add_missing_ids_query_results.reset()
@@ -405,8 +411,8 @@ class TEINERPostprocessing:
                                 with st.beta_container():
                                     st.info(f"Error: {el_editor_content_check_result}")
                                     st.button(
-                                        label="Rerun first before manually editing entity library again",
-                                        help="At the moment the postprocessing page has be reloaded after a manual edit of the current entity library, before a manual edit can be executed again. Otherwise the second changes will be lost.",
+                                        label="Rerun first before manually edit the entity library again",
+                                        help="At the moment the postprocessing page has to be reloaded after a manual change of the current entity library, before a manual change can be executed again.",
                                     )
                         else:
                             pp_el_library_object.data = json.loads(editor_content)
@@ -417,8 +423,8 @@ class TEINERPostprocessing:
                                         "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
                                     )
                                     st.button(
-                                        label="Rerun first before manually editing entity library again",
-                                        help="At the moment the postprocessing page has be reloaded after a manual edit of the current entity library, before a manual edit can be executed again. Otherwise the second changes will be lost.",
+                                        label="Rerun first before manually edit entity library again",
+                                        help="At the moment the postprocessing page has to be reloaded after a manual change of the current entity library, before a manual change can be executed again.",
                                     )
             # basic layout: add entities subcontainer
             el_add_entities_from_file_subcontainer = st.beta_container()
@@ -439,7 +445,7 @@ class TEINERPostprocessing:
                         el_add_entities_from_file_button_value = el_add_entities_from_file_button_placeholder.button(
                             label="Start adding process", key=None, help=None
                         )
-                        # processes triggered by add_entities button
+                        # processes triggered by add entities button
                         if el_add_entities_from_file_button_value == True:
                             result_messages = []
                             for uploaded_file in el_add_entities_from_file_loader_file_list:
@@ -477,8 +483,8 @@ class TEINERPostprocessing:
                             with el_file_view_message_placeholder:
                                 with st.beta_container():
                                     st.button(
-                                        label="Rerun first before manually editing entity library again",
-                                        help="At the moment the postprocessing page has be reloaded after an edit of the current entity library.",
+                                        label="Rerun first before manually edit the entity library again",
+                                        help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
                                     )
 
         ## 2. Manual TEI Postprocessing
