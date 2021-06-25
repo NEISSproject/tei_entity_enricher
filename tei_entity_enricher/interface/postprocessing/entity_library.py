@@ -310,11 +310,26 @@ class EntityLibrary:
                                 "gnd_id": _gnd_id_to_add,
                             }
                         )
-                    return (
-                        entity_list_in_query_wikidata_result,
-                        -1,
-                        "multiple possible entities found in wikidata query",
-                    )
+                    return_value_len = len(entity_list_in_query_wikidata_result)
+                    if return_value_len > 1:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            -1,
+                            "multiple possible entities found in wikidata query",
+                        )
+                    elif return_value_len == 1:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            -1,
+                            "one possible entity found in wikidata query",
+                        )
+                    elif return_value_len == 0:
+                        return_value = (
+                            entity_list_in_query_wikidata_result,
+                            0,
+                            "no possible entity found in wikidata query",
+                        )
+                    return return_value
                 else:
                     return ([], 0, "no matching entities found in wikidata query")
         if (input_entity["wikidata_id"] != "") and (input_entity["gnd_id"] == ""):

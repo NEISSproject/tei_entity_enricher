@@ -295,7 +295,7 @@ class NERTrainer(MenuBase):
                 data_config_check.append("val.list_ratios")
 
     def workdir(self):
-        if module_path != os.path.join(os.getcwd(), "tei_entity_enricher", "tei_entity_enricher"):
+        if module_path.lower() != os.path.join(os.getcwd(), "tei_entity_enricher", "tei_entity_enricher").lower():
             if self.show_menu:
                 st.error("Please run ntee-start from the directory which contains the git repos 'tei_entity_enricher'.")
             else:

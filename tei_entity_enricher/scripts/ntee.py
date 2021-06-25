@@ -29,8 +29,8 @@ def run():
 
 
 def main():
-    assert module_path == os.path.join(
-        os.getcwd(), "tei_entity_enricher", "tei_entity_enricher"
+    assert (
+        module_path.lower() == os.path.join(os.getcwd(), "tei_entity_enricher", "tei_entity_enricher").lower()
     ), "Please run ntee-start from the directory which contains the git repos 'tei_entity_enricher'."
     parser = argparse.ArgumentParser(description="The n-tee app")
 

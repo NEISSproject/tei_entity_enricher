@@ -21,6 +21,7 @@ Software for Tagging Entities in TEI-Files automatically
 
 `git clone https://github.com/NEISSproject/tf2_neiss_nlp.git`
 
-`pip install tf2_neiss_nlp` (this will install tfaip and other dependencies)
+`pip install ./tf2_neiss_nlp` (for linux; this will install tfaip and other dependencies)
+`pip install .\tf2_neiss_nlp` (for windows; this will install tfaip and other dependencies)
 
 
