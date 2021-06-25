@@ -167,6 +167,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
                     subdirlist.index(getattr(state, key + "_chosen_subdir"))
                     if getattr(state, key + "_chosen_subdir") and getattr(state, key + "_chosen_subdir") in subdirlist
                     else 0,
+                    key=key + "_chosen_subdir",
                 ),
             )
     else:
