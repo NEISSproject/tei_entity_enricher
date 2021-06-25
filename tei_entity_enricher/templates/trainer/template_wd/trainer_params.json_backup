@@ -12,7 +12,7 @@
   "val_every_n": 1,
   "lav_every_n": 0,
   "lav_min_epoch": 0,
-  "output_dir": "models/ner/bert_default",
+  "output_dir": "models_ner/bert_default",
   "write_checkpoints": true,
   "export_best": true,
   "export_final": true,
@@ -62,20 +62,20 @@
       "dff": 2048,
       "pos_enc_max_abs": 20000,
       "pos_enc_max_rel": 16,
-      "rel_pos_enc": false,
+      "rel_pos_enc": true,
       "rate": 0.1,
       "bert_graph": "BERT",
-      "pretrained_bert": "bertmodels/bertmlmabswwa",
-      "tags_fn_": "/home/jochen/devel/projects/aip2_ner/data/tags/germeval_wp.txt",
+      "pretrained_bert": "models_pretrained/bertmlmrelwwm/best/encoder_only/",
+      "tags_fn_": "",
       "target_vocab_size": 29990,
       "oov_id_": 24,
       "use_hf_model_": false,
       "use_hf_electra_model_": false,
       "pretrained_hf_model_": "",
-      "whole_word_attention_": true,
+      "whole_word_attention_": false,
       "one_side_attention_window": 5,
       "hidden_activation": "relu",
-      "use_crf": false,
+      "use_crf": true,
       "use_ner_loss": false,
       "use_entity_loss": false,
       "use_entity_loss_max": 2.0,
@@ -85,8 +85,8 @@
       "loss_se_boost": 5.0,
       "loss_se_mode": "l2",
       "feasible_pred_ids": false,
-      "crf_with_ner_rule": false,
-      "wordwise_output_": false,
+      "crf_with_ner_rule": true,
+      "wordwise_output_": true,
       "wwo_mode_": "first",
       "__cls__": "tfaip_scenario.nlp.ner.model:ModelParams"
     },
@@ -115,8 +115,8 @@
         "processors": [],
         "__cls__": "tfaip.data.pipeline.processor.params:SequentialProcessorPipelineParams"
       },
-      "resource_base_path": "/home/jochen/devel/projects/aip2_ner",
-      "tokenizer": "data/tokenizer/tokenizer_de.subwords",
+      "resource_base_path": "",
+      "tokenizer": "templates/tokenizer/tokenizer_de.subwords",
       "add_types": [],
       "magnitude": 3,
       "noise": "uniform",
@@ -126,7 +126,7 @@
       "random_seed": null,
       "shuffle_filenames": true,
       "shuffle_text_data": true,
-      "whole_word_masking": false,
+      "whole_word_masking": true,
       "use_hf_model": false,
       "use_hf_electra_model": false,
       "pretrained_hf_model": "",
@@ -134,16 +134,16 @@
       "sep_token_id_": 29988,
       "pad_token_id_": 0,
       "tok_vocab_size_": 29987,
-      "whole_word_attention": true,
-      "tags": "data/tags/germeval_wp.txt",
+      "whole_word_attention": false,
+      "tags": "templates/tags/germeval_wp.txt",
       "tokenizer_range": "sentence_v3",
       "bet_tagging": false,
-      "wordwise_output": false,
+      "wordwise_output": true,
       "wwo_mode": "first",
       "__cls__": "tfaip_scenario.nlp.data.ner_params:NERDataParams"
     },
     "evaluator": {
-      "tags_fn": "/home/jochen/devel/projects/aip2_ner/data/tags/germeval_wp.txt",
+      "tags_fn": "templates/tags/germeval_wp.txt",
       "__cls__": "tfaip_scenario.nlp.util.ner_eval:NEREvaluatorParams"
     },
     "export_net_config": true,
@@ -152,7 +152,7 @@
     "additional_serve_dir": "additional",
     "trainer_params_filename": "trainer_params.json",
     "scenario_params_filename": "scenario_params.json",
-    "scenario_base_path": "/home/jochen/devel/projects/aip2_ner/tf2_aip/tfaip_scenario/nlp/ner/scenario.py",
+    "scenario_base_path": "../tf2_neiss_nlp/tfaip_scenario/nlp/ner/scenario.py",
     "scenario_id": "tfaip_scenario.nlp.ner.scenario:Scenario",
     "id": "ge_bertmlmrelwwm_debug_list_tfaip_scenario.nlp.ner.scenario:Scenario_2021-05-05",
     "tfaip_commit_hash": "3a80c3217c2498d4098dbcb0c8795fbcbad4a1f1",
@@ -216,7 +216,7 @@
     },
     "train": {
       "lists": [
-        "lists/train_germeval_wp.lst"
+        "templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0
@@ -225,7 +225,7 @@
     },
     "val": {
       "lists": [
-        "lists/val_germeval_wp.lst"
+        "templates/lists/conll_small_val.lst"
       ],
       "list_ratios": [
         1.0
@@ -237,5 +237,6 @@
   "saved_checkpoint_sub_dir": ".",
   "checkpoint_sub_dir": "",
   "checkpoint_save_freq": "epoch",
-  "__cls__": "tfaip.trainer.params:TrainerParams"
+  "__cls__": "tfaip.trainer.params:TrainerParams",
+  "config_path": "trainer_params.json"
 }
