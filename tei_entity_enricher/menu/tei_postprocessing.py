@@ -1,10 +1,10 @@
 import streamlit as st
 import logging
 import json
-import os
 
 from streamlit_ace import st_ace
 from typing import Union
+from math import floor, trunc
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
 from tei_entity_enricher.util.exceptions import BadFormat
@@ -134,6 +134,21 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     if ca_el_redundancy_result == False:
         return "Editor content contains a redundancy issue; a wikidata or gnd id is assigned to more than one entity."
     return True
+
+
+def frange_positve(start, stop=None, step=None):
+    if stop == None:
+        stop = start + 0.0
+        start = 0.0
+    if step == None:
+        step = 1.0
+    count = 0
+    while True:
+        temp = float(start + count * step)
+        if temp >= stop:
+            break
+        yield temp
+        count += 1
 
 
 class TEINERPostprocessing:
@@ -305,14 +320,15 @@ class TEINERPostprocessing:
                         pp_el_button_states.add_missing_ids = True
                         # pp_el_button_states.export_el = False
                         with el_add_missing_ids_menu_placeholder.beta_container():
+                            progress_bar = st.progress(0)
                             checkbox_state = st.checkbox(
                                 label="Try to identify entities without any ids",
                                 value=False,
                                 help="When activated, for every entity in entity library, which has no id data at all, a list of matching entities will be suggested.",
                             )
                             proceed_button = st.button(
-                                label="Proceed",
-                                help="Start process, in which ids will be assigned for the entities in entity library.",
+                                label="Query",
+                                help="Start process, in which ids will be suggested for the entities in entity library.",
                             )
                             if proceed_button == True or pp_el_button_states.add_missing_ids_proceed == True:
                                 pp_el_button_states.add_missing_ids_proceed = True
@@ -326,15 +342,24 @@ class TEINERPostprocessing:
                                     cases_to_ignore = pp_el_add_missing_ids_query_results.data["cases_to_ignore"]
                                     identified_cases = pp_el_add_missing_ids_query_results.data["identified_cases"]
                                     cases_to_choose = pp_el_add_missing_ids_query_results.data["cases_to_choose"]
+                                    progress_bar.progress(100)
                                 else:
                                     # wikidata query
-                                    for entity in pp_el_library_object.data:
+                                    library_data_length = len(pp_el_library_object.data)
+                                    progress_amount = floor((100 / library_data_length) * 10 ** 2) / 10 ** 2
+                                    progress_amount_list = list(frange_positve(0, 100, progress_amount))
+                                    for index, entity in enumerate(pp_el_library_object.data):
                                         _temp_result_entity_identification = (
                                             pp_el_library_object.return_identification_suggestions_for_entity(
                                                 input_entity=entity,
                                                 try_to_identify_entities_without_id_values=checkbox_state,
                                             )
                                         )
+                                        current_progress_state = progress_amount_list[index]
+                                        progress_val = trunc(current_progress_state + progress_amount)
+                                        if progress_val > 100:
+                                            progress_val = 100
+                                        progress_bar.progress(trunc(current_progress_state + progress_amount))
                                         _len_temp_result = len(_temp_result_entity_identification[0])
                                         if _len_temp_result == 0:
                                             cases_to_ignore.append(_temp_result_entity_identification)
@@ -349,30 +374,67 @@ class TEINERPostprocessing:
                                     pp_el_add_missing_ids_query_results.data["identified_cases"] = identified_cases
                                     pp_el_add_missing_ids_query_results.data["cases_to_choose"] = cases_to_choose
                                 with el_misc_message_placeholder.beta_container():
-                                    col1, col2, col3 = st.beta_columns(3)
-                                    with col1:
-                                        for case in identified_cases:
+                                    for case in identified_cases:
+                                        col1, col2, col3 = st.beta_columns(3)
+                                        with col1:
                                             st.write(case[0][0]["name"])
-                                        for case in cases_to_choose:
-                                            st.write(case[0][0]["name"])
-                                    with col2:
-                                        for case in identified_cases:
+                                        with col2:
                                             st.write(case[2])
-                                        for index, case in enumerate(cases_to_choose):
-                                            description_list = [i["description"] for i in case[0]].append("-- None --")
+                                        with col3:
+                                            st.write("-")
+                                    for index, case in enumerate(cases_to_choose):
+                                        col1, col2, col3 = st.beta_columns(3)
+                                        with col1:
+                                            st.write(case[0][0]["name"])
+                                        with col2:
+                                            description_list = [i["description"] for i in case[0]]
+                                            description_list.append("-- Select none --")
                                             selectbox_result.append(
                                                 st.selectbox(
                                                     label="Select an entity...",
                                                     options=description_list,
                                                     help="Select the right entity, which should be added to entity library.",
-                                                    key=index,
+                                                    key=f"{index}",
                                                 )
                                             )
-                                    with col3:
-                                        for case in identified_cases:
-                                            st.write("-")
-                                        for index, case in enumerate(cases_to_choose):
-                                            button_results.append(st.button(label="Open wikidata entity page"))
+                                        with col3:
+                                            button_results.append(
+                                                st.button(
+                                                    label="Open wikidata entity page",
+                                                    key=f"open_wikidata_page_{index}",
+                                                )
+                                            )
+
+                                    # col1, col2, col3 = st.beta_columns(3)
+                                    # with col1:
+                                    #     for case in identified_cases:
+                                    #         st.write(case[0][0]["name"])
+                                    #     for case in cases_to_choose:
+                                    #         st.write(case[0][0]["name"])
+                                    # with col2:
+                                    #     for case in identified_cases:
+                                    #         st.write(case[2])
+                                    #     for index, case in enumerate(cases_to_choose):
+                                    #         description_list = [i["description"] for i in case[0]]
+                                    #         description_list.append("-- Select none --")
+                                    #         selectbox_result.append(
+                                    #             st.selectbox(
+                                    #                 label="Select an entity...",
+                                    #                 options=description_list,
+                                    #                 help="Select the right entity, which should be added to entity library.",
+                                    #                 key=index,
+                                    #             )
+                                    #         )
+                                    # with col3:
+                                    #     for case in identified_cases:
+                                    #         st.write("-")
+                                    #     for index, case in enumerate(cases_to_choose):
+                                    #         button_results.append(
+                                    #             st.button(
+                                    #                 label="Open wikidata entity page", key=f"open_wikidata_page_{index}"
+                                    #             )
+                                    #         )
+
                                 # HIER WEITER
                                 # messages = pp_el_library_object.add_missing_id_numbers(checkbox_state)
                                 # pp_el_last_editor_state.content = json.dumps(pp_el_library_object.data, indent=4)
