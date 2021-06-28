@@ -12,12 +12,12 @@ ON_POSIX = "posix" in sys.builtin_module_names
 
 @st.cache(allow_output_mutation=True)
 def get_train_process_manager(workdir):
-    return TrainProcessManager(workdir)
+    return TrainProcessManager(workdir=workdir, name="train_process_manager")
 
 
 class TrainProcessManager(ProcessManagerBase):
-    def __init__(self, work_dir):
-        super().__init__(work_dir)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._current_epoch: str = ""
 
     def clear_process(self):

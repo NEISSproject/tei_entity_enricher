@@ -1,4 +1,6 @@
+import os
 import subprocess
+import time
 from multiprocessing import Queue
 from queue import Empty
 from threading import Thread
@@ -8,13 +10,16 @@ import streamlit as st
 
 import logging
 
+from streamlit_ace import st_ace
+
 logger = logging.getLogger(__name__)
 
 
 class ProcessManagerBase:
-    def __init__(self, work_dir, verbose: int = 2):
+    def __init__(self, workdir=os.getcwd(), verbose: int = 2, name="process_manager"):
         print("Manager is beeing Initialized")
-        self.work_dir: str = work_dir
+        self.name: str = name
+        self.work_dir: str = workdir
         self.verbose: int = verbose
         self.process: Optional[subprocess.Popen[str]] = None
         self.outs_str = ""
@@ -111,10 +116,11 @@ class ProcessManagerBase:
     def read_progress(self):
         try:
             while True:
-                line = self.std_queue.get_nowait().decode("utf-8")
+                line = self.std_queue.get_nowait().decode("utf-8", errors="ignore")
                 if line != "":
                     self._progress_content = line
         except Empty:
+            time.sleep(1)
             pass
 
         return self._progress_content
@@ -122,8 +128,9 @@ class ProcessManagerBase:
     def log_content(self):
         try:
             while True:
-                self._log_content += self.error_queue.get_nowait().decode("utf-8")
+                self._log_content += self.error_queue.get_nowait().decode("utf-8", errors="ignore")
         except Empty:
+            time.sleep(1)
             pass
         return self._log_content
 
@@ -132,3 +139,39 @@ class ProcessManagerBase:
         for line in iter(out.readline, b""):
             queue.put(line)
         out.close()
+
+    def st_manager(self):
+        with st.beta_container():
+            st.text(self.name)
+            # if st.button("Set trainer params"):
+            #     train_process_manager.set_params(self.state.nt_trainer_params_json)
+            #     logger.info("trainer params set!")
+            b1, b2, b3, b4, process_status = st.beta_columns([2, 2, 2, 2, 6])
+            if b1.button("Start"):
+                self.start()
+            if b2.button("Stop"):
+                self.stop()
+            if b3.button("Clear"):
+                self.clear_process()
+            if b4.button("refresh"):
+                logger.info("refresh streamlit")
+            self.process_state(st_element=process_status)
+
+            if self.has_process():
+                with st.beta_expander("Progress", expanded=True):
+                    progress_str = self.read_progress()
+                    logger.info(progress_str)
+                    st.text(progress_str)
+            if self.has_process():
+                with st.beta_expander("Log-file", expanded=True):
+                    log_str = self.log_content()
+                    st_ace(
+                        log_str,
+                        language="powershell",
+                        auto_update=True,
+                        readonly=True,
+                        height=300,
+                        wrap=True,
+                        font_size=12,
+                    )
+        return 0

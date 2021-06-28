@@ -1,6 +1,7 @@
 import logging
 
 import streamlit as st
+from tei_entity_enricher.menu.ner_prediction import NERPrediction
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.util.SessionState import _get_state
@@ -63,29 +64,28 @@ class Main:
         self.state.sync()
 
     def tei_reader(self):
-        tr.TEIReader(self.state)
+        tr.TEIReader(state=self.state)
 
     def ner_task_def(self):
-        ntd.NERTaskDef(self.state)
+        ntd.NERTaskDef(state=self.state)
 
     def tei_ner_map(self):
-        tnm.TEINERMap(self.state)
+        tnm.TEINERMap(state=self.state)
 
     def gt_builder(self):
-        tng.TEINERGroundtruthBuilder(self.state)
+        tng.TEINERGroundtruthBuilder(state=self.state)
 
     def tei_ner_writer(self):
-        tnw.TEINERPredWriteMap(self.state)
+        tnw.TEINERPredWriteMap(state=self.state)
 
     def ner_trainer(self):
-        NERTrainer(self.state)
+        NERTrainer(state=self.state)
 
     def ner_prediction(self):
-        st.latex("\\text{\Huge{NER Prediction}}")
-        logger.info(self.state)
+        NERPrediction(state=self.state)
 
     def ner_postprocessing(self):
-        pp.TEINERPostprocessing(self.state)
+        pp.TEINERPostprocessing(state=self.state)
 
 
 # def page_dashboard(state):

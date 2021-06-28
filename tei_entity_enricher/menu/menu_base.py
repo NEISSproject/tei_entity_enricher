@@ -6,7 +6,7 @@ from tei_entity_enricher.util.SessionState import _SessionState
 class MenuBase(object):
     def __init__(self, state: _SessionState, show_menu: bool = True, name: str = ""):
         self.name: str = name
-        self.state = state
+        self.state: _SessionState = state
         self.show_menu: bool = show_menu
 
     @abstractmethod
