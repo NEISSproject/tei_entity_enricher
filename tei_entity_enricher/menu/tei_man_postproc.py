@@ -238,12 +238,20 @@ class TEIManPP:
                         if scol6.button("Add link as ref attribute", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
                         if scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id)):
-                            self.entity_library.add_entities([suggestion])
-                            self.entity_library.save_library()
-                            self.el_last_ed_state.reset()
-                            st.experimental_rerun()
+                            ret_value = self.entity_library.add_entities([suggestion])
+                            if isinstance(ret_value, str):
+                                st.warning(ret_value)
+                            else:
+                                self.entity_library.save_library()
+                                self.state.tmp_one_time_success_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library'
+                                self.el_last_ed_state.reset()
+                                st.experimental_rerun()
                 else:
                     st.write("No link suggestions found!")
+        if self.state.tmp_one_time_success_message:
+            st.success(self.state.tmp_one_time_success_message)
+            self.state.tmp_one_time_success_message = None
+            self.state.avoid_rerun()
         return tag_entry
 
     def tei_edit_environment(self):
