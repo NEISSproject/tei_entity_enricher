@@ -19,6 +19,24 @@ from tei_entity_enricher.util.helper import (
 
 logger = logging.getLogger(__name__)
 
+"""
+to do:
+- eine Cache-Klasse schreiben und alle anderen in sie integrieren
+- Einkapseln mit Sub-Funktionen für bessere Lesbarkeit
+- fehlende ace-Aktualisierung nach add-missing-ids fixen
+
+"""
+
+
+class EntityLibraryCache:
+    """class to save states over streamlit reruns"""
+
+    def __init__(self) -> None:
+        pass
+
+    def reset(self, var_name) -> None:
+        pass
+
 
 class EntityLibraryLastEditorState:
     """class only used to save the ace editor content of the last run
@@ -336,9 +354,8 @@ class TEINERPostprocessing:
                                 identified_cases = []
                                 cases_to_choose = []
                                 selectbox_result = []
-                                button_results = []
                                 if len(pp_el_add_missing_ids_query_results.data) > 0:
-                                    # load wikidata query results from cache
+                                    # load wikidata query results from cache, if they exist
                                     cases_to_ignore = pp_el_add_missing_ids_query_results.data["cases_to_ignore"]
                                     identified_cases = pp_el_add_missing_ids_query_results.data["identified_cases"]
                                     cases_to_choose = pp_el_add_missing_ids_query_results.data["cases_to_choose"]
@@ -367,13 +384,14 @@ class TEINERPostprocessing:
                                             if _temp_result_entity_identification[1] == 0:
                                                 identified_cases.append(_temp_result_entity_identification)
                                             else:
-                                                cases_to_choose.append(_temp_result_entity_identification)
+                                                cases_to_choose.append((_temp_result_entity_identification, index))
                                         elif _len_temp_result > 1:
-                                            cases_to_choose.append(_temp_result_entity_identification)
+                                            cases_to_choose.append((_temp_result_entity_identification, index))
                                     pp_el_add_missing_ids_query_results.data["cases_to_ignore"] = cases_to_ignore
                                     pp_el_add_missing_ids_query_results.data["identified_cases"] = identified_cases
                                     pp_el_add_missing_ids_query_results.data["cases_to_choose"] = cases_to_choose
                                 with el_misc_message_placeholder.beta_container():
+                                    # display query results in gui
                                     for case in identified_cases:
                                         col1, col2, col3 = st.beta_columns(3)
                                         with col1:
@@ -383,12 +401,12 @@ class TEINERPostprocessing:
                                         with col3:
                                             st.write("-")
                                     for index, case in enumerate(cases_to_choose):
+                                        description_list = [i["description"] for i in case[0][0]]
+                                        description_list.append("-- Select none --")
                                         col1, col2, col3 = st.beta_columns(3)
                                         with col1:
-                                            st.write(case[0][0]["name"])
+                                            st.write(case[0][0][0]["name"])
                                         with col2:
-                                            description_list = [i["description"] for i in case[0]]
-                                            description_list.append("-- Select none --")
                                             selectbox_result.append(
                                                 st.selectbox(
                                                     label="Select an entity...",
@@ -398,42 +416,63 @@ class TEINERPostprocessing:
                                                 )
                                             )
                                         with col3:
-                                            button_results.append(
-                                                st.button(
-                                                    label="Open wikidata entity page",
-                                                    key=f"open_wikidata_page_{index}",
+                                            current_selection_index = description_list.index(selectbox_result[index])
+                                            if current_selection_index != len(description_list) - 1:
+                                                st.write(
+                                                    f"[Open wikidata entity page](https://www.wikidata.org/wiki/{case[0][0][current_selection_index]['wikidata_id']})"
                                                 )
+                                            else:
+                                                st.write("-")
+                                    save_add_missing_ids_suggestions_to_loaded_el_button = st.button(
+                                        label="Save to currently loaded entity library",
+                                        help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
+                                    )
+                                    if save_add_missing_ids_suggestions_to_loaded_el_button:
+                                        for case in identified_cases:
+                                            entity_to_update = list(
+                                                filter(
+                                                    lambda ent: (ent["wikidata_id"] == case[0][0]["wikidata_id"])
+                                                    or (ent["gnd_id"] == case[0][0]["gnd_id"]),
+                                                    pp_el_library_object.data,
+                                                )
+                                            )[0]
+                                            entity_to_update.update(case[0][0])
+                                            # eventuell via index in el.data entity ansprechen, falls dies hier nicht funktioniert
+                                        for index, case in enumerate(cases_to_choose):
+                                            description_list = [i["description"] for i in case[0][0]]
+                                            description_list.append("-- Select none --")
+                                            current_selection_index = description_list.index(selectbox_result[index])
+                                            if current_selection_index != len(description_list) - 1:
+                                                # ignore '-- Select none --' selections
+                                                entity_to_update = pp_el_library_object.data[case[1]]
+                                                entity_to_update.update(case[0][0][current_selection_index])
+                                                # eventuell via index in el.data entity ansprechen, falls dies hier nicht funktioniert
+                                        st.success(
+                                            "Found and selected suggestions successfull saved to entity library."
+                                        )
+                                        pp_el_last_editor_state.content = json.dumps(
+                                            pp_el_library_object.data, indent=4
+                                        )
+                                        pp_el_button_states.add_missing_ids_proceed = False
+                                        pp_el_button_states.add_missing_ids = False
+                                        pp_el_add_missing_ids_query_results.reset()
+                                        st.button(label="Close add-missing-ids submenus")
+                                        # update ace-editor-content (empty placeholder and create new instance)
+                                        el_file_view_placeholder.empty()
+                                        with el_file_view_placeholder:
+                                            editor_content = st_ace(
+                                                value=pp_el_last_editor_state.content,
+                                                height=500,
+                                                language="json",
+                                                readonly=False,
+                                                key="third",
                                             )
-
-                                    # col1, col2, col3 = st.beta_columns(3)
-                                    # with col1:
-                                    #     for case in identified_cases:
-                                    #         st.write(case[0][0]["name"])
-                                    #     for case in cases_to_choose:
-                                    #         st.write(case[0][0]["name"])
-                                    # with col2:
-                                    #     for case in identified_cases:
-                                    #         st.write(case[2])
-                                    #     for index, case in enumerate(cases_to_choose):
-                                    #         description_list = [i["description"] for i in case[0]]
-                                    #         description_list.append("-- Select none --")
-                                    #         selectbox_result.append(
-                                    #             st.selectbox(
-                                    #                 label="Select an entity...",
-                                    #                 options=description_list,
-                                    #                 help="Select the right entity, which should be added to entity library.",
-                                    #                 key=index,
-                                    #             )
-                                    #         )
-                                    # with col3:
-                                    #     for case in identified_cases:
-                                    #         st.write("-")
-                                    #     for index, case in enumerate(cases_to_choose):
-                                    #         button_results.append(
-                                    #             st.button(
-                                    #                 label="Open wikidata entity page", key=f"open_wikidata_page_{index}"
-                                    #             )
-                                    #         )
+                                        with el_file_view_message_placeholder:
+                                            with st.beta_container():
+                                                st.button(
+                                                    label="Rerun first before manually edit the entity library again",
+                                                    help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
+                                                )
 
                                 # HIER WEITER
                                 # messages = pp_el_library_object.add_missing_id_numbers(checkbox_state)
