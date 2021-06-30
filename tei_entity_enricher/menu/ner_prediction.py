@@ -89,7 +89,7 @@ class NERPrediction(MenuBase):
         st.latex(state_ok)
 
     def select_model_dir(self):
-        ner_model_dir, ner_model_dir_state = small_dir_selector(
+        self.ner_prediction_params.ner_model_dir, ner_model_dir_state = small_dir_selector(
             state=self.state,
             label="Folder with NER model",
             value=self.ner_prediction_params.ner_model_dir if self.ner_prediction_params.ner_model_dir else self._wd,
@@ -99,8 +99,6 @@ class NERPrediction(MenuBase):
         )
         if ner_model_dir_state!=state_ok:
             self._check_list.append("NER model")
-        else:
-            self.ner_prediction_params.ner_model_dir = ner_model_dir
 
     def select_output_dir(self):
         prediction_out_dir, prediction_out_dir_state = small_dir_selector(
@@ -188,7 +186,7 @@ class NERPrediction(MenuBase):
             self.predict_conf_tei_input_options[self.ner_prediction_params.predict_conf_tei_option]()
 
     def select_tei_file(self):
-        prediction_tei_file, prediction_tei_file_state = small_file_selector(
+        self.ner_prediction_params.input_tei_file, prediction_tei_file_state = small_file_selector(
             state=self.state,
             label="TEI-File to predict",
             value=self.ner_prediction_params.input_tei_file
@@ -200,11 +198,9 @@ class NERPrediction(MenuBase):
         )
         if prediction_tei_file_state!=state_ok:
             self._check_list.append("TEI-File to predict")
-        else:
-            self.ner_prediction_params.input_tei_file = prediction_tei_file
 
     def select_tei_folder(self):
-        prediction_tei_dir, prediction_tei_dir_state = small_dir_selector(
+        self.ner_prediction_params.input_tei_folder, prediction_tei_dir_state = small_dir_selector(
             state=self.state,
             label="Folder containing the TEI-Files to predict",
             value=self.ner_prediction_params.input_tei_folder
@@ -216,8 +212,6 @@ class NERPrediction(MenuBase):
         )
         if prediction_tei_dir_state!=state_ok:
             self._check_list.append("Folder containing the TEI-Files to predict")
-        else:
-            self.ner_prediction_params.input_tei_folder = prediction_tei_dir
 
     def workdir(self):
         if module_path.lower() != os.path.join(os.getcwd(), "tei_entity_enricher", "tei_entity_enricher").lower():

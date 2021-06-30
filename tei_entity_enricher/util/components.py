@@ -145,7 +145,8 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
 
 def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     col1, col2 = st.beta_columns([10, 1])
-    dirpath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    dirpath_placeholder = col1.empty()
+    dirpath = value
     if os.path.isdir(dirpath):
         col2.latex(state_ok)
         ret_state = state_ok
@@ -185,7 +186,7 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             if make_dir:
                 os.makedirs(dirpath)
                 st.experimental_rerun()
-
+    dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     if return_state:
         return dirpath, ret_state
     return dirpath
@@ -193,7 +194,8 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
 
 def small_file_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.beta_columns([10, 1])
-    filepath = col1.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    filepath_placeholder = col1.empty()
+    filepath = value
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
             col2.latex(state_ok)
@@ -234,6 +236,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
             filepath = local_save_path
+    filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
     if return_state:
         return filepath, ret_state
     return filepath
