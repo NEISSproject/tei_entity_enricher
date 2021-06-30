@@ -10,6 +10,10 @@ from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPred
 
 logger = logging.getLogger(__name__)
 ON_POSIX = "posix" in sys.builtin_module_names
+predict_option_json="Predict a JSON-File"
+predict_option_tei="Predict Text of TEI-Files"
+predict_option_single_tei="Predict a single TEI-File"
+predict_option_tei_folder="Predict all TEI-Files of a folder"
 
 
 @st.cache(allow_output_mutation=True)
