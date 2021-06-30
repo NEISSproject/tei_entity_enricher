@@ -146,7 +146,7 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
 def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     col1, col2 = st.beta_columns([10, 1])
     dirpath_placeholder = col1.empty()
-    dirpath = value
+    dirpath = dirpath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
         col2.latex(state_ok)
         ret_state = state_ok
@@ -154,11 +154,9 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             dirpath = os.path.dirname(dirpath)
             setattr(state, key + "_chosen_subdir", None)
+            dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
         subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
         if len(subdirlist) > 0:
-            if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
-                dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
-                setattr(state, key + "_chosen_subdir", None)
             setattr(
                 state,
                 key + "_chosen_subdir",
@@ -171,6 +169,10 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
                     key=key + "_chosen_subdir",
                 ),
             )
+            if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
+                dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
+                setattr(state, key + "_chosen_subdir", None)
+                dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     else:
         col2.latex(state_failed)
         ret_state = state_failed
@@ -186,7 +188,6 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
             if make_dir:
                 os.makedirs(dirpath)
                 st.experimental_rerun()
-    dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     if return_state:
         return dirpath, ret_state
     return dirpath
@@ -195,7 +196,8 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
 def small_file_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.beta_columns([10, 1])
     filepath_placeholder = col1.empty()
-    filepath = value
+    filepath = filepath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
+
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
             col2.latex(state_ok)
@@ -208,6 +210,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
         if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             filepath = os.path.dirname(filepath)
             setattr(state, key + "_chosen_subelement", None)
+            filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
         if os.path.isdir(filepath):
             subdirlist = os.listdir(filepath)
             if len(subdirlist) > 0:
@@ -226,6 +229,7 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
                 if col4.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."):
                     filepath = os.path.join(filepath, getattr(state, key + "_chosen_subelement"))
                     setattr(state, key + "_chosen_subelement", None)
+                    filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
     else:
         col2.latex(state_failed)
         ret_state = state_failed
@@ -236,7 +240,6 @@ def small_file_selector(state, label=None, value=local_save_path, key="", help=N
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
             filepath = local_save_path
-    filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
     if return_state:
         return filepath, ret_state
     return filepath
