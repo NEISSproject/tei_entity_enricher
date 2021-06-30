@@ -40,3 +40,11 @@ class PredictProcessManager(ProcessManagerBase):
             "--out",
             self._params.prediction_out_dir,
         ]
+
+    def do_before_start_process(self):
+        print("Start Trigger")
+        return None
+
+    def do_after_finish_process(self):
+        print("Finish Trigger")
+        return None
