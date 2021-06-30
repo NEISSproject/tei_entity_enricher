@@ -22,6 +22,7 @@ class ProcessManagerBase:
         self.work_dir: str = workdir
         self.verbose: int = verbose
         self.process: Optional[subprocess.Popen[str]] = None
+        self.current_process_finished: bool = False
         self.outs_str = ""
         self.errs_str = ""
         self.error_out = None
@@ -51,26 +52,39 @@ class ProcessManagerBase:
     def process_command_list(self):
         return ["echo", "Hello World!"]
 
+    def do_before_start_process(self):
+        #returns an error message if its execution failed otherwise it has to return None
+        return None
+
+    def do_after_finish_process(self):
+        #returns an error message if its execution failed otherwise it has to return None
+        return None
+
     def start(self):
         if not self.process:
             # self.process = subprocess.Popen(
             #     ["bash", "ner_trainer/loop_sleep.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
             # )
-            self.process = subprocess.Popen(
-                args=self.process_command_list(),
-                cwd=self.work_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-            )
-            self.std_queue = Queue()
-            self.error_queue = Queue()
-            t_std = Thread(target=self.enqueue_output, args=(self.process.stdout, self.std_queue))
-            t_err = Thread(target=self.enqueue_output, args=(self.process.stderr, self.error_queue))
-            t_std.daemon = True  # thread dies with the program
-            t_std.start()
-            t_err.daemon = True  # thread dies with the program
-            t_err.start()
+            error = self.do_before_start_process()
+            self.current_process_finished=False
+            if error is None:
+                self.process = subprocess.Popen(
+                    args=self.process_command_list(),
+                    cwd=self.work_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=False,
+                )
+                self.std_queue = Queue()
+                self.error_queue = Queue()
+                t_std = Thread(target=self.enqueue_output, args=(self.process.stdout, self.std_queue))
+                t_err = Thread(target=self.enqueue_output, args=(self.process.stderr, self.error_queue))
+                t_std.daemon = True  # thread dies with the program
+                t_std.start()
+                t_err.daemon = True  # thread dies with the program
+                t_err.start()
+            else:
+                self.message(f"process could not be started because an error occured: {error}", level="error")
         else:
             self.message("Process is not empty, please clear process first.", level="error")
             # error_msg = "Process is not empty, please clear process first."
@@ -96,7 +110,16 @@ class ProcessManagerBase:
             if self.process.poll() is None:
                 self.message("running...", level="info", st_element=st_element)
             elif self.process.poll() == 0:
-                self.message("finished successful :-)", level="success", st_element=st_element)
+                if not self.current_process_finished:
+                    # run do_after_finish_process only once it its run is succesful
+                    error = self.do_after_finish_process()
+                    if error is not None:
+                        self.message(f"process could not be finished because an error occured: {error}", "error", st_element)
+                    else:
+                        self.current_process_finished=True
+                        self.message("finished successful :-)", level="success", st_element=st_element)
+                else:
+                    self.message("finished successful :-)", level="success", st_element=st_element)
             else:
                 self.message(f"process finished with error code: {self.process.poll()}", "error", st_element)
         else:
