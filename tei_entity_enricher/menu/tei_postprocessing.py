@@ -406,9 +406,7 @@ class TEINERPostprocessing:
                                             pp_aux_cache.reset_add_missing_ids_query_result()
                                             st.experimental_rerun()
                                             # with el_misc_message_placeholder:
-                                            #     st.success(
-                                            #         "Found and selected suggestions successfull saved to entity library."
-                                            #     )
+                                            #     st.success("Found and selected suggestions successfull saved to entity library.")
                                             # st.button(label="Close add-missing-ids submenus")
                                             # update ace-editor-content (empty placeholder and create new instance)
                                             # el_file_view_placeholder.empty()
@@ -426,6 +424,10 @@ class TEINERPostprocessing:
                                             #             label="Rerun first before manually edit the entity library again",
                                             #             help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
                                             #         )
+                                    else:
+                                        st.info("No new data could be retrieved by wikidata query.")
+                                        pp_aux_cache.reset_add_missing_ids_query_result()
+
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
@@ -509,22 +511,7 @@ class TEINERPostprocessing:
                                         else:
                                             st.info(message)
                             pp_aux_cache.last_editor_state = json.dumps(pp_el_library_object.data, indent=4)
-                            # update ace-editor-content (empty placeholder and create new instance)
-                            el_file_view_placeholder.empty()
-                            with el_file_view_placeholder:
-                                editor_content = st_ace(
-                                    value=pp_aux_cache.last_editor_state,
-                                    height=500,
-                                    language="json",
-                                    readonly=False,
-                                    key="second",
-                                )
-                            with el_file_view_message_placeholder:
-                                with st.beta_container():
-                                    st.button(
-                                        label="Rerun first before manually edit the entity library again",
-                                        help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
-                                    )
+                            st.experimental_rerun()
 
         ## 2. Manual TEI Postprocessing
         tmp.TEIManPP(self.state, entity_library=pp_el_library_object, el_last_ed_state=pp_aux_cache.last_editor_state)
