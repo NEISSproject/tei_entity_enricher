@@ -15,7 +15,7 @@ from tei_entity_enricher.util.components import (
     file_selector_expander,
 )
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
-from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams
+from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
 from tei_entity_enricher.util.processmanger.predict import (
     get_predict_process_manager,
     predict_option_json,
@@ -27,20 +27,11 @@ import streamlit as st
 
 logger = logging.getLogger(__name__)
 
-
-@st.cache(allow_output_mutation=True)
-def get_params() -> NERPredictionParams:
-    return NERPredictionParams()
-
-
 class NERPrediction(MenuBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._wd: Optional[str] = None
         self._wd_ner_prediction = "ner_prediction"
-
-        # if not self.state.ner_prediction_params:
-        #    self.state.ner_prediction_params = NERPredictionParams()
 
         self.predict_conf_options = {
             predict_option_tei: self.select_tei_input_data,
@@ -65,7 +56,6 @@ class NERPrediction(MenuBase):
     @property
     def ner_prediction_params(self) -> NERPredictionParams:
         return get_params()
-        # return self.state.ner_prediction_params
 
     def check(self, **kwargs):
         # Todo implement
@@ -85,7 +75,7 @@ class NERPrediction(MenuBase):
         # print("state", self.state.ner_prediction_params)
         # print("self", self.ner_prediction_params)
 
-        predict_process_manager = get_predict_process_manager(workdir=self._wd, params=self.ner_prediction_params)
+        predict_process_manager = get_predict_process_manager(workdir=self._wd)
         return_code = predict_process_manager.st_manager()
         if return_code != 0:
             return -1
