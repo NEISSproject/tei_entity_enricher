@@ -197,6 +197,9 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
                         else 0,
                         key=key + "_chosen_subdir",
                     )
+                else:
+                    subelement_button_placeholder.empty()
+                    chosen_subdir_placeholder.empty()
     else:
         state_placeholder.latex(state_failed)
         ret_state = state_failed
@@ -305,6 +308,9 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
                                 if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                                 else 0,
                             )
+                        else:
+                            subelement_button_placeholder.empty()
+                            chosen_subdir_placeholder.empty()
                     elif os.path.isfile(filepath):
                         subelement_button_placeholder.empty()
                         chosen_subdir_placeholder.empty()
