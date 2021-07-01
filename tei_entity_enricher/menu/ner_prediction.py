@@ -9,7 +9,11 @@ from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tei_ner_writer_map
-from tei_entity_enricher.util.components import small_file_selector, small_dir_selector, file_selector_expander
+from tei_entity_enricher.util.components import (
+    small_file_selector,
+    small_dir_selector,
+    file_selector_expander,
+)
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
 from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams
 from tei_entity_enricher.util.processmanger.predict import (
@@ -90,19 +94,17 @@ class NERPrediction(MenuBase):
 
     def select_model_dir(self):
         self.ner_prediction_params.ner_model_dir, ner_model_dir_state = small_dir_selector(
-            state=self.state,
             label="Folder with NER model",
             value=self.ner_prediction_params.ner_model_dir if self.ner_prediction_params.ner_model_dir else self._wd,
             key="ner_prediction_ner_model_dir",
             help="Choose a directory with a trained NER model",
             return_state=True,
         )
-        if ner_model_dir_state!=state_ok:
+        if ner_model_dir_state != state_ok:
             self._check_list.append("NER model")
 
     def select_output_dir(self):
         prediction_out_dir, prediction_out_dir_state = small_dir_selector(
-            state=self.state,
             label="Folder for prediction output",
             value=self.ner_prediction_params.prediction_out_dir
             if self.ner_prediction_params.prediction_out_dir
@@ -174,7 +176,9 @@ class NERPrediction(MenuBase):
             self.ner_prediction_params.predict_conf_tei_option = st.radio(
                 "Input options",
                 tuple(self.predict_conf_tei_input_options.keys()),
-                tuple(self.predict_conf_tei_input_options.keys()).index(self.ner_prediction_params.predict_conf_tei_option)
+                tuple(self.predict_conf_tei_input_options.keys()).index(
+                    self.ner_prediction_params.predict_conf_tei_option
+                )
                 if self.ner_prediction_params.predict_conf_tei_option is not None
                 and self.ner_prediction_params.predict_conf_tei_option != ""
                 else 0,
@@ -187,7 +191,6 @@ class NERPrediction(MenuBase):
 
     def select_tei_file(self):
         self.ner_prediction_params.input_tei_file, prediction_tei_file_state = small_file_selector(
-            state=self.state,
             label="TEI-File to predict",
             value=self.ner_prediction_params.input_tei_file
             if self.ner_prediction_params.input_tei_file != ""
@@ -196,12 +199,11 @@ class NERPrediction(MenuBase):
             help="Choose a TEI-File whose text should be enriched with entities",
             return_state=True,
         )
-        if prediction_tei_file_state!=state_ok:
+        if prediction_tei_file_state != state_ok:
             self._check_list.append("TEI-File to predict")
 
     def select_tei_folder(self):
         self.ner_prediction_params.input_tei_folder, prediction_tei_dir_state = small_dir_selector(
-            state=self.state,
             label="Folder containing the TEI-Files to predict",
             value=self.ner_prediction_params.input_tei_folder
             if self.ner_prediction_params.input_tei_folder != ""
@@ -210,7 +212,7 @@ class NERPrediction(MenuBase):
             help="Choose a directory containing TEI-Files whose text should be enriched with entities",
             return_state=True,
         )
-        if prediction_tei_dir_state!=state_ok:
+        if prediction_tei_dir_state != state_ok:
             self._check_list.append("Folder containing the TEI-Files to predict")
 
     def workdir(self):

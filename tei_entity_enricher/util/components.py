@@ -143,46 +143,88 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
     return os.path.join(folder_path, selected_dirname)
 
 
-def small_dir_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
+@st.cache(allow_output_mutation=True)
+def get_sel_dict():
+    return dict()
+
+
+def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
+    sel_dict = get_sel_dict()
     col1, col2 = st.beta_columns([10, 1])
+    col3, col4, col5 = st.beta_columns([25, 25, 50])
     dirpath_placeholder = col1.empty()
+    state_placeholder = col2.empty()
+    parent_button_placeholder = col3.empty()
+    subelement_button_placeholder = col4.empty()
+    chosen_subdir_placeholder = col5.empty()
     dirpath = dirpath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    if dirpath != value:
+        dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
-        col2.latex(state_ok)
+        state_placeholder.latex(state_ok)
         ret_state = state_ok
-        col3, col4, col5 = st.beta_columns([25, 25, 50])
-        if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
+        if parent_button_placeholder.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             dirpath = os.path.dirname(dirpath)
-            setattr(state, key + "_chosen_subdir", None)
+            sel_dict[key + "_chosen_subdir"] = None
             dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
         subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
         if len(subdirlist) > 0:
-            setattr(
-                state,
-                key + "_chosen_subdir",
-                col5.selectbox(
-                    "Subdirectories:",
-                    subdirlist,
-                    subdirlist.index(getattr(state, key + "_chosen_subdir"))
-                    if getattr(state, key + "_chosen_subdir") and getattr(state, key + "_chosen_subdir") in subdirlist
-                    else 0,
-                    key=key + "_chosen_subdir",
-                ),
+            if key + "_chosen_subdir" not in sel_dict.keys():
+                sel_dict[key + "_chosen_subdir"] = None
+            sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                "Subdirectories:",
+                subdirlist,
+                subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                else 0,
+                key=key + "_chosen_subdir",
             )
-            if col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
-                dirpath = os.path.join(dirpath, getattr(state, key + "_chosen_subdir"))
-                setattr(state, key + "_chosen_subdir", None)
+            if subelement_button_placeholder.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
+                dirpath = os.path.join(dirpath, sel_dict[key + "_chosen_subdir"])
+                sel_dict[key + "_chosen_subdir"] = None
                 dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
+                subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
+                if len(subdirlist) > 0:
+                    sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                        "Subdirectories:",
+                        subdirlist,
+                        subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                        if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                        else 0,
+                        key=key + "_chosen_subdir",
+                    )
     else:
-        col2.latex(state_failed)
+        state_placeholder.latex(state_failed)
         ret_state = state_failed
-        setattr(state, key + "_chosen_subdir", None)
-        col3, col4 = st.beta_columns([30, 70])
-        col4.error(f"The path {dirpath} is not a folder.")
-        if col3.button(
+        sel_dict[key + "_chosen_subdir"] = None
+        col6, col7 = st.beta_columns([30, 70])
+        reset_button_placeholder=col6.empty()
+        error_placeholder=col7.empty()
+        error_placeholder.error(f"The path {dirpath} is not a folder.")
+        if reset_button_placeholder.button(
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
-            dirpath = local_save_path
+            dirpath = dirpath_placeholder.text_input(label=label, value=local_save_path, key=key + "_text_input", help=help)
+            state_placeholder.latex(state_ok)
+            ret_state = state_ok
+            error_placeholder.empty()
+            reset_button_placeholder.empty()
+            if parent_button_placeholder.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
+                pass
+            subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
+            if len(subdirlist) > 0:
+                if key + "_chosen_subdir" not in sel_dict.keys():
+                    sel_dict[key + "_chosen_subdir"] = None
+                sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                    "Subdirectories:",
+                    subdirlist,
+                    subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                    if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                    else 0,
+                    key=key + "_chosen_subdir",
+                )
+                if subelement_button_placeholder.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."):
+                    pass
         if ask_make and os.path.isdir(os.path.dirname(dirpath)):
             make_dir = st.button(f"Create dir: {dirpath}")
             if make_dir:
@@ -193,53 +235,110 @@ def small_dir_selector(state, label=None, value=local_save_path, key="", help=No
     return dirpath
 
 
-def small_file_selector(state, label=None, value=local_save_path, key="", help=None, return_state=False):
+def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
+    sel_dict = get_sel_dict()
     col1, col2 = st.beta_columns([10, 1])
+    col3, col4, col5 = st.beta_columns([25, 25, 50])
     filepath_placeholder = col1.empty()
+    state_placeholder = col2.empty()
+    parent_button_placeholder = col3.empty()
+    subelement_button_placeholder = col4.empty()
+    chosen_subdir_placeholder = col5.empty()
+    warning_placeholder = st.empty()
     filepath = filepath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
-
+    if filepath != value:
+        filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
-            col2.latex(state_ok)
+            state_placeholder.latex(state_ok)
             ret_state = state_ok
         else:
-            col2.latex(state_uncertain)
+            state_placeholder.latex(state_uncertain)
             ret_state = state_uncertain
-            st.warning("You have currently chosen a folder, but you have to choose a file here.")
-        col3, col4, col5 = st.beta_columns([25, 25, 50])
-        if col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
+            warning_placeholder.warning("You have currently chosen a folder, but you have to choose a file here.")
+        if parent_button_placeholder.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
             filepath = os.path.dirname(filepath)
-            setattr(state, key + "_chosen_subelement", None)
+            sel_dict[key + "_chosen_subdir"] = None
             filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
+            warning_placeholder.warning("You have currently chosen a folder, but you have to choose a file here.")
+            state_placeholder.latex(state_uncertain)
+            ret_state = state_uncertain
         if os.path.isdir(filepath):
             subdirlist = os.listdir(filepath)
             if len(subdirlist) > 0:
-                setattr(
-                    state,
-                    key + "_chosen_subelement",
-                    col5.selectbox(
-                        "Subelements:",
-                        subdirlist,
-                        subdirlist.index(getattr(state, key + "_chosen_subelement"))
-                        if getattr(state, key + "_chosen_subelement")
-                        and getattr(state, key + "_chosen_subelement") in subdirlist
-                        else 0,
-                    ),
+                if key + "_chosen_subdir" not in sel_dict.keys():
+                    sel_dict[key + "_chosen_subdir"] = None
+                sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                    "Subelements:",
+                    subdirlist,
+                    subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                    if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                    else 0,
                 )
-                if col4.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."):
-                    filepath = os.path.join(filepath, getattr(state, key + "_chosen_subelement"))
-                    setattr(state, key + "_chosen_subelement", None)
-                    filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
+                if subelement_button_placeholder.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."):
+                    filepath = os.path.join(filepath, sel_dict[key + "_chosen_subdir"])
+                    sel_dict[key + "_chosen_subdir"] = None
+                    filepath = filepath_placeholder.text_input(
+                        label=label, value=filepath, key=key + "_text_input", help=help
+                    )
+                    if os.path.isdir(filepath):
+                        subdirlist = os.listdir(filepath)
+                        if len(subdirlist) > 0:
+                            sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                                "Subelements:",
+                                subdirlist,
+                                subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                                if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                                else 0,
+                            )
+                    elif os.path.isfile(filepath):
+                        subelement_button_placeholder.empty()
+                        chosen_subdir_placeholder.empty()
+                        warning_placeholder.empty()
+                        state_placeholder.latex(state_ok)
+                        ret_state = state_ok
     else:
-        col2.latex(state_failed)
+        state_placeholder.latex(state_failed)
         ret_state = state_failed
-        setattr(state, key + "_chosen_subelement", None)
-        col3, col4 = st.beta_columns([30, 70])
-        col4.error(f"The path {filepath} is not a valid path.")
-        if col3.button(
+        sel_dict[key + "_chosen_subdir"] = None
+        col6, col7 = st.beta_columns([30, 70])
+        reset_button_placeholder=col6.empty()
+        error_placeholder=col7.empty()
+        error_placeholder.error(f"The path {filepath} is not a valid path.")
+
+        if reset_button_placeholder.button(
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
-            filepath = local_save_path
+            filepath = filepath_placeholder.text_input(
+                label=label, value=local_save_path, key=key + "_text_input", help=help
+            )
+            warning_placeholder.warning("You have currently chosen a folder, but you have to choose a file here.")
+            state_placeholder.latex(state_uncertain)
+            ret_state = state_uncertain
+            error_placeholder.empty()
+            reset_button_placeholder.empty()
+            if parent_button_placeholder.button("Go to parent directory", key=key + "_level_up", help="Go one directory up."):
+                pass
+            if os.path.isdir(filepath):
+                subdirlist = os.listdir(filepath)
+                if len(subdirlist) > 0:
+                    if key + "_chosen_subdir" not in sel_dict.keys():
+                        sel_dict[key + "_chosen_subdir"] = None
+                    sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                        "Subelements:",
+                        subdirlist,
+                        subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                        if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
+                        else 0,
+                    )
+                    if subelement_button_placeholder.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."):
+                        filepath = os.path.join(filepath, sel_dict[key + "_chosen_subdir"])
+                        sel_dict[key + "_chosen_subdir"] = None
+                        filepath = filepath_placeholder.text_input(
+                            label=label, value=filepath, key=key + "_text_input", help=help
+                        )
+                        pass
+
     if return_state:
         return filepath, ret_state
     return filepath

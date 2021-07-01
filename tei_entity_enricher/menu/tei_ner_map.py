@@ -370,7 +370,6 @@ class TEINERMap:
             # )
             # self.state.tnm_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
             self.state.tnm_teifile = small_file_selector(
-                self.state,
                 label="Choose a TEI-File",
                 value=self.state.tnm_teifile if self.state.tnm_teifile else local_save_path,
                 key="tnm_test_choos_TEI",
