@@ -13,9 +13,11 @@ from tei_entity_enricher.util.components import (
     small_file_selector,
     small_dir_selector,
     file_selector_expander,
+    selectbox_widget,
 )
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
-from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams
+from tei_entity_enricher.util.spacy_lm import lang_dict
+from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
 from tei_entity_enricher.util.processmanger.predict import (
     get_predict_process_manager,
     predict_option_json,
@@ -27,20 +29,11 @@ import streamlit as st
 
 logger = logging.getLogger(__name__)
 
-
-@st.cache(allow_output_mutation=True)
-def get_params() -> NERPredictionParams:
-    return NERPredictionParams()
-
-
 class NERPrediction(MenuBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._wd: Optional[str] = None
         self._wd_ner_prediction = "ner_prediction"
-
-        # if not self.state.ner_prediction_params:
-        #    self.state.ner_prediction_params = NERPredictionParams()
 
         self.predict_conf_options = {
             predict_option_tei: self.select_tei_input_data,
@@ -65,7 +58,6 @@ class NERPrediction(MenuBase):
     @property
     def ner_prediction_params(self) -> NERPredictionParams:
         return get_params()
-        # return self.state.ner_prediction_params
 
     def check(self, **kwargs):
         # Todo implement
@@ -85,7 +77,7 @@ class NERPrediction(MenuBase):
         # print("state", self.state.ner_prediction_params)
         # print("self", self.ner_prediction_params)
 
-        predict_process_manager = get_predict_process_manager(workdir=self._wd, params=self.ner_prediction_params)
+        predict_process_manager = get_predict_process_manager(workdir=self._wd)
         return_code = predict_process_manager.st_manager()
         if return_code != 0:
             return -1
@@ -150,7 +142,7 @@ class NERPrediction(MenuBase):
     def select_tei_input_data(self):
         np_tei_input_expander = st.beta_expander("Select a TEI Prediction Configuration", expanded=False)
         with np_tei_input_expander:
-            tr_name = st.selectbox(
+            tr_name = selectbox_widget(
                 "Select a TEI Reader Config which should be used for the prediction!",
                 list(self.tr.configdict.keys()),
                 index=list(self.tr.configdict.keys()).index(
@@ -161,7 +153,7 @@ class NERPrediction(MenuBase):
                 key="np_tei_pred_tr_name",
             )
             self.ner_prediction_params.predict_tei_reader = self.tr.configdict[tr_name]
-            tnw_name = st.selectbox(
+            tnw_name = selectbox_widget(
                 "Select a TEI Prediction Writer Mapping which should be used for the prediction!",
                 list(self.tnw.mappingdict.keys()),
                 index=list(self.tnw.mappingdict.keys()).index(
@@ -172,6 +164,13 @@ class NERPrediction(MenuBase):
                 key="np_tei_pred_tnw_name",
             )
             self.ner_prediction_params.predict_tei_write_map = self.tnw.mappingdict[tnw_name]
+            self.ner_prediction_params.predict_lang = selectbox_widget(
+                "Select a language for the TEI-Files:",
+                list(lang_dict.keys()),
+                index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
+                key="np_lang",
+                help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language."
+            )
             old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
             self.ner_prediction_params.predict_conf_tei_option = st.radio(
                 "Input options",

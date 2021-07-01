@@ -1,3 +1,4 @@
+import streamlit as st
 from dataclasses import dataclass
 
 from dataclasses_json import dataclass_json
@@ -13,5 +14,10 @@ class NERPredictionParams:
     predict_conf_tei_option: str = ""
     predict_tei_reader: dict = None
     predict_tei_write_map: dict = None
+    predict_lang: str = "German"
     input_tei_file: str = ""
     input_tei_folder: str = ""
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> NERPredictionParams:
+    return NERPredictionParams()

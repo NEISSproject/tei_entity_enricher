@@ -1,7 +1,6 @@
 import streamlit as st
 import json
 import os
-import spacy
 import random
 import math
 import shutil
@@ -15,6 +14,7 @@ import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
+from tei_entity_enricher.util.spacy_lm import lang_dict,get_spacy_lm
 from tei_entity_enricher.util.components import small_dir_selector
 
 
@@ -36,13 +36,6 @@ class TEINERGroundtruthBuilder:
         self.tng_gt_type_dev = "dev"
         self.tng_gt_type_test = "test"
 
-        self.lang_dict = {
-            "German": "de_core_news_sm",
-            "English": "en_core_web_sm",
-            "Multilingual": "xx_ent_wiki_sm",
-            "French": "fr_core_news_sm",
-            "Spanish": "es_core_news_sm",
-        }
         self.shuffle_options_dict = {
             "Shuffle by TEI File": True,
             "Shuffle by Sentences": False,
@@ -93,11 +86,6 @@ class TEINERGroundtruthBuilder:
             if not tng[self.tng_attr_template]:
                 self.editable_tng_names.append(tng[self.tng_attr_name])
 
-    def get_spacy_lm(self, lang):
-        if not spacy.util.is_package(self.lang_dict[lang]):
-            spacy.cli.download(self.lang_dict[lang])
-        return spacy.load(self.lang_dict[lang])
-
     def validate_build_configuration(self, build_config, folder_path):
         val = True
         if (
@@ -132,9 +120,7 @@ class TEINERGroundtruthBuilder:
         save_train_folder = os.path.join(save_folder, self.tng_gt_type_train)
         makedir_if_necessary(save_train_folder)
 
-        nlp = self.get_spacy_lm(build_config[self.tng_attr_lang])
-        if build_config[self.tng_attr_lang] == "Multilingual":
-            nlp.add_pipe("sentencizer")
+        nlp = get_spacy_lm(build_config[self.tng_attr_lang])
         by_file = self.shuffle_options_dict[build_config[self.tng_attr_shuffle_type]]
         filelist = os.listdir(folder_path)
         if not by_file:
@@ -353,8 +339,8 @@ class TEINERGroundtruthBuilder:
                 tng_dict[self.tng_attr_name] = self.state.tng_name
             self.state.tng_lang = st.selectbox(
                 "Select a language for the groundtruth (relevant for the split into sentences):",
-                list(self.lang_dict.keys()),
-                list(self.lang_dict.keys()).index(self.state.tng_lang) if self.state.tng_lang else 0,
+                list(lang_dict.keys()),
+                list(lang_dict.keys()).index(self.state.tng_lang) if self.state.tng_lang else 0,
                 key="tng_lang",
             )
             if self.state.tng_lang:
