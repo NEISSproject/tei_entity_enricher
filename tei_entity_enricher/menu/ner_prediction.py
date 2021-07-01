@@ -13,6 +13,7 @@ from tei_entity_enricher.util.components import (
     small_file_selector,
     small_dir_selector,
     file_selector_expander,
+    selectbox_widget,
 )
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
 from tei_entity_enricher.util.spacy_lm import lang_dict
@@ -141,7 +142,7 @@ class NERPrediction(MenuBase):
     def select_tei_input_data(self):
         np_tei_input_expander = st.beta_expander("Select a TEI Prediction Configuration", expanded=False)
         with np_tei_input_expander:
-            tr_name = st.selectbox(
+            tr_name = selectbox_widget(
                 "Select a TEI Reader Config which should be used for the prediction!",
                 list(self.tr.configdict.keys()),
                 index=list(self.tr.configdict.keys()).index(
@@ -152,7 +153,7 @@ class NERPrediction(MenuBase):
                 key="np_tei_pred_tr_name",
             )
             self.ner_prediction_params.predict_tei_reader = self.tr.configdict[tr_name]
-            tnw_name = st.selectbox(
+            tnw_name = selectbox_widget(
                 "Select a TEI Prediction Writer Mapping which should be used for the prediction!",
                 list(self.tnw.mappingdict.keys()),
                 index=list(self.tnw.mappingdict.keys()).index(
@@ -163,14 +164,13 @@ class NERPrediction(MenuBase):
                 key="np_tei_pred_tnw_name",
             )
             self.ner_prediction_params.predict_tei_write_map = self.tnw.mappingdict[tnw_name]
-            language = st.selectbox(
+            self.ner_prediction_params.predict_lang = selectbox_widget(
                 "Select a language for the TEI-Files:",
                 list(lang_dict.keys()),
                 index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
                 key="np_lang",
                 help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language."
             )
-            self.ner_prediction_params.predict_lang=language
             old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
             self.ner_prediction_params.predict_conf_tei_option = st.radio(
                 "Input options",
