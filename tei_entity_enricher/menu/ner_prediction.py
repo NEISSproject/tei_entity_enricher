@@ -168,7 +168,7 @@ class NERPrediction(MenuBase):
                 list(lang_dict.keys()),
                 index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
                 key="np_lang",
-                help="For Predicting entities the text of the TEI-Files has to be splitted into parts sentences. For this sentence split you need to choose a language."
+                help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language."
             )
             self.ner_prediction_params.predict_lang=language
             old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
