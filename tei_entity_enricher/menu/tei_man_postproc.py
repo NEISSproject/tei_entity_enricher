@@ -267,7 +267,6 @@ class TEIManPP:
         selected_tr = self.tr.configdict[self.state.tmp_selected_tr_name]
         tag_list = self.define_search_criterion()
         self.state.tmp_teifile = small_file_selector(
-            self.state,
             label="Choose a TEI File:",
             value=self.state.tmp_teifile if self.state.tmp_teifile else local_save_path,
             key="tmp_choose_tei_file",

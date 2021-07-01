@@ -426,7 +426,6 @@ class TEINERGroundtruthBuilder:
         #    key="tng_tei_file_folder",
         # )
         self.state.tng_teifile_folder = small_dir_selector(
-            self.state,
             label="Choose a Folder containing only TEI Files to build the groundtruth from:",
             value=self.state.tng_teifile_folder if self.state.tng_teifile_folder else local_save_path,
             key="tng_tei_file_folder",

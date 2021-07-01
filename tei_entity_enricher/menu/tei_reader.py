@@ -263,7 +263,6 @@ class TEIReader:
             )
             config = self.configdict[self.state.tr_test_selected_config_name]
             self.state.tr_teifile = small_file_selector(
-                self.state,
                 label="Choose a TEI-File",
                 value=self.state.tr_teifile if self.state.tr_teifile else local_save_path,
                 key="tr_test_choose_tei",

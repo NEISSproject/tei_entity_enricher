@@ -114,7 +114,6 @@ class NERTrainer(MenuBase):
                 #    self._data_config_check.append("output_dir")
 
                 output_dir, output_dir_state = small_dir_selector(
-                    self.state,
                     "Output Directory",
                     self.state.nt_trainer_params_json["output_dir"],
                     key="nt_conf_output_dir",
@@ -184,7 +183,6 @@ class NERTrainer(MenuBase):
 
     def data_list_conf_from_folder(self):
         train_dir, train_dir_state = small_dir_selector(
-            self.state,
             "Folder with Train-JSON-Files",
             self.state.nt_train_dir
             if self.state.nt_train_dir
@@ -203,7 +201,6 @@ class NERTrainer(MenuBase):
             self._data_config_check.append("Folder with Train-JSON-Files")
 
         val_dir, val_dir_state = small_dir_selector(
-            self.state,
             "Folder with Validation-JSON-Files",
             self.state.nt_val_dir
             if self.state.nt_val_dir
