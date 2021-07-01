@@ -53,6 +53,7 @@ class PostprocessingAuxiliaryCache:
         self.button_add_missing_ids_proceed: bool = False
         self.button_export_el: bool = False
         self.add_missing_ids_query_result: dict = {}
+        self.counter = 0
 
     def reset_buttons(self) -> None:
         self.button_add_missing_ids: bool = False
@@ -403,11 +404,11 @@ class TEINERPostprocessing:
                                             pp_aux_cache.reset_editor_state()
                                             pp_aux_cache.reset_buttons()
                                             pp_aux_cache.reset_add_missing_ids_query_result()
-                                            # el_misc_message_placeholder.empty()
-                                            with el_misc_message_placeholder:
-                                                st.success(
-                                                    "Found and selected suggestions successfull saved to entity library."
-                                                )
+                                            st.experimental_rerun()
+                                            # with el_misc_message_placeholder:
+                                            #     st.success(
+                                            #         "Found and selected suggestions successfull saved to entity library."
+                                            #     )
                                             # st.button(label="Close add-missing-ids submenus")
                                             # update ace-editor-content (empty placeholder and create new instance)
                                             # el_file_view_placeholder.empty()
@@ -434,9 +435,14 @@ class TEINERPostprocessing:
                         if pp_aux_cache.last_editor_state is None
                         else pp_aux_cache.last_editor_state
                     )
+                    pp_aux_cache.counter += 1
                     with el_file_view_placeholder:
                         editor_content = st_ace(
-                            value=editor_init_content, height=500, language="json", readonly=False, key="first"
+                            value=editor_init_content,
+                            height=500,
+                            language="json",
+                            readonly=False,
+                            key=str(pp_aux_cache.counter),
                         )
                         logger.info(editor_content)
                     if pp_aux_cache.last_editor_state is None:
