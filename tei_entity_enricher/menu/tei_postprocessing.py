@@ -23,10 +23,6 @@ logger = logging.getLogger(__name__)
 """
 to do:
 - Einkapseln mit Sub-Funktionen für bessere Lesbarkeit
-- fehlende ace-Aktualisierung nach add-missing-ids fixen
-- 376: bedingung einfügen: nur anzeigen, wenn mindestens eine änderung möglich ist
-- warum updated ace nur im debugging-modus?
-- warum kommt eine "bad format"-meldung von streamlit, wenn ein empty-container wieder geleert wird, nachdem ein beta_container und elemente in diesen zuvor hinzugefügt worden sind?
 """
 
 
@@ -44,6 +40,10 @@ class PostprocessingAuxiliaryCache:
         saves was-pressed state over more than one rerun
     add_missing_ids_query_result : dict
         saves temporarily wikidata query result in add-missing-ids process
+    counter : int
+        used to change ace editor key value between two reruns
+    is_rerun : bool
+        used to control, if counter is raised in a rerun (ace editor can be changed manually) or not (ace editor can be updated by internal processes)
     """
 
     def __init__(self) -> None:
@@ -53,7 +53,8 @@ class PostprocessingAuxiliaryCache:
         self.button_add_missing_ids_proceed: bool = False
         self.button_export_el: bool = False
         self.add_missing_ids_query_result: dict = {}
-        self.counter = 0
+        self.counter: int = 0
+        self.is_rerun: bool = False
 
     def reset_buttons(self) -> None:
         self.button_add_missing_ids: bool = False
@@ -404,6 +405,7 @@ class TEINERPostprocessing:
                                             pp_aux_cache.reset_editor_state()
                                             pp_aux_cache.reset_buttons()
                                             pp_aux_cache.reset_add_missing_ids_query_result()
+                                            pp_aux_cache.is_rerun = True
                                             st.experimental_rerun()
                                             # with el_misc_message_placeholder:
                                             #     st.success("Found and selected suggestions successfull saved to entity library.")
@@ -437,7 +439,9 @@ class TEINERPostprocessing:
                         if pp_aux_cache.last_editor_state is None
                         else pp_aux_cache.last_editor_state
                     )
-                    pp_aux_cache.counter += 1
+                    if pp_aux_cache.is_rerun == True:
+                        pp_aux_cache.counter += 1
+                        pp_aux_cache.is_rerun = False
                     with el_file_view_placeholder:
                         editor_content = st_ace(
                             value=editor_init_content,
@@ -511,7 +515,9 @@ class TEINERPostprocessing:
                                         else:
                                             st.info(message)
                             pp_aux_cache.last_editor_state = json.dumps(pp_el_library_object.data, indent=4)
-                            st.experimental_rerun()
+                            pp_aux_cache.is_rerun = True
+                            # st.experimental_rerun()
+                            st.button(label="Finish process")
 
         ## 2. Manual TEI Postprocessing
         tmp.TEIManPP(self.state, entity_library=pp_el_library_object, el_last_ed_state=pp_aux_cache.last_editor_state)
