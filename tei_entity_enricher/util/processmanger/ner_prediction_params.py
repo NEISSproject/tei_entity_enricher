@@ -14,6 +14,7 @@ class NERPredictionParams:
     predict_conf_tei_option: str = ""
     predict_tei_reader: dict = None
     predict_tei_write_map: dict = None
+    predict_lang: str = "German"
     input_tei_file: str = ""
     input_tei_folder: str = ""
 

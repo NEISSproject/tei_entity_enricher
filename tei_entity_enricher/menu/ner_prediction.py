@@ -15,6 +15,7 @@ from tei_entity_enricher.util.components import (
     file_selector_expander,
 )
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
+from tei_entity_enricher.util.spacy_lm import lang_dict
 from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
 from tei_entity_enricher.util.processmanger.predict import (
     get_predict_process_manager,
@@ -162,6 +163,14 @@ class NERPrediction(MenuBase):
                 key="np_tei_pred_tnw_name",
             )
             self.ner_prediction_params.predict_tei_write_map = self.tnw.mappingdict[tnw_name]
+            language = st.selectbox(
+                "Select a language for the TEI-Files:",
+                list(lang_dict.keys()),
+                index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
+                key="np_lang",
+                help="For Predicting entities the text of the TEI-Files has to be splitted into parts sentences. For this sentence split you need to choose a language."
+            )
+            self.ner_prediction_params.predict_lang=language
             old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
             self.ner_prediction_params.predict_conf_tei_option = st.radio(
                 "Input options",

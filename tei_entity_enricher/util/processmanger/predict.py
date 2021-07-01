@@ -58,8 +58,7 @@ class PredictProcessManager(ProcessManagerBase):
             if len(tei_filelist) < 1:
                 message_placeholder.empty()
                 return "With the given Configuration no TEI-Files where found!"
-            # TODO Sprachauswahl in GUI einbauen
-            nlp = get_spacy_lm("German")
+            nlp = get_spacy_lm(self._params.predict_lang)
             all_data = []
             file_name_dict = {}
             for fileindex in range(len(tei_filelist)):
