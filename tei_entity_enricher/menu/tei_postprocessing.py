@@ -30,7 +30,7 @@ to do:
 """
 
 
-class EntityLibraryAuxiliaryCache:
+class PostprocessingAuxiliaryCache:
     """class to save different states over streamlit reruns
     el_filepath : str
         filepath to entity library, which is loaded or should be loaded
@@ -78,8 +78,8 @@ def get_entity_library():
 
 
 @st.cache(allow_output_mutation=True)
-def get_auxiliary_cache():
-    return EntityLibraryAuxiliaryCache()
+def get_pp_auxiliary_cache():
+    return PostprocessingAuxiliaryCache()
 
 
 def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
@@ -137,7 +137,7 @@ class TEINERPostprocessing:
         ## 1. Entity Library
         # vars
         pp_el_library_object: EntityLibrary = get_entity_library()
-        pp_aux_cache: EntityLibraryAuxiliaryCache = get_auxiliary_cache()
+        pp_aux_cache: PostprocessingAuxiliaryCache = get_pp_auxiliary_cache()
         pp_aux_cache.set_el_filepath(
             pp_el_library_object.default_data_file
         ) if pp_aux_cache.el_filepath is None else None
@@ -198,8 +198,13 @@ class TEINERPostprocessing:
                 el_misc_message_placeholder = st.empty()
                 el_file_view_placeholder = st.empty()
                 el_file_view_message_placeholder = st.empty()
-                # menu control: reset of button states in cache
-                if el_save_button == True or el_export_button == True or el_add_missing_ids_button == True:
+                # menu control: reset of button states in cache (not button states read from button widgets)
+                if (
+                    el_quit_button == True
+                    or el_save_button == True
+                    or el_export_button == True
+                    or el_add_missing_ids_button == True
+                ):
                     pp_aux_cache.reset_buttons()
                 # processes triggered by init button
                 if el_init_button == True:
@@ -253,10 +258,10 @@ class TEINERPostprocessing:
                             label="Proceed", help="Start export process."
                         )
                         if proceed_button == True:
-                            el_export_filepath_field_container.button(
-                                label="Complete export procedure",
-                                help="Complete export procedure before exporting again.",
-                            )
+                            # el_export_filepath_field_container.button(
+                            #     label="Complete export procedure",
+                            #     help="Complete export procedure before exporting again.",
+                            # )
                             fw = FileWriter(data=pp_el_library_object.data, filepath=el_export_filepath_field)
                             if_file_exists = "replace" if el_export_overwrite_checkbox == True else "cancel"
                             if el_export_create_folder_checkbox == True:
@@ -271,7 +276,7 @@ class TEINERPostprocessing:
                                 el_misc_message_placeholder.info("Entity Library export failed: File already exists.")
                             elif fw_return_value == "folder_not_found":
                                 el_misc_message_placeholder.info("Entity Library export failed: Folder does not exist.")
-                            pp_aux_cache.button_export_el = False
+                            # pp_aux_cache.reset_buttons()
                 # el_export_filepath_placeholder.empty()
                 # (((el_export_filepath_placeholder.empty() deletes the export elements,
                 # so that the user can not click on exports proceed again,
@@ -375,55 +380,51 @@ class TEINERPostprocessing:
                                                 )
                                             else:
                                                 st.write("-")
-                                    # todo: bedingung einfügen: nur anzeigen, wenn mindestens eine änderung möglich ist
-                                    save_add_missing_ids_suggestions_to_loaded_el_button = st.button(
-                                        label="Save to currently loaded entity library",
-                                        help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
-                                    )
-                                    if save_add_missing_ids_suggestions_to_loaded_el_button:
-                                        for case in identified_cases:
-                                            # entity_to_update = list(
-                                            #     filter(
-                                            #         lambda ent: (ent["wikidata_id"] == case[0][0]["wikidata_id"])
-                                            #         or (ent["gnd_id"] == case[0][0]["gnd_id"]),
-                                            #         pp_el_library_object.data,
-                                            #     )
-                                            # )[0]
-                                            entity_to_update = pp_el_library_object.data[case[1]]
-                                            entity_to_update.update(case[0][0][0])
-                                        for index, case in enumerate(cases_to_choose):
-                                            description_list = [i["description"] for i in case[0][0]]
-                                            description_list.append("-- Select none --")
-                                            current_selection_index = description_list.index(selectbox_result[index])
-                                            if current_selection_index != len(description_list) - 1:
-                                                # ignore '-- Select none --' selections
+                                    if len(identified_cases) > 0 or len(cases_to_choose) > 0:
+                                        # show save button, if new information can be added to entity library
+                                        save_add_missing_ids_suggestions_to_loaded_el_button = st.button(
+                                            label="Save to currently loaded entity library",
+                                            help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
+                                        )
+                                        if save_add_missing_ids_suggestions_to_loaded_el_button:
+                                            for case in identified_cases:
                                                 entity_to_update = pp_el_library_object.data[case[1]]
-                                                entity_to_update.update(case[0][0][current_selection_index])
-                                        pp_aux_cache.last_editor_state = json.dumps(pp_el_library_object.data, indent=4)
-                                        pp_aux_cache.reset_buttons()
-                                        pp_aux_cache.reset_add_missing_ids_query_result()
-                                        # el_misc_message_placeholder.empty()
-                                        with el_misc_message_placeholder:
-                                            st.success(
-                                                "Found and selected suggestions successfull saved to entity library."
-                                            )
-                                        # st.button(label="Close add-missing-ids submenus")
-                                        # update ace-editor-content (empty placeholder and create new instance)
-                                        # el_file_view_placeholder.empty()
-                                        # with el_file_view_placeholder:
-                                        #     editor_content = st_ace(
-                                        #         value=pp_aux_cache.last_editor_state,
-                                        #         height=500,
-                                        #         language="json",
-                                        #         readonly=False,
-                                        #         key="third",
-                                        #     )
-                                        # with el_file_view_message_placeholder:
-                                        #     with st.beta_container():
-                                        #         st.button(
-                                        #             label="Rerun first before manually edit the entity library again",
-                                        #             help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
-                                        #         )
+                                                entity_to_update.update(case[0][0][0])
+                                            for index, case in enumerate(cases_to_choose):
+                                                description_list = [i["description"] for i in case[0][0]]
+                                                description_list.append("-- Select none --")
+                                                current_selection_index = description_list.index(
+                                                    selectbox_result[index]
+                                                )
+                                                if current_selection_index != len(description_list) - 1:
+                                                    # ignore '-- Select none --' selections
+                                                    entity_to_update = pp_el_library_object.data[case[1]]
+                                                    entity_to_update.update(case[0][0][current_selection_index])
+                                            pp_aux_cache.reset_editor_state()
+                                            pp_aux_cache.reset_buttons()
+                                            pp_aux_cache.reset_add_missing_ids_query_result()
+                                            # el_misc_message_placeholder.empty()
+                                            with el_misc_message_placeholder:
+                                                st.success(
+                                                    "Found and selected suggestions successfull saved to entity library."
+                                                )
+                                            # st.button(label="Close add-missing-ids submenus")
+                                            # update ace-editor-content (empty placeholder and create new instance)
+                                            # el_file_view_placeholder.empty()
+                                            # with el_file_view_placeholder:
+                                            #     editor_content = st_ace(
+                                            #         value=pp_aux_cache.last_editor_state,
+                                            #         height=500,
+                                            #         language="json",
+                                            #         readonly=False,
+                                            #         key="third",
+                                            #     )
+                                            # with el_file_view_message_placeholder:
+                                            #     with st.beta_container():
+                                            #         st.button(
+                                            #             label="Rerun first before manually edit the entity library again",
+                                            #             help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
+                                            #         )
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
