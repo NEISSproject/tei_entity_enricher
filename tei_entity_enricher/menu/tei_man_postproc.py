@@ -18,7 +18,7 @@ from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 
 class TEIManPP:
-    def __init__(self, state, show_menu=True, entity_library=None, el_last_ed_state=None):
+    def __init__(self, state, show_menu=True, entity_library=None, aux_cache=None):
         self.state = state
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
@@ -30,7 +30,7 @@ class TEIManPP:
         self.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
         self.tmp_base_ls_search_type_options = ["without specified type"]
         self.entity_library = entity_library  # get_entity_library()
-        self.el_last_ed_state = el_last_ed_state
+        self._aux_cache = aux_cache
         if show_menu:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.tnm = tnm_map.TEINERMap(state, show_menu=False)
@@ -244,7 +244,8 @@ class TEIManPP:
                             else:
                                 self.entity_library.save_library()
                                 self.state.tmp_one_time_success_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library'
-                                self.el_last_ed_state.reset()
+                                self._aux_cache.last_editor_state = None
+                                self._aux_cache.is_count_up_rerun = True
                                 st.experimental_rerun()
                 else:
                     st.write("No link suggestions found!")
