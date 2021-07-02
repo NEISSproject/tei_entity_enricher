@@ -132,6 +132,7 @@ class TEINERPostprocessing:
         """consists of the entity library control panel and the manual postprocessing panel"""
         if show_menu:
             self.state = state
+            self.init_vars()
             self.show()
 
     def init_vars(self):
@@ -498,7 +499,6 @@ class TEINERPostprocessing:
     def show(self):
         st.latex("\\text{\Huge{NER Postprocessing}}")
         ## 1. Entity Library
-        self.init_vars()
         st.subheader("Entity Library")
         el_container = st.beta_expander(label="Entity Library", expanded=True)
         with el_container:
