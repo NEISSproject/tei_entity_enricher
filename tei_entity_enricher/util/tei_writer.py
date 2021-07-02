@@ -14,7 +14,7 @@ class TEI_Writer:
         if openfile is not None:
             tei = openfile.getvalue().decode("utf-8")
         else:
-            with open(filename, "r") as f:
+            with open(file=filename, mode="r",encoding="utf8") as f:
                 tei = f.read()
         begintextindex = tei.find("<text ")
         begintextindex2 = tei.find("<text>")
@@ -202,7 +202,7 @@ class TEI_Writer:
         return self._begin + self._text + self._end
 
     def write_back_to_file(self, outputpath):
-        with open(outputpath, "w") as file:
+        with open(file=outputpath, mode="w", encoding="utf8") as file:
             file.write(self.get_tei_file_string())
 
     def _merge_tags_to_insert(self, ins_tag, textstring):
