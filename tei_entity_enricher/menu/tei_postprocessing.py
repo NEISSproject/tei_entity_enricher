@@ -65,6 +65,9 @@ class PostprocessingAuxiliaryCache:
     def reset_add_missing_ids_query_result(self) -> None:
         self.add_missing_ids_query_result: dict = {}
 
+    def reset_is_count_up_rerun(self) -> None:
+        self.is_count_up_rerun: bool = False
+
     def set_el_filepath(self, path) -> None:
         self.el_filepath: str = path
 
@@ -469,7 +472,7 @@ class TEINERPostprocessing:
                 )
                 if self.pp_aux_cache.is_count_up_rerun == True:
                     self.pp_aux_cache.counter += 1
-                    self.pp_aux_cache.is_count_up_rerun = False
+                    self.pp_aux_cache.reset_is_count_up_rerun()
                 with self.el_file_view_placeholder:
                     editor_content = st_ace(
                         value=editor_init_content,
