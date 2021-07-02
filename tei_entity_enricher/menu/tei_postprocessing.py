@@ -54,7 +54,7 @@ class PostprocessingAuxiliaryCache:
         self.button_export_el: bool = False
         self.add_missing_ids_query_result: dict = {}
         self.counter: int = 0
-        self.is_rerun: bool = False
+        self.is_count_up_rerun: bool = False
 
     def reset_buttons(self) -> None:
         self.button_add_missing_ids: bool = False
@@ -405,7 +405,7 @@ class TEINERPostprocessing:
                                             pp_aux_cache.reset_editor_state()
                                             pp_aux_cache.reset_buttons()
                                             pp_aux_cache.reset_add_missing_ids_query_result()
-                                            pp_aux_cache.is_rerun = True
+                                            pp_aux_cache.is_count_up_rerun = True
                                             st.experimental_rerun()
                                             # with el_misc_message_placeholder:
                                             #     st.success("Found and selected suggestions successfull saved to entity library.")
@@ -439,9 +439,9 @@ class TEINERPostprocessing:
                         if pp_aux_cache.last_editor_state is None
                         else pp_aux_cache.last_editor_state
                     )
-                    if pp_aux_cache.is_rerun == True:
+                    if pp_aux_cache.is_count_up_rerun == True:
                         pp_aux_cache.counter += 1
-                        pp_aux_cache.is_rerun = False
+                        pp_aux_cache.is_count_up_rerun = False
                     with el_file_view_placeholder:
                         editor_content = st_ace(
                             value=editor_init_content,
@@ -515,7 +515,7 @@ class TEINERPostprocessing:
                                         else:
                                             st.info(message)
                             pp_aux_cache.last_editor_state = json.dumps(pp_el_library_object.data, indent=4)
-                            pp_aux_cache.is_rerun = True
+                            pp_aux_cache.is_count_up_rerun = True
                             # st.experimental_rerun()
                             st.button(label="Finish process")
 
