@@ -481,4 +481,4 @@ class TEINERPostprocessing:
                             st.button(label="Finish process")
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(self.state, entity_library=pp_el_library_object, el_last_ed_state=pp_aux_cache.last_editor_state)
+        tmp.TEIManPP(self.state, entity_library=pp_el_library_object, aux_cache=pp_aux_cache)

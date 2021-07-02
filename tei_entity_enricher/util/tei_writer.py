@@ -7,8 +7,10 @@ _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
 class TEI_Writer:
-    def __init__(self, filename, openfile=None, tr=None, tnw=None):
+    def __init__(self, filename, openfile=None, tr=None, tnw=None, untagged_symbols=["O"], tags_from_iob_scheme=True):
         self._space_codes = ["&#x2008;", "&#xA0;"]
+        self._untagged_symbols=untagged_symbols
+        self._tags_from_iob_scheme=tags_from_iob_scheme
         if openfile is not None:
             tei = openfile.getvalue().decode("utf-8")
         else:
@@ -206,26 +208,52 @@ class TEI_Writer:
     def _merge_tags_to_insert(self, ins_tag, textstring):
         merged_tags = []
         last_tag = {"tag": "X", "begin": 0, "end": 0, "note": False}
-        for tag in ins_tag:
-            if "begin" in tag.keys():
-                if (
-                    last_tag["tag"] == tag["tag"]
-                    and last_tag["note"] == tag["note"]
-                    and (
-                        last_tag["end"] == tag["begin"]
-                        or (last_tag["end"] + 1 == tag["begin"] and textstring[last_tag["end"]] in (" ", "-"))
-                    )
-                ):
-                    if "end" in tag.keys():
-                        last_tag["end"] = tag["end"]
+        if self._tags_from_iob_scheme:
+            for tag in ins_tag:
+                if "begin" in tag.keys():
+                    if (
+                        "I-"+last_tag["tag"] == tag["tag"]
+                        and last_tag["note"] == tag["note"]
+                        and (
+                            last_tag["end"] == tag["begin"]
+                            or (last_tag["end"] + 1 == tag["begin"] and textstring[last_tag["end"]] in (" ", "-"))
+                        )
+                    ):
+                        if "end" in tag.keys():
+                            last_tag["end"] = tag["end"]
+                        else:
+                            del last_tag["end"]
                     else:
-                        del last_tag["end"]
+                        if last_tag["tag"] != "X":
+                            merged_tags.append(last_tag)
+                        last_tag = tag
+                        if last_tag["tag"].startswith('B-') or last_tag["tag"].startswith('I-'):
+                            last_tag["tag"]=last_tag["tag"][2:]
                 else:
-                    if last_tag["tag"] != "X":
-                        merged_tags.append(last_tag)
                     last_tag = tag
-            else:
-                last_tag = tag
+                    if last_tag["tag"].startswith('B-') or last_tag["tag"].startswith('I-'):
+                            last_tag["tag"]=last_tag["tag"][2:]
+        else:
+            for tag in ins_tag:
+                if "begin" in tag.keys():
+                    if (
+                        last_tag["tag"] == tag["tag"]
+                        and last_tag["note"] == tag["note"]
+                        and (
+                            last_tag["end"] == tag["begin"]
+                            or (last_tag["end"] + 1 == tag["begin"] and textstring[last_tag["end"]] in (" ", "-"))
+                        )
+                    ):
+                        if "end" in tag.keys():
+                            last_tag["end"] = tag["end"]
+                        else:
+                            del last_tag["end"]
+                    else:
+                        if last_tag["tag"] != "X":
+                            merged_tags.append(last_tag)
+                        last_tag = tag
+                else:
+                    last_tag = tag
         if last_tag["tag"] != "X":
             merged_tags.append(last_tag)
         return merged_tags
@@ -275,7 +303,7 @@ class TEI_Writer:
                     if self._cur_note_word == self._cur_pred_note_word:
                         if (
                             already_tagged == False
-                            and predicted_note_data[self._notecontentindex][self._notewordindex][1] != "O"
+                            and predicted_note_data[self._notecontentindex][self._notewordindex][1] not in self._untagged_symbols
                         ):
                             if i - len(self._cur_pred_note_word) + 1 >= 0:
                                 ins_tag.append(
@@ -325,7 +353,7 @@ class TEI_Writer:
                         print("Error: Predicted data doesn't match TEI-File!")
                         raise ValueError
                     if self._cur_word == self._cur_pred_word:
-                        if already_tagged == False and predicted_data[self._contentindex][self._wordindex][1] != "O":
+                        if already_tagged == False and predicted_data[self._contentindex][self._wordindex][1] not in self._untagged_symbols:
                             if i - len(self._cur_pred_word) + 1 >= 0:
                                 ins_tag.append(
                                     {
@@ -357,7 +385,7 @@ class TEI_Writer:
         if len(self._cur_word) > 0:
             if (
                 already_tagged == False
-                and predicted_data[self._contentindex][self._wordindex][1] != "O"
+                and predicted_data[self._contentindex][self._wordindex][1] not in self._untagged_symbols
                 and i - len(self._cur_word) + 1 >= 0
             ):
                 ins_tag.append(
@@ -370,7 +398,7 @@ class TEI_Writer:
         if len(self._cur_note_word) > 0:
             if (
                 already_tagged == False
-                and predicted_note_data[self._notecontentindex][self._notewordindex][1] != "O"
+                and predicted_note_data[self._notecontentindex][self._notewordindex][1] not in self._untagged_symbols
                 and i - len(self._cur_note_word) + 1 >= 0
             ):
                 ins_tag.append(
@@ -668,6 +696,29 @@ def parse_xml_to_text(text):
     return new_text
 
 
+def test_write_pred_results(tr,tnw,pred_out_dir):
+    with open(os.path.join(pred_out_dir, "data_to_predict.pred.json")) as h:
+        all_predict_data = json.load(h)
+    with open(os.path.join(pred_out_dir, "predict_file_dict.json")) as h2:
+        file_dict = json.load(h2)
+    filelist = list(file_dict.keys())
+    for tei_file_path in filelist:
+        _, teifilename = os.path.split(tei_file_path)
+        predicted_data = all_predict_data[file_dict[tei_file_path]["begin"] : file_dict[tei_file_path]["end"]]
+        if tr["use_notes"]:
+            if file_dict[tei_file_path]["note_end"] - file_dict[tei_file_path]["end"] > 0:
+                predicted_note_data = all_predict_data[
+                    file_dict[tei_file_path]["end"] : file_dict[tei_file_path]["note_end"]
+                ]
+            else:
+                predicted_note_data = []
+        else:
+            predicted_note_data = []
+        brief = TEI_Writer(tei_file_path, tr=tr, tnw=tnw,untagged_symbols=["O","UNK"])
+        brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
+        brief.write_back_to_file(os.path.join(pred_out_dir, teifilename))
+
+
 if __name__ == "__main__":
     import json
 
@@ -675,7 +726,7 @@ if __name__ == "__main__":
         # with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
         tr = json.load(f)
     # print(tr)
-    with open("tei_entity_enricher/tei_entity_enricher/templates/TNW/UJA_Prediction_Writer.json") as f:
+    with open("tei_entity_enricher/tei_entity_enricher/templates/TNW/GermEval_Prediction_Writer.json") as f:
         # with open("../TNW/Arendt_Prediction_Writer.json") as f:
         tnw = json.load(f)
     # write_predicted_text_list_back_to_TEI(
@@ -685,8 +736,9 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
-    print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
+    #tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
+    #print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
+    test_write_pred_results(tr=tr,tnw=tnw,pred_out_dir="ner_prediction")
     # mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
     # print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml

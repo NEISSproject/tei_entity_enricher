@@ -1,1 +1,1 @@
-{"entitylist": ["PER", "PER-deriv", "PER-part", "LOC", "LOC-deriv", "LOC-part", "ORG", "ORG-deriv", "ORG-part", "OTH", "OTH-deriv", "OTH-part"], "name": "GermEval14", "template": true}
+{"entitylist": ["PER", "PERderiv", "PERpart", "LOC", "LOCderiv", "LOCpart", "ORG", "ORGderiv", "ORGpart", "OTH", "OTHderiv", "OTHpart"], "name": "GermEval14", "template": true}
