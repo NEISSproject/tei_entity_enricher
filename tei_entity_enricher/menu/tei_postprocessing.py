@@ -20,11 +20,6 @@ from tei_entity_enricher.util.helper import (
 
 logger = logging.getLogger(__name__)
 
-"""
-to do:
-- Einkapseln mit Sub-Funktionen für bessere Lesbarkeit
-"""
-
 
 class PostprocessingAuxiliaryCache:
     """class to save different states over streamlit reruns
@@ -41,9 +36,9 @@ class PostprocessingAuxiliaryCache:
     add_missing_ids_query_result : dict
         saves temporarily wikidata query result in add-missing-ids process
     counter : int
-        used to change ace editor key value between two reruns
-    is_rerun : bool
-        used to control, if counter is raised in a rerun (ace editor can be changed manually) or not (ace editor can be updated by internal processes)
+        used to change ace editor key value between two reruns, if self.is_count_up_rerun is True
+    is_count_up_rerun : bool
+        used to control, if counter is raised in a rerun (ace editor can be updated by internal processes) or not (ace editor can be changed manually)
     """
 
     def __init__(self) -> None:
@@ -260,10 +255,6 @@ class TEINERPostprocessing:
                             label="Proceed", help="Start export process."
                         )
                         if proceed_button == True:
-                            # el_export_filepath_field_container.button(
-                            #     label="Complete export procedure",
-                            #     help="Complete export procedure before exporting again.",
-                            # )
                             fw = FileWriter(data=pp_el_library_object.data, filepath=el_export_filepath_field)
                             if_file_exists = "replace" if el_export_overwrite_checkbox == True else "cancel"
                             if el_export_create_folder_checkbox == True:
@@ -278,12 +269,6 @@ class TEINERPostprocessing:
                                 el_misc_message_placeholder.info("Entity Library export failed: File already exists.")
                             elif fw_return_value == "folder_not_found":
                                 el_misc_message_placeholder.info("Entity Library export failed: Folder does not exist.")
-                            # pp_aux_cache.reset_buttons()
-                # el_export_filepath_placeholder.empty()
-                # (((el_export_filepath_placeholder.empty() deletes the export elements,
-                # so that the user can not click on exports proceed again,
-                # which will cause a rerun without executing an export.
-                # at the moment this produces a "Bad message format"-popup)))
                 # processes triggered by quit button
                 if el_quit_button == True:
                     if pp_el_library_object.data_file is not None:
@@ -402,34 +387,15 @@ class TEINERPostprocessing:
                                                     # ignore '-- Select none --' selections
                                                     entity_to_update = pp_el_library_object.data[case[1]]
                                                     entity_to_update.update(case[0][0][current_selection_index])
+                                            # reset cache vars and start count-up rerun
                                             pp_aux_cache.reset_editor_state()
                                             pp_aux_cache.reset_buttons()
                                             pp_aux_cache.reset_add_missing_ids_query_result()
                                             pp_aux_cache.is_count_up_rerun = True
                                             st.experimental_rerun()
-                                            # with el_misc_message_placeholder:
-                                            #     st.success("Found and selected suggestions successfull saved to entity library.")
-                                            # st.button(label="Close add-missing-ids submenus")
-                                            # update ace-editor-content (empty placeholder and create new instance)
-                                            # el_file_view_placeholder.empty()
-                                            # with el_file_view_placeholder:
-                                            #     editor_content = st_ace(
-                                            #         value=pp_aux_cache.last_editor_state,
-                                            #         height=500,
-                                            #         language="json",
-                                            #         readonly=False,
-                                            #         key="third",
-                                            #     )
-                                            # with el_file_view_message_placeholder:
-                                            #     with st.beta_container():
-                                            #         st.button(
-                                            #             label="Rerun first before manually edit the entity library again",
-                                            #             help="At the moment the postprocessing page has to be reloaded after a change of the current entity library.",
-                                            #         )
                                     else:
                                         st.info("No new data could be retrieved by wikidata query.")
                                         pp_aux_cache.reset_add_missing_ids_query_result()
-
                 # processes triggered if an entity library is loaded (and it has a string value in data_file)
                 if pp_el_library_object.data_file is not None:
                     el_filepath_state_col.latex(state_ok)
@@ -459,10 +425,6 @@ class TEINERPostprocessing:
                             with el_file_view_message_placeholder:
                                 with st.beta_container():
                                     st.info(f"Error: {el_editor_content_check_result}")
-                                    # st.button(
-                                    #     label="Rerun first before manually edit the entity library again",
-                                    #     help="At the moment the postprocessing page has to be reloaded after a manual change of the current entity library, before a manual change can be executed again.",
-                                    # )
                         else:
                             pp_el_library_object.data = json.loads(editor_content)
                             pp_aux_cache.last_editor_state = editor_content
@@ -516,7 +478,6 @@ class TEINERPostprocessing:
                                             st.info(message)
                             pp_aux_cache.last_editor_state = json.dumps(pp_el_library_object.data, indent=4)
                             pp_aux_cache.is_count_up_rerun = True
-                            # st.experimental_rerun()
                             st.button(label="Finish process")
 
         ## 2. Manual TEI Postprocessing
