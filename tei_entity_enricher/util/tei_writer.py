@@ -9,12 +9,12 @@ _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 class TEI_Writer:
     def __init__(self, filename, openfile=None, tr=None, tnw=None, untagged_symbols=["O"], tags_from_iob_scheme=True):
         self._space_codes = ["&#x2008;", "&#xA0;"]
-        self._untagged_symbols=untagged_symbols
-        self._tags_from_iob_scheme=tags_from_iob_scheme
+        self._untagged_symbols = untagged_symbols
+        self._tags_from_iob_scheme = tags_from_iob_scheme
         if openfile is not None:
             tei = openfile.getvalue().decode("utf-8")
         else:
-            with open(file=filename, mode="r",encoding="utf8") as f:
+            with open(file=filename, mode="r", encoding="utf8") as f:
                 tei = f.read()
         begintextindex = tei.find("<text ")
         begintextindex2 = tei.find("<text>")
@@ -81,7 +81,7 @@ class TEI_Writer:
             return newstartindex + 2 + self._find_endstartindex(cur_text[newstartindex + 2 :], tag_name)
         return endstartindex
 
-    def _extract_next_tag(self, cur_text, swap=False):
+    def _extract_next_tag(self, cur_text, swap=False, allow_only_end_tags=False):
         beginstartindex = cur_text.find("<")
         swap_tag = ""
         if beginstartindex >= 0:
@@ -98,6 +98,8 @@ class TEI_Writer:
             if endstartindex < beginstopindex:
                 if swap:
                     swap_tag = tag_name
+                elif allow_only_end_tags:
+                    return tag_name, beginstartindex, beginstopindex, -1, -1, ""
                 else:
                     print("Error: CheckSyntax")
                     raise ValueError
@@ -107,30 +109,148 @@ class TEI_Writer:
         else:
             return None, 0, 0, 0, 0, ""
 
+    def contains_raw_text(self, cur_text):
+        if len(cur_text) == 0:
+            return False
+        tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, cur_swap_tag = self._extract_next_tag(
+            cur_text, swap=False, allow_only_end_tags=True
+        )
+        if tag_name is not None:
+            if beginstartindex > 0:
+                return True
+            else:
+                if endstartindex < 0:
+                    if beginstopindex + 1 < len(cur_text):
+                        return self.contains_raw_text(cur_text[beginstopindex + 1 :])
+                    else:
+                        return False
+                else:
+                    if (
+                        beginstopindex + 1 < endstartindex
+                        and tag_name not in self._exclude_tags
+                        and tag_name not in self._note_tags
+                    ):
+                        text_in_tag = self.contains_raw_text(cur_text[beginstopindex + 1 : endstartindex])
+                    else:
+                        text_in_tag = False
+                    if endstopindex + 1 < len(cur_text):
+                        text_after_tag = self.contains_raw_text(cur_text[endstopindex + 1 :])
+                    else:
+                        text_after_tag = False
+                    return text_in_tag or text_after_tag
+        else:
+            return True
+        # first_start = cur_text.find("<")
+        # if first_start < 0:
+        #    return True
+        # elif first_start > 0:
+        #    return True
+        # first_end = cur_text.find(">", first_start)
+        # if first_end < 0:
+        #    print("Error: CheckSyntax")
+        #    raise ValueError
+        # elif first_end + 1 < len(cur_text):
+        #    return self.contains_raw_text(cur_text[first_end + 1 :])
+        # return False
+
     def _swap_tag_ends(self, first_tag, second_tag, cur_text):
+        first_tag_start = "<" + first_tag
+        second_tag_start = "<" + second_tag
+        first_tag_start_begin_index = cur_text.find(first_tag_start + " ")
+        if first_tag_start_begin_index == -1:
+            first_tag_start_begin_index = cur_text.find(first_tag_start + ">")
+        second_tag_start_begin_index = cur_text.find(second_tag_start + " ", first_tag_start_begin_index)
+        if second_tag_start_begin_index == -1:
+            second_tag_start_begin_index = cur_text.find(second_tag_start + ">", first_tag_start_begin_index)
+        if first_tag_start_begin_index < 0 or second_tag_start_begin_index < 0:
+            print("Error: CheckSyntax")
+            raise ValueError
+        first_tag_start_stop_index = cur_text.find(">", first_tag_start_begin_index)
+        second_tag_start_stop_index = cur_text.find(">", second_tag_start_begin_index)
         # print(first_tag, second_tag, cur_text)
         first_tag_end = "</" + first_tag + ">"
         second_tag_end = "</" + second_tag + ">"
         first_tag_end_begin_index = cur_text.find(first_tag_end)
         second_tag_end_begin_index = cur_text.find(second_tag_end, first_tag_end_begin_index)
-        if first_tag_end_begin_index < 0 or second_tag_end_begin_index < 0:
+        if first_tag_end_begin_index < 0:
             print("Error: CheckSyntax")
             raise ValueError
-        new_text = (
-            cur_text[:first_tag_end_begin_index]
-            + cur_text[first_tag_end_begin_index + len(first_tag_end) : second_tag_end_begin_index]
-            + second_tag_end
-            + first_tag_end
-        )
-        if second_tag_end_begin_index + len(second_tag_end) < len(cur_text):
-            new_text = new_text + cur_text[second_tag_end_begin_index + len(second_tag_end) :]
-        # print(new_text)
-        if len(cur_text) != len(new_text):
-            print("Error: CheckSyntax")
-            raise ValueError
-        return new_text, new_text.find(first_tag_end), new_text.find(first_tag_end) + len(first_tag_end) - 1
+        if second_tag_end_begin_index < 0:
+            return first_tag, "", -1, -1, -1, -1
+        first_tag_end_stop_index = first_tag_end_begin_index + len(first_tag_end) - 1
+        second_tag_end_stop_index = second_tag_end_begin_index + len(second_tag_end) - 1
+        if (
+            second_tag_end_begin_index == first_tag_end_stop_index + 1
+            or self.contains_raw_text(cur_text[first_tag_end_stop_index + 1 : second_tag_end_begin_index]) == False
+        ):
+            new_text = (
+                cur_text[:first_tag_end_begin_index]
+                + cur_text[first_tag_end_begin_index + len(first_tag_end) : second_tag_end_begin_index]
+                + second_tag_end
+                + first_tag_end
+            )
+            if second_tag_end_begin_index + len(second_tag_end) < len(cur_text):
+                new_text = new_text + cur_text[second_tag_end_begin_index + len(second_tag_end) :]
+            # print(new_text)
+            if len(cur_text) != len(new_text):
+                print("Error: CheckSyntax")
+                raise ValueError
+            return (
+                first_tag,
+                new_text,
+                new_text.find(first_tag_start),
+                new_text.find(">", new_text.find(first_tag_start)),
+                new_text.find(first_tag_end),
+                new_text.find(first_tag_end) + len(first_tag_end) - 1,
+            )
+        elif (
+            second_tag_start_begin_index == first_tag_start_stop_index + 1
+            or self.contains_raw_text(cur_text[first_tag_start_stop_index + 1 : second_tag_start_begin_index]) == False
+        ):
+            new_text = (
+                cur_text[second_tag_start_begin_index : second_tag_start_stop_index + 1]
+                + cur_text[first_tag_start_begin_index:second_tag_start_begin_index]
+            )
+            if first_tag_start_begin_index > 0:
+                new_text = cur_text[:first_tag_start_begin_index] + new_text
+            if len(cur_text) > second_tag_start_stop_index + 1:
+                new_text = new_text + cur_text[second_tag_start_stop_index + 1 :]
+            if len(cur_text) != len(new_text):
+                print("Error: CheckSyntax")
+                raise ValueError
+            return (
+                second_tag,
+                new_text,
+                new_text.find(second_tag_start),
+                new_text.find(">", new_text.find(second_tag_start)),
+                new_text.find(second_tag_end),
+                new_text.find(second_tag_end) + len(second_tag_end) - 1,
+            )
+        else:
+            new_text = (
+                cur_text[:first_tag_end_begin_index]
+                + cur_text[first_tag_end_begin_index + len(first_tag_end) : second_tag_end_begin_index]
+                + second_tag_end
+                + first_tag_end
+            )
+            if second_tag_end_begin_index + len(second_tag_end) < len(cur_text):
+                new_text = new_text + cur_text[second_tag_end_begin_index + len(second_tag_end) :]
+            # print(new_text)
+            if len(cur_text) != len(new_text):
+                print("Error: CheckSyntax")
+                raise ValueError
+            return (
+                first_tag,
+                new_text,
+                new_text.find(first_tag_start),
+                new_text.find(">", new_text.find(first_tag_start)),
+                new_text.find(first_tag_end),
+                new_text.find(first_tag_end) + len(first_tag_end) - 1,
+            )
 
     def _build_subtexttaglist(self, cur_text, swap=False):
+        # if swap and cur_text=='<lem type="print">Chl.</lem><rdg type="original"><del type="strikethrough"><subst><del type="overwritten">ich</del><add type="superimposed">Ch.</add></subst></del><add place="left-margin">Chl.</add></rdg>':
+        #    print("Hallo")
         tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, cur_swap_tag = self._extract_next_tag(
             cur_text, swap=swap
         )
@@ -153,7 +273,19 @@ class TEI_Writer:
                         cur_text[beginstopindex + 1 : endstartindex], swap=swap
                     )
                     if swap and len(swap_tag) > 0:
-                        new_text, endstartindex, endstopindex = self._swap_tag_ends(tag_name, swap_tag, cur_text)
+                        (
+                            tag_name,
+                            new_text,
+                            beginstartindex,
+                            beginstopindex,
+                            endstartindex,
+                            endstopindex,
+                        ) = self._swap_tag_ends(tag_name, swap_tag, cur_text)
+                        if endstartindex == -1 and endstopindex == -1:
+                            return [], swap_tag
+                        tag_dict["name"] = tag_name
+                        tag_dict["tagbegin"] = new_text[beginstartindex : beginstopindex + 1]
+                        tag_dict["tagend"] = new_text[endstartindex : endstopindex + 1]
                         tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
                             new_text[beginstopindex + 1 : endstartindex], swap=swap
                         )
@@ -212,7 +344,7 @@ class TEI_Writer:
             for tag in ins_tag:
                 if "begin" in tag.keys():
                     if (
-                        "I-"+last_tag["tag"] == tag["tag"]
+                        "I-" + last_tag["tag"] == tag["tag"]
                         and last_tag["note"] == tag["note"]
                         and (
                             last_tag["end"] == tag["begin"]
@@ -227,12 +359,12 @@ class TEI_Writer:
                         if last_tag["tag"] != "X":
                             merged_tags.append(last_tag)
                         last_tag = tag
-                        if last_tag["tag"].startswith('B-') or last_tag["tag"].startswith('I-'):
-                            last_tag["tag"]=last_tag["tag"][2:]
+                        if last_tag["tag"].startswith("B-") or last_tag["tag"].startswith("I-"):
+                            last_tag["tag"] = last_tag["tag"][2:]
                 else:
                     last_tag = tag
-                    if last_tag["tag"].startswith('B-') or last_tag["tag"].startswith('I-'):
-                            last_tag["tag"]=last_tag["tag"][2:]
+                    if last_tag["tag"].startswith("B-") or last_tag["tag"].startswith("I-"):
+                        last_tag["tag"] = last_tag["tag"][2:]
         else:
             for tag in ins_tag:
                 if "begin" in tag.keys():
@@ -303,7 +435,8 @@ class TEI_Writer:
                     if self._cur_note_word == self._cur_pred_note_word:
                         if (
                             already_tagged == False
-                            and predicted_note_data[self._notecontentindex][self._notewordindex][1] not in self._untagged_symbols
+                            and predicted_note_data[self._notecontentindex][self._notewordindex][1]
+                            not in self._untagged_symbols
                         ):
                             if i - len(self._cur_pred_note_word) + 1 >= 0:
                                 ins_tag.append(
@@ -353,7 +486,10 @@ class TEI_Writer:
                         print("Error: Predicted data doesn't match TEI-File!")
                         raise ValueError
                     if self._cur_word == self._cur_pred_word:
-                        if already_tagged == False and predicted_data[self._contentindex][self._wordindex][1] not in self._untagged_symbols:
+                        if (
+                            already_tagged == False
+                            and predicted_data[self._contentindex][self._wordindex][1] not in self._untagged_symbols
+                        ):
                             if i - len(self._cur_pred_word) + 1 >= 0:
                                 ins_tag.append(
                                     {
@@ -696,7 +832,7 @@ def parse_xml_to_text(text):
     return new_text
 
 
-def test_write_pred_results(tr,tnw,pred_out_dir):
+def test_write_pred_results(tr, tnw, pred_out_dir):
     with open(os.path.join(pred_out_dir, "data_to_predict.pred.json")) as h:
         all_predict_data = json.load(h)
     with open(os.path.join(pred_out_dir, "predict_file_dict.json")) as h2:
@@ -714,7 +850,8 @@ def test_write_pred_results(tr,tnw,pred_out_dir):
                 predicted_note_data = []
         else:
             predicted_note_data = []
-        brief = TEI_Writer(tei_file_path, tr=tr, tnw=tnw,untagged_symbols=["O","UNK"])
+        print(teifilename)
+        brief = TEI_Writer(tei_file_path, tr=tr, tnw=tnw, untagged_symbols=["O", "UNK"])
         brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
         brief.write_back_to_file(os.path.join(pred_out_dir, teifilename))
 
@@ -736,9 +873,9 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    #tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
-    #print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
-    test_write_pred_results(tr=tr,tnw=tnw,pred_out_dir="ner_prediction")
+    # tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
+    # print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
+    test_write_pred_results(tr=tr, tnw=tnw, pred_out_dir="ner_prediction")
     # mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
     # print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml
