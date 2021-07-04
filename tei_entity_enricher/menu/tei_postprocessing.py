@@ -8,6 +8,7 @@ from typing import Union
 from math import floor, trunc
 from tei_entity_enricher.interface.postprocessing.entity_library import EntityLibrary
 from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter, Cache
+from tei_entity_enricher.interface.postprocessing.wikidata_connector import WikidataConnector
 from tei_entity_enricher.util.exceptions import BadFormat
 import tei_entity_enricher.menu.tei_man_postproc as tmp
 from tei_entity_enricher.util.helper import (
@@ -98,6 +99,10 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     ca_el_structure_result = ca.check_json_structure(usecase="EntityLibrary")
     if ca_el_structure_result == False:
         return "Editor content does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
+    wcon = WikidataConnector(check_connectivity=False, show_printmessages=False)
+    for e in fr_result:
+        if e["type"] not in list(wcon.wikidata_sparql_queries.keys()):
+            return f"An entity ({e['name']}) in editor content is missing a valid 'type' value"
     # redundancy check
     ca_el_redundancy_result = True
     for entity in ca.data:
@@ -351,8 +356,19 @@ class TEINERPostprocessing:
                         checkbox_state = st.checkbox(
                             label="Try to identify entities without any ids",
                             value=False,
-                            help="When activated, for every entity in entity library, which has no id data at all, a list of matching entities will be suggested.",
+                            help="When activated, for every entity in entity library, which has no id data at all, a list of matching entities in wikidata database will be suggested.",
                         )
+                        if checkbox_state == True:
+                            wikidata_search_amount = st.number_input(
+                                label="max number of query results",
+                                min_value=1,
+                                max_value=50,
+                                value=5,
+                                step=1,
+                                help="Choose the maximum number of results the wikidata query can deliver.",
+                            )
+                        else:
+                            wikidata_search_amount = 5
                         proceed_button = st.button(
                             label="Query",
                             help="Start process, in which ids will be suggested for the entities in entity library.",
@@ -379,6 +395,7 @@ class TEINERPostprocessing:
                                         self.pp_el_library_object.return_identification_suggestions_for_entity(
                                             input_entity=entity,
                                             try_to_identify_entities_without_id_values=checkbox_state,
+                                            wikidata_query_match_limit=str(wikidata_search_amount),
                                         )
                                     )
                                     current_progress_state = progress_amount_list[index]
