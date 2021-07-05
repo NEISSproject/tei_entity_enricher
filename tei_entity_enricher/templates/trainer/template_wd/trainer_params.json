@@ -1,6 +1,6 @@
 {
   "epochs": 20,
-  "current_epoch": 1,
+  "current_epoch": 0,
   "samples_per_epoch": 5000,
   "scale_epoch_size": 1,
   "train_accum_steps": 1,
