@@ -135,6 +135,14 @@ def frange_positve(start, stop=None, step=None):
         count += 1
 
 
+def fix_editor_content(content):
+    """workaround for ace editor bug: editor content is stringified multiple times,
+    so that a single json.loads() execution returns a string and not a dict"""
+    while type(json.loads(content)) == str:
+        content = json.loads(content)
+    return content
+
+
 class TEINERPostprocessing:
     def __init__(self, state, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
@@ -498,6 +506,7 @@ class TEINERPostprocessing:
                         readonly=False,
                         key=str(self.pp_aux_cache.counter),
                     )
+                    editor_content = fix_editor_content(editor_content)
                     logger.info(editor_content)
                 if self.pp_aux_cache.last_editor_state is None:
                     self.pp_aux_cache.last_editor_state = editor_content
