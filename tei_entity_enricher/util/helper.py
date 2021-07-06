@@ -228,7 +228,7 @@ def model_dir_entry_widget(
                 string_field = test_path
         if not ok:
             test_path = str(string_field)
-            for path_appendix in ["", "export", "additional", "encoder_only"]:
+            for path_appendix in ["", "additional", "encoder_only"]:
                 test_path = os.path.join(test_path, path_appendix)
                 if os.path.isfile(os.path.join(test_path, "saved_model.pb")):
                     ok = True
