@@ -65,7 +65,7 @@
       "rel_pos_enc": true,
       "rate": 0.1,
       "bert_graph": "BERT",
-      "pretrained_bert": "models_pretrained/bertmlmrelwwm/best/encoder_only/",
+      "pretrained_bert": "models_pretrained/bertmlmrelwwm_v2/export/additional/encoder_only",
       "tags_fn_": "",
       "target_vocab_size": 29990,
       "oov_id_": 24,
