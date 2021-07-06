@@ -135,7 +135,7 @@
       "pad_token_id_": 0,
       "tok_vocab_size_": 29987,
       "whole_word_attention": true,
-      "tags": "tei_entity_enricher/tei_entity_enricher/templates/NTD/Arendt_Edition.txt",
+      "tags": "templates/tags/germeval_wp.txt",
       "tokenizer_range": "sentence_v3",
       "bet_tagging": false,
       "wordwise_output": false,
