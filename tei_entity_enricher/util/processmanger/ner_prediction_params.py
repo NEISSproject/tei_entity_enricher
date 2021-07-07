@@ -18,6 +18,7 @@ class NERPredictionParams:
     input_tei_file: str = ""
     input_tei_folder: str = ""
 
+
 @st.cache(allow_output_mutation=True)
 def get_params() -> NERPredictionParams:
     return NERPredictionParams()

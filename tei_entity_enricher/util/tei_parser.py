@@ -18,7 +18,7 @@ class TEIFile:
             if openfile is not None:
                 self._soup = BeautifulSoup(openfile.getvalue().decode("utf-8"), "xml")
             else:
-                with open(file=filename, mode="r",encoding="utf8") as tei:
+                with open(file=filename, mode="r", encoding="utf8") as tei:
                     self._soup = BeautifulSoup(tei, "xml")  # 'html.parser' )#'lxml')
 
         self._note_list = []

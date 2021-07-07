@@ -369,7 +369,7 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
 
 
 def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None):
-    #Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
     sel_box_placeholder = st.empty()
     ret_value = sel_box_placeholder.selectbox(
         label=label, options=options, index=index, format_func=format_func, key=key, help=help

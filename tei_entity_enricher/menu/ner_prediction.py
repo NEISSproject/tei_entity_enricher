@@ -14,6 +14,7 @@ from tei_entity_enricher.util.components import (
     small_dir_selector,
     file_selector_expander,
     selectbox_widget,
+    file_selector,
 )
 from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
 from tei_entity_enricher.util.spacy_lm import lang_dict
@@ -28,6 +29,7 @@ from tei_entity_enricher.util.processmanger.predict import (
 import streamlit as st
 
 logger = logging.getLogger(__name__)
+
 
 class NERPrediction(MenuBase):
     def __init__(self, **kwargs):
@@ -127,17 +129,22 @@ class NERPrediction(MenuBase):
         self.predict_conf_options[self.ner_prediction_params.predict_conf_option]()
 
     def select_json_input_data(self):
-        input_file = file_selector_expander(
-            folder_path=self._wd_ner_prediction,
-            target=f"Select input json-file: {self.ner_prediction_params.input_json_file}",
-            init_file=self.ner_prediction_params.input_json_file
+        init = str(
+            self.ner_prediction_params.input_json_file
             if self.ner_prediction_params.input_json_file
-            else os.path.join(self._wd_ner_prediction, "pred_input_example2.json"),
+            else os.path.join(self._wd_ner_prediction, "pred_input_example2.json")
         )
-        if input_file == "":
-            self._check_list.append("input json-file")
-        else:
-            self.ner_prediction_params.input_json_file = input_file
+
+        target = f"Select input json-file: {self.ner_prediction_params.input_json_file}"
+        with st.beta_expander(target, expanded=False):
+            input_file = file_selector(folder_path=self._wd_ner_prediction, parent=target, init_file=init)
+
+            if st.button("select"):
+                if input_file == "":
+                    self._check_list.append("input json-file")
+                elif input_file:
+                    self.ner_prediction_params.input_json_file = input_file
+                    st.experimental_rerun()
 
     def select_tei_input_data(self):
         np_tei_input_expander = st.beta_expander("Select a TEI Prediction Configuration", expanded=False)
@@ -169,7 +176,7 @@ class NERPrediction(MenuBase):
                 list(lang_dict.keys()),
                 index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
                 key="np_lang",
-                help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language."
+                help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language.",
             )
             old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
             self.ner_prediction_params.predict_conf_tei_option = st.radio(

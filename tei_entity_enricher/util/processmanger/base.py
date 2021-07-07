@@ -53,11 +53,11 @@ class ProcessManagerBase:
         return ["echo", "Hello World!"]
 
     def do_before_start_process(self):
-        #returns an error message if its execution failed otherwise it has to return None
+        # returns an error message if its execution failed otherwise it has to return None
         return None
 
     def do_after_finish_process(self):
-        #returns an error message if its execution failed otherwise it has to return None
+        # returns an error message if its execution failed otherwise it has to return None
         return None
 
     def start(self):
@@ -66,7 +66,7 @@ class ProcessManagerBase:
             #     ["bash", "ner_trainer/loop_sleep.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
             # )
             error = self.do_before_start_process()
-            self.current_process_finished=False
+            self.current_process_finished = False
             if error is None:
                 self.process = subprocess.Popen(
                     args=self.process_command_list(),
@@ -114,9 +114,11 @@ class ProcessManagerBase:
                     # run do_after_finish_process only once it its run is succesful
                     error = self.do_after_finish_process()
                     if error is not None:
-                        self.message(f"process could not be finished because an error occured: {error}", "error", st_element)
+                        self.message(
+                            f"process could not be finished because an error occured: {error}", "error", st_element
+                        )
                     else:
-                        self.current_process_finished=True
+                        self.current_process_finished = True
                         self.message("finished successful :-)", level="success", st_element=st_element)
                 else:
                     self.message("finished successful :-)", level="success", st_element=st_element)

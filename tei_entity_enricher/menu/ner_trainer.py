@@ -3,6 +3,7 @@ import os
 import shutil
 
 import streamlit as st
+
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_ner_gb as gb
 from tei_entity_enricher.menu.menu_base import MenuBase
@@ -123,6 +124,7 @@ class NERTrainer(MenuBase):
                 )
                 if output_dir_state == state_ok and output_dir != self.state.nt_trainer_params_json["output_dir"]:
                     self.state.nt_trainer_params_json["output_dir"] = output_dir
+                    self.state.nt_trainer_params_json["early_stopping"]["best_model_output_dir"] = output_dir
                     # st.experimental_rerun()
                 elif output_dir_state != state_ok:
                     self._data_config_check.append("Output Directory")
