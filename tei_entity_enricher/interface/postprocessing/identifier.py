@@ -45,20 +45,39 @@ class Identifier:
         searchstring_name = input_tuple[0]
         searchstring_type = input_tuple[1]
         if query_by_type == True:
-            result_list = list(
-                filter(
-                    lambda item: (item["type"] == searchstring_type)
-                    and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"])),
-                    loaded_library.data,
-                )
-            )
+            # result_list = list(
+            #     filter(
+            #         lambda item: (item["type"] == searchstring_type)
+            #         and ((item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"])),
+            #         loaded_library.data,
+            #     )
+            # )
+            result_list = []
+            for entity in loaded_library.data:
+                if entity["type"] == searchstring_type:
+                    if searchstring_name.lower() in entity["name"].lower():
+                        result_list.append(entity)
+                        continue
+                    for furtherName in entity["furtherNames"]:
+                        if searchstring_name.lower() in furtherName.lower():
+                            result_list.append(entity)
+                            continue
         else:
-            result_list = list(
-                filter(
-                    lambda item: (item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"]),
-                    loaded_library.data,
-                )
-            )
+            # result_list = list(
+            #     filter(
+            #         lambda item: (item["name"] == searchstring_name) or (searchstring_name in item["furtherNames"]),
+            #         loaded_library.data,
+            #     )
+            # )
+            result_list = []
+            for entity in loaded_library.data:
+                if searchstring_name.lower() in entity["name"].lower():
+                    result_list.append(entity)
+                    continue
+                for furtherName in entity["furtherNames"]:
+                    if searchstring_name.lower() in furtherName.lower():
+                        result_list.append(entity)
+                        continue
         return result_list
 
     def check_query_results_with_wikidata_ids_of_entity_library(
