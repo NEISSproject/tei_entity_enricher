@@ -150,7 +150,9 @@ class TEIReader:
 
     def show_editable_note_tags(self, note_list, mode, name, dupl_name):
         st.markdown("Define Tags that contain notes.")
-        return editable_single_column_table(entry_list=note_list, key="tr_note" + mode + name + dupl_name, head="Note tags")
+        return editable_single_column_table(
+            entry_list=note_list, key="tr_note" + mode + name + dupl_name, head="Note tags"
+        )
 
     def reset_tr_edit_states(self):
         self.state.tr_exclude_list = None

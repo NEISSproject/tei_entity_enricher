@@ -151,7 +151,9 @@ class NERTaskDef:
 
     def show_editable_entitylist(self, entitylist, mode, name, dupl_name):
         st.markdown("Define a list of entities for the ner task.")
-        return editable_single_column_table(entry_list=entitylist, key="ntd_entitylist" + mode + name + dupl_name, head="Entities")
+        return editable_single_column_table(
+            entry_list=entitylist, key="ntd_entitylist" + mode + name + dupl_name, head="Entities"
+        )
 
     def reset_ntd_edit_states(self):
         self.state.ntd_name = None
@@ -181,7 +183,7 @@ class NERTaskDef:
                 if mode == self.ntd_mode_dupl:
                     ntd_definition_dict[self.ntd_attr_name] = ""
             else:
-                selected_ntd_name=""
+                selected_ntd_name = ""
             if mode == self.ntd_mode_add:
                 ntd_definition_dict[self.ntd_attr_entitylist] = []
             if mode in [self.ntd_mode_dupl, self.ntd_mode_add]:

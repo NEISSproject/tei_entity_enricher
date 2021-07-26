@@ -253,7 +253,9 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
                 ):
                     dirpath = os.path.dirname(dirpath)
                     sel_dict[key + "_chosen_subdir"] = None
-                    dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
+                    dirpath = dirpath_placeholder.text_input(
+                        label=label, value=dirpath, key=key + "_text_input", help=help
+                    )
     if return_state:
         return dirpath, ret_state
     return dirpath
