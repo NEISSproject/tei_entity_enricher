@@ -242,7 +242,18 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
             make_dir = st.button(f"Create dir: {dirpath}")
             if make_dir:
                 os.makedirs(dirpath)
-                st.experimental_rerun()
+                subelement_button_placeholder.empty()
+                chosen_subdir_placeholder.empty()
+                reset_button_placeholder.empty()
+                state_placeholder.latex(state_ok)
+                ret_state = state_ok
+                error_placeholder.empty()
+                if parent_button_placeholder.button(
+                    "Go to parent directory", key=key + "_level_up", help="Go one directory up."
+                ):
+                    dirpath = os.path.dirname(dirpath)
+                    sel_dict[key + "_chosen_subdir"] = None
+                    dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     if return_state:
         return dirpath, ret_state
     return dirpath

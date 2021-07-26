@@ -122,11 +122,9 @@ class NERTrainer(MenuBase):
                     return_state=True,
                     ask_make=True,
                 )
-                if output_dir_state == state_ok and output_dir != self.state.nt_trainer_params_json["output_dir"]:
-                    self.state.nt_trainer_params_json["output_dir"] = output_dir
-                    self.state.nt_trainer_params_json["early_stopping"]["best_model_output_dir"] = output_dir
-                    # st.experimental_rerun()
-                elif output_dir_state != state_ok:
+                self.state.nt_trainer_params_json["output_dir"] = output_dir
+                self.state.nt_trainer_params_json["early_stopping"]["best_model_output_dir"] = output_dir
+                if output_dir_state != state_ok:
                     self._data_config_check.append("Output Directory")
 
                 if self._data_config_check:
