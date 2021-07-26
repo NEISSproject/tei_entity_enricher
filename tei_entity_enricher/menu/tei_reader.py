@@ -142,13 +142,15 @@ class TEIReader:
             self.state.tr_test_selected_config_name = None
             st.experimental_rerun()
 
-    def show_editable_exclude_tags(self, excl_list, mode, name):
+    def show_editable_exclude_tags(self, excl_list, mode, name, dupl_name):
         st.markdown("Define Tags to Exclude from the text which should be considered.")
-        return editable_single_column_table(entry_list=excl_list, key="tr_excl" + mode + name, head="Exclude")
+        return editable_single_column_table(
+            entry_list=excl_list, key="tr_excl" + mode + name + dupl_name, head="Exclude"
+        )
 
-    def show_editable_note_tags(self, note_list, mode, name):
+    def show_editable_note_tags(self, note_list, mode, name, dupl_name):
         st.markdown("Define Tags that contain notes.")
-        return editable_single_column_table(entry_list=note_list, key="tr_note" + mode + name, head="Note tags")
+        return editable_single_column_table(entry_list=note_list, key="tr_note" + mode + name + dupl_name, head="Note tags")
 
     def reset_tr_edit_states(self):
         self.state.tr_exclude_list = None
@@ -185,6 +187,8 @@ class TEIReader:
                 init_use_notes = tr_config_dict[self.tr_config_attr_use_notes]
                 if mode == self.tr_config_mode_dupl:
                     tr_config_dict[self.tr_config_attr_name] = ""
+            else:
+                selected_config_name = ""
             if mode == self.tr_config_mode_add:
                 tr_config_dict[self.tr_config_attr_excl_tags] = []
                 tr_config_dict[self.tr_config_attr_note_tags] = []
@@ -198,6 +202,7 @@ class TEIReader:
                 self.state.tr_exclude_list if self.state.tr_exclude_list else init_exclude_list,
                 mode,
                 tr_config_dict[self.tr_config_attr_name] if self.tr_config_attr_name in tr_config_dict.keys() else "",
+                selected_config_name,
             )
             # st.write('Tags to exclude: '+ self.get_listoutput(self.state.tr_exclude_list))
             init_note_tags = tr_config_dict[self.tr_config_attr_note_tags]
@@ -210,6 +215,7 @@ class TEIReader:
                     tr_config_dict[self.tr_config_attr_name]
                     if self.tr_config_attr_name in tr_config_dict.keys()
                     else "",
+                    selected_config_name,
                 )
             if st.button("Save TEI Reader Config", key=mode):
                 tr_config_dict[self.tr_config_attr_excl_tags] = self.state.tr_exclude_list

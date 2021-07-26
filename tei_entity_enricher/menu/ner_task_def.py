@@ -149,9 +149,9 @@ class NERTaskDef:
             self.state.ntd_sel_definition_name = None
             st.experimental_rerun()
 
-    def show_editable_entitylist(self, entitylist, mode, name):
+    def show_editable_entitylist(self, entitylist, mode, name, dupl_name):
         st.markdown("Define a list of entities for the ner task.")
-        return editable_single_column_table(entry_list=entitylist, key="ntd_entitylist" + mode + name, head="Entities")
+        return editable_single_column_table(entry_list=entitylist, key="ntd_entitylist" + mode + name + dupl_name, head="Entities")
 
     def reset_ntd_edit_states(self):
         self.state.ntd_name = None
@@ -180,6 +180,8 @@ class NERTaskDef:
                 ntd_definition_dict = self.defdict[selected_ntd_name].copy()
                 if mode == self.ntd_mode_dupl:
                     ntd_definition_dict[self.ntd_attr_name] = ""
+            else:
+                selected_ntd_name=""
             if mode == self.ntd_mode_add:
                 ntd_definition_dict[self.ntd_attr_entitylist] = []
             if mode in [self.ntd_mode_dupl, self.ntd_mode_add]:
@@ -191,6 +193,7 @@ class NERTaskDef:
                 self.state.ntd_entitylist if self.state.ntd_entitylist else init_entitylist,
                 mode,
                 ntd_definition_dict[self.ntd_attr_name] if self.ntd_attr_name in ntd_definition_dict.keys() else "",
+                selected_ntd_name,
             )
             if st.button("Save NER Task Entity Definition", key=mode):
                 ntd_definition_dict[self.ntd_attr_entitylist] = self.state.ntd_entitylist
