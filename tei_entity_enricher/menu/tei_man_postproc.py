@@ -1,9 +1,10 @@
 import streamlit as st
+import os
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
-from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector
+from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, radio_widget
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
@@ -13,13 +14,41 @@ from tei_entity_enricher.util.helper import (
     local_save_path,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
+from dataclasses import dataclass, field
+from typing import List, Dict
+
+from dataclasses_json import dataclass_json
 
 # from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
 
 
+@dataclass
+@dataclass_json
+class TEIManPPParams:
+    tmp_selected_tr_name: str = None
+    tmp_teifile: str = None
+    tmp_teifile_save: str = None
+    tmp_last_save_path: str = None
+    tmp_current_search_text_tree: str = None
+    tmp_matching_tag_list: List[Dict] = None
+    tmp_tr_from_last_search: Dict = None
+    tmp_current_loop_element: int = None
+    tmp_link_choose_option: str = None
+    tmp_one_time_success_message: str = None
+    tmp_search_options: str = None
+    tmp_selected_tnw_name: str = None
+    tmp_selected_tnm_name: str = None
+    tmp_sd_search_tag: str = None
+    tmp_sd_search_tag_attr_dict: Dict = None
+
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> TEIManPPParams:
+    return TEIManPPParams()
+
+
 class TEIManPP:
     def __init__(self, state, show_menu=True, entity_library=None, aux_cache=None):
-        self.state = state
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
             "By TEI Read NER Entity Mapping",
@@ -36,6 +65,10 @@ class TEIManPP:
             self.tnm = tnm_map.TEINERMap(state, show_menu=False)
             self.tnw = tnw_map.TEINERPredWriteMap(state, show_menu=False)
             self.show()
+
+    @property
+    def tei_man_pp_params(self) -> TEIManPPParams:
+        return get_params()
 
     def show_editable_attr_value_def(self, tagname, tagbegin):
         st.markdown("Editable Attributes and Values for current search result!")
@@ -91,7 +124,7 @@ class TEIManPP:
                 if "=" in element:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
-        if self.state.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
+        if self.tei_man_pp_params.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
             link_to_add = "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"]
         else:
             # default gnd
@@ -138,7 +171,11 @@ class TEIManPP:
             st.markdown("### Surrounding text in the TEI File:")
             st.write(
                 self.get_surrounded_text(
-                    self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1]["tag_id"], 250, tr
+                    self.tei_man_pp_params.tmp_matching_tag_list[self.tei_man_pp_params.tmp_current_loop_element - 1][
+                        "tag_id"
+                    ],
+                    250,
+                    tr,
                 )
             )
         if self.entity_library.data is None:
@@ -197,13 +234,14 @@ class TEIManPP:
             if "link_suggestions" in tag_entry.keys():
                 suggestion_id = 0
                 if len(tag_entry["link_suggestions"]) > 0:
-                    self.state.tmp_link_choose_option = col3.selectbox(
+                    self.tei_man_pp_params.tmp_link_choose_option = selectbox_widget(
                         "Choose links from",
                         self.tmp_link_choose_options,
-                        self.tmp_link_choose_options.index(self.state.tmp_link_choose_option)
-                        if self.state.tmp_link_choose_option
+                        self.tmp_link_choose_options.index(self.tei_man_pp_params.tmp_link_choose_option)
+                        if self.tei_man_pp_params.tmp_link_choose_option
                         else self.tmp_link_choose_options.index(self.tmp_link_choose_option_gnd),
                         help='Define the source where links should be added from when pressing an "Add link"-Button',
+                        st_element=col3,
                     )
                     scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.beta_columns(7)
                     scol1.markdown("### Name")
@@ -237,39 +275,40 @@ class TEIManPP:
                         suggestion_id += 1
                         if scol6.button("Add link as ref attribute", key="tmp" + str(suggestion_id)):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
+                            st.experimental_rerun()
                         if scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id)):
                             ret_value = self.entity_library.add_entities([suggestion])
                             if isinstance(ret_value, str):
                                 st.warning(ret_value)
                             else:
                                 self.entity_library.save_library()
-                                self.state.tmp_one_time_success_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library'
+                                self.tei_man_pp_params.tmp_one_time_success_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library'
                                 self._aux_cache.last_editor_state = None
                                 self._aux_cache.is_count_up_rerun = True
                                 st.experimental_rerun()
                 else:
                     st.write("No link suggestions found!")
-        if self.state.tmp_one_time_success_message:
-            st.success(self.state.tmp_one_time_success_message)
-            self.state.tmp_one_time_success_message = None
-            self.state.avoid_rerun()
+        if self.tei_man_pp_params.tmp_one_time_success_message:
+            one_time_success_message=self.tei_man_pp_params.tmp_one_time_success_message
+            st.success(one_time_success_message)
+            self.tei_man_pp_params.tmp_one_time_success_message = None
         return tag_entry
 
     def tei_edit_environment(self):
         st.write("Loop manually over the predicted tags defined by a TEI NER Prediction Writer Mapping.")
-        self.state.tmp_selected_tr_name = st.selectbox(
+        self.tei_man_pp_params.tmp_selected_tr_name = selectbox_widget(
             "Select a TEI Reader Config!",
             list(self.tr.configdict.keys()),
-            index=list(self.tr.configdict.keys()).index(self.state.tmp_selected_tr_name)
-            if self.state.tmp_selected_tr_name
+            index=list(self.tr.configdict.keys()).index(self.tei_man_pp_params.tmp_selected_tr_name)
+            if self.tei_man_pp_params.tmp_selected_tr_name
             else 0,
             key="tmp_sel_tr",
         )
-        selected_tr = self.tr.configdict[self.state.tmp_selected_tr_name]
+        selected_tr = self.tr.configdict[self.tei_man_pp_params.tmp_selected_tr_name]
         tag_list = self.define_search_criterion()
-        self.state.tmp_teifile = small_file_selector(
+        self.tei_man_pp_params.tmp_teifile = small_file_selector(
             label="Choose a TEI File:",
-            value=self.state.tmp_teifile if self.state.tmp_teifile else local_save_path,
+            value=self.tei_man_pp_params.tmp_teifile if self.tei_man_pp_params.tmp_teifile else local_save_path,
             key="tmp_choose_tei_file",
             help="Choose a TEI file for manually manipulating its tags.",
         )
@@ -278,52 +317,77 @@ class TEIManPP:
             key="tmp_search_entities",
             help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
         ):
-            self.state.tmp_last_save_path = None
-            if self.state.tmp_teifile or self.state.tmp_open_teifile:
-                tei = tei_writer.TEI_Writer(
-                    self.state.tmp_teifile, openfile=self.state.tmp_open_teifile, tr=selected_tr
-                )
-                self.state.tmp_current_search_text_tree = tei.get_text_tree()
-                self.state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
-                self.state.tmp_tr_from_last_search = selected_tr
-                self.state.tmp_current_loop_element = 1
-                if len(self.state.tmp_matching_tag_list) > 0:
-                    self.state.tmp_teifile_save = self.state.tmp_teifile
-                    self.enrich_search_list(self.state.tmp_tr_from_last_search)
-                    if self.entity_library:
-                        self.enrich_search_list_with_link_suggestions()
+            self.tei_man_pp_params.tmp_last_save_path = None
+            if self.tei_man_pp_params.tmp_teifile and os.path.isfile(self.tei_man_pp_params.tmp_teifile):
+                tei = tei_writer.TEI_Writer(self.tei_man_pp_params.tmp_teifile, tr=selected_tr)
+                self.tei_man_pp_params.tmp_current_search_text_tree = tei.get_text_tree()
+                self.tei_man_pp_params.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
+                self.tei_man_pp_params.tmp_tr_from_last_search = selected_tr
+                self.tei_man_pp_params.tmp_current_loop_element = 1
+                if len(self.tei_man_pp_params.tmp_matching_tag_list) > 0:
+                    self.tei_man_pp_params.tmp_teifile_save = self.tei_man_pp_params.tmp_teifile
+                    self.enrich_search_list(self.tei_man_pp_params.tmp_tr_from_last_search)
             else:
-                self.state.avoid_rerun()
-                self.state.tmp_matching_tag_list = []
+                self.tei_man_pp_params.tmp_matching_tag_list = []
                 st.warning("Please select a TEI file to be searched for entities.")
 
-        if self.state.tmp_last_save_path:
-            st.success(f"Changes are succesfully saved to {self.state.tmp_last_save_path}")
-        elif self.state.tmp_matching_tag_list is None:
+        if self.tei_man_pp_params.tmp_last_save_path:
+            st.success(f"Changes are succesfully saved to {self.tei_man_pp_params.tmp_last_save_path}")
+        elif self.tei_man_pp_params.tmp_matching_tag_list is None:
             st.info("Use the search button to loop through a TEI file for the entities specified above.")
-        elif len(self.state.tmp_matching_tag_list) < 1:
+        elif len(self.tei_man_pp_params.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
         else:
-            if len(self.state.tmp_matching_tag_list) == 1:
+            if len(self.tei_man_pp_params.tmp_matching_tag_list) == 1:
                 st.write("One tag in the TEI-File matches the search conditions.")
             else:
-                self.state.tmp_current_loop_element = st.slider(
-                    f"Matching tags in the TEI file (found {str(len(self.state.tmp_matching_tag_list))} entries) ",
+                # To avoid reruns reload loop gui elements if necessary
+                slider_placeholder = st.empty()
+                number_input_placeholder = st.empty()
+                old_loop_element = self.tei_man_pp_params.tmp_current_loop_element
+                new_loop_element = slider_placeholder.slider(
+                    f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
                     1,
-                    len(self.state.tmp_matching_tag_list),
-                    self.state.tmp_current_loop_element if self.state.tmp_current_loop_element else 1,
+                    len(self.tei_man_pp_params.tmp_matching_tag_list),
+                    old_loop_element if old_loop_element else 1,
                     key="tmp_loop_slider",
                 )
-                self.state.tmp_current_loop_element = st.number_input(
+                if old_loop_element != new_loop_element:
+                    self.tei_man_pp_params.tmp_current_loop_element = slider_placeholder.slider(
+                        f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
+                        1,
+                        len(self.tei_man_pp_params.tmp_matching_tag_list),
+                        new_loop_element,
+                        key="tmp_loop_slider",
+                    )
+                    old_loop_element = new_loop_element
+                new_loop_element = number_input_placeholder.number_input(
                     "Goto Search Result with Index:",
                     1,
-                    len(self.state.tmp_matching_tag_list),
-                    self.state.tmp_current_loop_element,
+                    len(self.tei_man_pp_params.tmp_matching_tag_list),
+                    new_loop_element,
                 )
+                if old_loop_element != new_loop_element:
+                    new_loop_element = slider_placeholder.slider(
+                        f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
+                        1,
+                        len(self.tei_man_pp_params.tmp_matching_tag_list),
+                        new_loop_element,
+                        key="tmp_loop_slider",
+                    )
+                    new_loop_element = number_input_placeholder.number_input(
+                        "Goto Search Result with Index:",
+                        1,
+                        len(self.tei_man_pp_params.tmp_matching_tag_list),
+                        new_loop_element,
+                    )
+                self.tei_man_pp_params.tmp_current_loop_element = new_loop_element
             st.markdown("### Modify manually!")
-            self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1] = self.tei_edit_specific_entity(
-                self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1],
-                self.state.tmp_tr_from_last_search,
+            self.tei_man_pp_params.tmp_matching_tag_list[
+                self.tei_man_pp_params.tmp_current_loop_element - 1
+            ] = self.tei_edit_specific_entity(
+                self.tei_man_pp_params.tmp_matching_tag_list[self.tei_man_pp_params.tmp_current_loop_element - 1],
+                self.tei_man_pp_params.tmp_tr_from_last_search,
             )
             st.markdown("### Save the changes!")
             col1, col2 = st.beta_columns([0.1, 0.9])
@@ -334,29 +398,31 @@ class TEIManPP:
                     help="Save the current changes to the the specified path.",
                 )
             with col2:
-                self.state.tmp_teifile_save = st.text_input(
+                self.tei_man_pp_params.tmp_teifile_save = st.text_input(
                     "Path to save the changes to:",
-                    self.state.tmp_teifile_save or "",
+                    self.tei_man_pp_params.tmp_teifile_save or "",
                     key="tmp_tei_file_save",
                 )
             if save_button_result:
-                if self.validate_manual_changes_before_saving(self.state.tmp_matching_tag_list):
+                if self.validate_manual_changes_before_saving(self.tei_man_pp_params.tmp_matching_tag_list):
                     self.save_manual_changes_to_tei(
-                        self.state.tmp_teifile,
-                        self.state.tmp_teifile_save,
-                        self.state.tmp_matching_tag_list,
-                        self.state.tmp_tr_from_last_search,
+                        self.tei_man_pp_params.tmp_teifile,
+                        self.tei_man_pp_params.tmp_teifile_save,
+                        self.tei_man_pp_params.tmp_matching_tag_list,
+                        self.tei_man_pp_params.tmp_tr_from_last_search,
                     )
-                    self.state.tmp_matching_tag_list = None
-                    self.state.tmp_last_save_path = self.state.tmp_teifile_save
-                else:
-                    self.state.avoid_rerun()
-            # st.write(self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element-1])
+                    self.tei_man_pp_params.tmp_matching_tag_list = None
+                    self.tei_man_pp_params.tmp_last_save_path = self.tei_man_pp_params.tmp_teifile_save
 
     def get_surrounded_text(self, id, sliding_window, tr):
-        if "pure_tagcontent" in self.state.tmp_matching_tag_list[self.state.tmp_current_loop_element - 1].keys():
+        if (
+            "pure_tagcontent"
+            in self.tei_man_pp_params.tmp_matching_tag_list[self.tei_man_pp_params.tmp_current_loop_element - 1].keys()
+        ):
             marked_text = tei_writer.parse_xml_to_text(
-                tei_writer.get_pure_text_of_tree_element(self.state.tmp_current_search_text_tree, tr, id_to_mark=id)
+                tei_writer.get_pure_text_of_tree_element(
+                    self.tei_man_pp_params.tmp_current_search_text_tree, tr, id_to_mark=id
+                )
             )
             splitted_text = marked_text.split("<marked_id>")
             before_text = splitted_text[0]
@@ -373,69 +439,57 @@ class TEIManPP:
     def define_search_criterion(self):
         col1, col2 = st.beta_columns(2)
         with col1:
-            self.state.tmp_search_options = st.radio(
+            self.tei_man_pp_params.tmp_search_options = radio_widget(
                 "Search Options",
                 self.search_options,
-                self.search_options.index(self.state.tmp_search_options) if self.state.tmp_search_options else 0,
+                self.search_options.index(self.tei_man_pp_params.tmp_search_options)
+                if self.tei_man_pp_params.tmp_search_options
+                else 0,
             )
         with col2:
-            if self.search_options.index(self.state.tmp_search_options) == 0:
-                self.state.tmp_selected_tnw_name = st.selectbox(
+            if self.search_options.index(self.tei_man_pp_params.tmp_search_options) == 0:
+                self.tei_man_pp_params.tmp_selected_tnw_name = selectbox_widget(
                     "Select a TEI NER Prediction Writer Mapping as search criterion!",
                     list(self.tnw.mappingdict.keys()),
-                    index=list(self.tnw.mappingdict.keys()).index(self.state.tmp_selected_tnw_name)
-                    if self.state.tmp_selected_tnw_name
+                    index=list(self.tnw.mappingdict.keys()).index(self.tei_man_pp_params.tmp_selected_tnw_name)
+                    if self.tei_man_pp_params.tmp_selected_tnw_name
                     else 0,
                     key="tmp_sel_tnw",
                 )
                 tag_list = tei_writer.build_tag_list_from_entity_dict(
-                    self.tnw.mappingdict[self.state.tmp_selected_tnw_name]["entity_dict"], "tnw"
+                    self.tnw.mappingdict[self.tei_man_pp_params.tmp_selected_tnw_name]["entity_dict"], "tnw"
                 )
-            elif self.search_options.index(self.state.tmp_search_options) == 1:
-                self.state.tmp_selected_tnm_name = st.selectbox(
+            elif self.search_options.index(self.tei_man_pp_params.tmp_search_options) == 1:
+                self.tei_man_pp_params.tmp_selected_tnm_name = selectbox_widget(
                     "Select a TEI Read NER Entity Mapping as search criterion!",
                     list(self.tnm.mappingdict.keys()),
-                    index=list(self.tnm.mappingdict.keys()).index(self.state.tmp_selected_tnm_name)
-                    if self.state.tmp_selected_tnm_name
+                    index=list(self.tnm.mappingdict.keys()).index(self.tei_man_pp_params.tmp_selected_tnm_name)
+                    if self.tei_man_pp_params.tmp_selected_tnm_name
                     else 0,
                     key="tmp_sel_tnm",
                 )
                 tag_list = tei_writer.build_tag_list_from_entity_dict(
-                    self.tnm.mappingdict[self.state.tmp_selected_tnm_name]["entity_dict"], "tnm"
+                    self.tnm.mappingdict[self.tei_man_pp_params.tmp_selected_tnm_name]["entity_dict"], "tnm"
                 )
             else:
-                self.state.tmp_sd_search_tag = st.text_input(
+                self.tei_man_pp_params.tmp_sd_search_tag = st.text_input(
                     "Define a Tag as search criterion",
-                    self.state.tmp_sd_search_tag or "",
+                    self.tei_man_pp_params.tmp_sd_search_tag or "",
                     key="tmp_sd_search_tag",
                     help="Define a Tag as a search criterion!",
                 )
-                self.state.tmp_sd_search_tag_attr_dict = self.show_sd_search_attr_value_def(
-                    self.state.tmp_sd_search_tag_attr_dict if self.state.tmp_sd_search_tag_attr_dict else {},
+                self.tei_man_pp_params.tmp_sd_search_tag_attr_dict = self.show_sd_search_attr_value_def(
+                    self.tei_man_pp_params.tmp_sd_search_tag_attr_dict if self.tei_man_pp_params.tmp_sd_search_tag_attr_dict else {},
                     "tmp_sd_search_tag_attr_dict",
                 )
-                tag_list = [[self.state.tmp_sd_search_tag, self.state.tmp_sd_search_tag_attr_dict]]
+                tag_list = [[self.tei_man_pp_params.tmp_sd_search_tag, self.tei_man_pp_params.tmp_sd_search_tag_attr_dict]]
         return tag_list
 
     def enrich_search_list(self, tr):
-        for tag in self.state.tmp_matching_tag_list:
+        for tag in self.tei_man_pp_params.tmp_matching_tag_list:
             tag["delete"] = False
             if "tagcontent" in tag.keys():
                 tag["pure_tagcontent"] = tei_writer.get_pure_text_of_tree_element(tag["tagcontent"], tr)
-
-    def enrich_search_list_with_link_suggestions(self):
-        entitylist = []
-        # for tag in self.state.tmp_matching_tag_list:
-        #    if "pure_tagcontent" in tag.keys():
-        #        input_tuple=tag["pure_tagcontent"],"person"
-        #        entitylist.append(input_tuple)
-        # link_identifier=Identifier(input=entitylist)
-        # result=link_identifier.suggest(self.entity_library)
-        # cur_el_index=0
-        # for tag in self.state.tmp_matching_tag_list:
-        #    if "pure_tagcontent" in tag.keys():
-        #        tag["link_suggestions"]=result[entitylist[cur_el_index]]
-        #        cur_el_index+=1
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True

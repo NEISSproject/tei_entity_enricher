@@ -381,14 +381,27 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
     return filepath
 
 
-def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None):
+def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
-    sel_box_placeholder = st.empty()
+    sel_box_placeholder = st_element.empty()
     ret_value = sel_box_placeholder.selectbox(
         label=label, options=options, index=index, format_func=format_func, key=key, help=help
     )
     if options.index(ret_value) != index:
         ret_value = sel_box_placeholder.selectbox(
+            label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
+        )
+    return ret_value
+
+
+def radio_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a radio button.
+    radio_placeholder = st_element.empty()
+    ret_value = radio_placeholder.radio(
+        label=label, options=options, index=index, format_func=format_func, key=key, help=help
+    )
+    if options.index(ret_value) != index:
+        radio_placeholder.radio(
             label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
         )
     return ret_value
