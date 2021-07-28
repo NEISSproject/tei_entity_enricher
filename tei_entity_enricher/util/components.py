@@ -405,3 +405,28 @@ def radio_widget(label, options, index=0, format_func=str, key=None, help=None, 
             label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
         )
     return ret_value
+
+
+def text_input_widget(label, value="", max_chars=None, key=None, type="default", help=None, st_element=st):
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of text input.
+    text_input_placeholder = st_element.empty()
+    ret_value = text_input_placeholder.text_input(
+        label, value=value, max_chars=max_chars, key=key, type=type, help=help
+    )
+    if value != ret_value:
+        ret_value = text_input_placeholder.text_input(
+            label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
+        )
+    return ret_value
+
+def checkbox_widget(label, value=False, key=None, help=None, st_element=st):
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a checkbox.
+    checkbox_placeholder = st_element.empty()
+    ret_value = checkbox_placeholder.checkbox(
+        label, value=value, key=key, help=help
+    )
+    if value != ret_value:
+        ret_value = checkbox_placeholder.checkbox(
+            label, value=ret_value, key=key, help=help
+        )
+    return ret_value

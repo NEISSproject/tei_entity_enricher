@@ -4,7 +4,7 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
-from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, radio_widget
+from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, radio_widget, text_input_widget, checkbox_widget
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
@@ -142,7 +142,7 @@ class TEIManPP:
     def tei_edit_specific_entity(self, tag_entry, tr):
         col1, col2 = st.beta_columns(2)
         with col1:
-            tag_entry["delete"] = st.checkbox(
+            tag_entry["delete"] = checkbox_widget(
                 "Remove this tag from the TEI-File",
                 tag_entry["delete"],
                 key="tmp_edit_del_tag",
@@ -151,15 +151,20 @@ class TEIManPP:
             if tag_entry["delete"]:
                 st.write("This tag will be removed when saving the current changes.")
             else:
-                tag_entry["name"] = st.text_input(
+                tag_entry["name"] = text_input_widget(
                     "Editable Tag Name",
                     tag_entry["name"],
                     key="tmp_edit_ent_name",
                     help="Here you can change the name of the tag.",
                 )
+                old_tagbegin=tag_entry["tagbegin"]
                 tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
                 if "tagend" in tag_entry.keys():
                     tag_entry["tagend"] = "</" + tag_entry["name"] + ">"
+                if old_tagbegin!= tag_entry["tagbegin"]:
+                    # unfortunately an necessary workaround because in an aggrid component you can not use a placeholder,
+                    # thus you can not easily replace the widget itself like in the workaround for the other widgets
+                    st.experimental_rerun()
         with col2:
             st.markdown("### Textcontent of the tag:")
             if "pure_tagcontent" in tag_entry.keys():
