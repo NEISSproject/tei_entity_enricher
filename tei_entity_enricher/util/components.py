@@ -23,7 +23,7 @@ def editable_single_column_table(entry_list, key, head, openentrys=100, height=1
     if "data" in response:
         all_list = list(response["data"].to_dict()[head].values())
         for element in all_list:
-            if element != "" and element is not None:
+            if element != "" and element is not None and element != "nan":
                 returnlist.append(element)
     return returnlist
 

@@ -7,14 +7,38 @@ from tei_entity_enricher.util.helper import (
     local_save_path,
     makedir_if_necessary,
 )
-from tei_entity_enricher.util.components import editable_single_column_table
+from tei_entity_enricher.util.components import (
+    editable_single_column_table,
+    radio_widget,
+    selectbox_widget,
+    text_input_widget,
+)
 import tei_entity_enricher.menu.tei_ner_map as tei_map
+
+from dataclasses import dataclass
+from typing import List, Dict
+
+from dataclasses_json import dataclass_json
+
+
+@dataclass
+@dataclass_json
+class NERTaskDefParams:
+    ntd_edit_options: str = None
+    ntd_mode: str = None
+    ntd_sel_definition_name: str = None
+    ntd_name: str = None
+    ntd_entitylist: List[str] = None
+    ntd_sel_del_def_name: str = None
+
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> NERTaskDefParams:
+    return NERTaskDefParams()
 
 
 class NERTaskDef:
     def __init__(self, state, show_menu=True):
-        self.state = state
-
         self.ntd_Folder = "NTD"
         self.template_ntd_Folder = os.path.join(module_path, "templates", self.ntd_Folder)
         self.ntd_Folder = os.path.join(local_save_path, self.ntd_Folder)
@@ -48,6 +72,10 @@ class NERTaskDef:
         if show_menu:
             self.tnm = tei_map.TEINERMap(state, show_menu=False)
             self.show()
+
+    @property
+    def ner_task_def_params(self) -> NERTaskDefParams:
+        return get_params()
 
     def get_tag_filepath_to_ntdname(self, name):
         if self.defdict[name][self.ntd_attr_template]:
@@ -146,7 +174,8 @@ class NERTaskDef:
                 )
             )
             self.reset_ntd_edit_states()
-            self.state.ntd_sel_definition_name = None
+            self.ner_task_def_params.ntd_sel_definition_name = None
+            self.ner_task_def_params.ntd_sel_del_def_name = None
             st.experimental_rerun()
 
     def show_editable_entitylist(self, entitylist, mode, name, dupl_name):
@@ -156,8 +185,8 @@ class NERTaskDef:
         )
 
     def reset_ntd_edit_states(self):
-        self.state.ntd_name = None
-        self.state.ntd_entitylist = None
+        self.ner_task_def_params.ntd_name = None
+        self.ner_task_def_params.ntd_entitylist = None
 
     def show_editable_definition_content(self, mode):
         if mode == self.ntd_mode_edit and len(self.editable_def_names) < 1:
@@ -165,9 +194,9 @@ class NERTaskDef:
                 "There are no self-defined NER Task Entity Definitions to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
-            if self.state.ntd_mode != mode:
+            if self.ner_task_def_params.ntd_mode != mode:
                 self.reset_ntd_edit_states()
-            self.state.ntd_mode = mode
+            self.ner_task_def_params.ntd_mode = mode
             ntd_definition_dict = {}
             # init_use_notes=True
             if mode in [self.ntd_mode_dupl, self.ntd_mode_edit]:
@@ -175,10 +204,17 @@ class NERTaskDef:
                     options = list(self.defdict.keys())
                 else:
                     options = self.editable_def_names
-                selected_ntd_name = st.selectbox(f"Select a definition to {mode}!", options, key=mode)
-                if self.state.ntd_sel_definition_name != selected_ntd_name:
+                selected_ntd_name = selectbox_widget(
+                    f"Select a definition to {mode}!",
+                    options,
+                    index=options.index(self.ner_task_def_params.ntd_sel_definition_name)
+                    if self.ner_task_def_params.ntd_sel_definition_name
+                    else 0,
+                    key=mode,
+                )
+                if self.ner_task_def_params.ntd_sel_definition_name != selected_ntd_name:
                     self.reset_ntd_edit_states()
-                self.state.ntd_sel_definition_name = selected_ntd_name
+                self.ner_task_def_params.ntd_sel_definition_name = selected_ntd_name
                 ntd_definition_dict = self.defdict[selected_ntd_name].copy()
                 if mode == self.ntd_mode_dupl:
                     ntd_definition_dict[self.ntd_attr_name] = ""
@@ -187,18 +223,20 @@ class NERTaskDef:
             if mode == self.ntd_mode_add:
                 ntd_definition_dict[self.ntd_attr_entitylist] = []
             if mode in [self.ntd_mode_dupl, self.ntd_mode_add]:
-                self.state.ntd_name = st.text_input("New NER Task Entity Definition Name:", self.state.ntd_name or "")
-                if self.state.ntd_name:
-                    ntd_definition_dict[self.ntd_attr_name] = self.state.ntd_name
+                self.ner_task_def_params.ntd_name = text_input_widget(
+                    "New NER Task Entity Definition Name:", self.ner_task_def_params.ntd_name or ""
+                )
+                if self.ner_task_def_params.ntd_name:
+                    ntd_definition_dict[self.ntd_attr_name] = self.ner_task_def_params.ntd_name
             init_entitylist = ntd_definition_dict[self.ntd_attr_entitylist]
-            self.state.ntd_entitylist = self.show_editable_entitylist(
-                self.state.ntd_entitylist if self.state.ntd_entitylist else init_entitylist,
+            self.ner_task_def_params.ntd_entitylist = self.show_editable_entitylist(
+                self.ner_task_def_params.ntd_entitylist if self.ner_task_def_params.ntd_entitylist else init_entitylist,
                 mode,
                 ntd_definition_dict[self.ntd_attr_name] if self.ntd_attr_name in ntd_definition_dict.keys() else "",
                 selected_ntd_name,
             )
             if st.button("Save NER Task Entity Definition", key=mode):
-                ntd_definition_dict[self.ntd_attr_entitylist] = self.state.ntd_entitylist
+                ntd_definition_dict[self.ntd_attr_entitylist] = self.ner_task_def_params.ntd_entitylist
                 self.validate_and_saving_definition(ntd_definition_dict, mode)
 
     def tei_ner_map_add(self):
@@ -211,9 +249,18 @@ class NERTaskDef:
         self.show_editable_definition_content(self.ntd_mode_edit)
 
     def tei_ner_map_del(self):
-        selected_definition_name = st.selectbox("Select a definition to delete!", self.editable_def_names)
-        if st.button("Delete Selected Definition"):
-            self.validate_and_delete_definition(self.defdict[selected_definition_name])
+        if len(self.editable_def_names) > 0:
+            self.ner_task_def_params.ntd_sel_del_def_name = selectbox_widget(
+                "Select a definition to delete!",
+                self.editable_def_names,
+                index=self.editable_def_names.index(self.ner_task_def_params.ntd_sel_del_def_name)
+                if self.ner_task_def_params.ntd_sel_del_def_name
+                else 0,
+            )
+            if st.button("Delete Selected Definition"):
+                self.validate_and_delete_definition(self.defdict[self.ner_task_def_params.ntd_sel_del_def_name])
+        else:
+            st.info("There are no self-defined ner task definitions to delete!")
 
     def show_edit_environment(self):
         ntd_definer = st.beta_expander("Add or edit existing NER Task Entity Definition", expanded=False)
@@ -224,12 +271,14 @@ class NERTaskDef:
                 "Edit NER Task Entity Definition": self.tei_ner_map_edit,
                 "Delete NER Task Entity Definition": self.tei_ner_map_del,
             }
-            self.state.ntd_edit_options = st.radio(
+            self.ner_task_def_params.ntd_edit_options = radio_widget(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.ntd_edit_options) if self.state.ntd_edit_options else 0,
+                tuple(options.keys()).index(self.ner_task_def_params.ntd_edit_options)
+                if self.ner_task_def_params.ntd_edit_options
+                else 0,
             )
-            options[self.state.ntd_edit_options]()
+            options[self.ner_task_def_params.ntd_edit_options]()
 
     def build_ntd_tablestring(self):
         tablestring = "Name | Entities | Template \n -----|-------|-------"

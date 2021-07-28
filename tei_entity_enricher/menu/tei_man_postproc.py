@@ -14,7 +14,7 @@ from tei_entity_enricher.util.helper import (
     local_save_path,
 )
 from tei_entity_enricher.interface.postprocessing.identifier import Identifier
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Dict
 
 from dataclasses_json import dataclass_json
