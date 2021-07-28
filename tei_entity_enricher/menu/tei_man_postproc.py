@@ -34,7 +34,6 @@ class TEIManPPParams:
     tmp_tr_from_last_search: Dict = None
     tmp_current_loop_element: int = None
     tmp_link_choose_option: str = None
-    tmp_one_time_success_message: str = None
     tmp_search_options: str = None
     tmp_selected_tnw_name: str = None
     tmp_selected_tnm_name: str = None
@@ -192,7 +191,7 @@ class TEIManPP:
             search_type_list = []
             search_type_list.extend(self.tmp_base_ls_search_type_options)
             search_type_list.extend(link_identifier.entity_types)
-            tag_entry["ls_search_type"] = st.selectbox(
+            tag_entry["ls_search_type"] = selectbox_widget(
                 label="Link suggestion search type",
                 options=search_type_list,
                 index=search_type_list.index(tag_entry["ls_search_type"])
@@ -203,17 +202,7 @@ class TEIManPP:
             )
             input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
             link_identifier.input = [input_tuple]
-            # tag_entry["ls_search_type"] = st.text_input(
-            #    "Link suggestion search type",
-            #    tag_entry["ls_search_type"] if "ls_search_type" in tag_entry.keys() else tag_entry["name"],
-            #    help="Define a search type for which link suggestions should be done!",
-            # )
             col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
-            # simple_search = col1.button(
-            #    "Simple Search",
-            #    key="tmp_ls_simple_search",
-            #    help="Searches for link suggestions only in the currently loaded entity library.",
-            # )
             if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
                 simple_search = True
             else:
@@ -287,16 +276,15 @@ class TEIManPP:
                                 st.warning(ret_value)
                             else:
                                 self.entity_library.save_library()
-                                self.tei_man_pp_params.tmp_one_time_success_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library'
                                 self._aux_cache.last_editor_state = None
                                 self._aux_cache.is_count_up_rerun = True
-                                st.experimental_rerun()
+                                with st.form(key='tmp_save_to_el'):
+                                    st.success(f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.')
+                                    submit_button = st.form_submit_button(label='OK')
+                                    if submit_button:
+                                        st.experimental_rerun()
                 else:
                     st.write("No link suggestions found!")
-        if self.tei_man_pp_params.tmp_one_time_success_message:
-            one_time_success_message=self.tei_man_pp_params.tmp_one_time_success_message
-            st.success(one_time_success_message)
-            self.tei_man_pp_params.tmp_one_time_success_message = None
         return tag_entry
 
     def tei_edit_environment(self):
@@ -403,7 +391,7 @@ class TEIManPP:
                     help="Save the current changes to the the specified path.",
                 )
             with col2:
-                self.tei_man_pp_params.tmp_teifile_save = st.text_input(
+                self.tei_man_pp_params.tmp_teifile_save = text_input_widget(
                     "Path to save the changes to:",
                     self.tei_man_pp_params.tmp_teifile_save or "",
                     key="tmp_tei_file_save",
@@ -477,7 +465,7 @@ class TEIManPP:
                     self.tnm.mappingdict[self.tei_man_pp_params.tmp_selected_tnm_name]["entity_dict"], "tnm"
                 )
             else:
-                self.tei_man_pp_params.tmp_sd_search_tag = st.text_input(
+                self.tei_man_pp_params.tmp_sd_search_tag = text_input_widget(
                     "Define a Tag as search criterion",
                     self.tei_man_pp_params.tmp_sd_search_tag or "",
                     key="tmp_sd_search_tag",
