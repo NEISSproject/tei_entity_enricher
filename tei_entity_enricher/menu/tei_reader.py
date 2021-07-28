@@ -4,7 +4,7 @@ import json
 import os
 from tei_entity_enricher.util.helper import (
     get_listoutput,
-    transform_arbitrary_text_to_markdown,
+    transform_arbitrary_text_to_latex,
 )
 from tei_entity_enricher.util.components import editable_single_column_table, small_file_selector
 from tei_entity_enricher.util.helper import (
@@ -293,10 +293,10 @@ class TEIReader:
             if self.state.tr_last_test_dict and len(self.state.tr_last_test_dict.keys()) > 0:
                 tei = tp.TEIFile(self.state.tr_last_test_dict["teifile"], self.state.tr_last_test_dict["tr"])
                 st.subheader("Text Content:")
-                st.markdown(transform_arbitrary_text_to_markdown(tei.get_text()))
+                st.write(transform_arbitrary_text_to_latex(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
                     st.subheader("Note Content:")
-                    st.markdown(transform_arbitrary_text_to_markdown(tei.get_notes()))
+                    st.write(transform_arbitrary_text_to_latex(tei.get_notes()))
 
     def build_config_tablestring(self):
         tablestring = (
