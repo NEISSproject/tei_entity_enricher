@@ -5,6 +5,7 @@ from tei_entity_enricher.menu.ner_prediction import NERPrediction
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.util.SessionState import _get_state
+from tei_entity_enricher.util.components import radio_widget
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
@@ -12,14 +13,32 @@ import tei_entity_enricher.menu.tei_ner_gb as tng
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 import tei_entity_enricher.menu.tei_postprocessing as pp
 from tei_entity_enricher.util.helper import load_images
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 
 logger = logging.getLogger(__name__)
+
+
+
+
+@dataclass
+@dataclass_json
+class MainMenuParams:
+    mm_page: str = None
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> MainMenuParams:
+    return MainMenuParams()
 
 
 class Main:
     def __init__(self, args):
         self.state = None
         self.show(args)
+
+    @property
+    def main_menu_params(self) -> MainMenuParams:
+        return get_params()
 
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
@@ -44,10 +63,11 @@ class Main:
         logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
-        self.state.page = st.sidebar.radio(
+        self.main_menu_params.mm_page = radio_widget(
             "Main Menu",
             tuple(pages.keys()),
-            tuple(pages.keys()).index(self.state.page) if self.state.page else int(args.start_state),
+            tuple(pages.keys()).index(self.main_menu_params.mm_page) if self.main_menu_params.mm_page else int(args.start_state),
+            st_element=st.sidebar
         )
 
         st.sidebar.markdown("### Funded by")
@@ -58,7 +78,7 @@ class Main:
         colbm.image(mv_bm)
 
         # Display the selected page with the session state
-        pages[self.state.page]()
+        pages[self.main_menu_params.mm_page]()
 
         # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
         self.state.sync()
