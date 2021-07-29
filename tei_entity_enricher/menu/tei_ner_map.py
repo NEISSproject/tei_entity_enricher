@@ -340,7 +340,7 @@ class TEINERMap:
 
     def tei_ner_map_del(self):
         if len(self.editable_mapping_names) > 0:
-            self.tei_ner_map_params.tnm_sel_wri_del_name = st.selectbox(
+            self.tei_ner_map_params.tnm_sel_wri_del_name = selectbox_widget(
                 "Select a mapping to delete!",
                 self.editable_mapping_names,
                 index=self.editable_mapping_names.index(self.tei_ner_map_params.tnm_sel_wri_del_name)
