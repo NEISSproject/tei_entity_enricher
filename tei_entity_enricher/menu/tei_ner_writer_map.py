@@ -7,6 +7,8 @@ from tei_entity_enricher.util.helper import (
     local_save_path,
     makedir_if_necessary,
     get_listoutput,
+    transform_arbitrary_text_to_latex,
+    latex_color_list,
 )
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
@@ -14,10 +16,13 @@ from tei_entity_enricher.util.components import (
     selectbox_widget,
     text_input_widget,
     radio_widget,
+    small_file_selector,
 )
 import tei_entity_enricher.menu.ner_task_def as ner_task
+import tei_entity_enricher.menu.tei_reader as tei_reader
+import tei_entity_enricher.util.tei_parser as tp
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 from dataclasses_json import dataclass_json
 
 
@@ -34,6 +39,12 @@ class TEINERWriterParams:
     tnw_fixed_list: List[str] = None
     tnw_entity_dict: List = None
     tnw_edit_entity: str = None
+    tnw_test_selected_config_name: str = None
+    tnw_test_selected_mapping_name: str = None
+    tnw_teifile: str = None
+    tnw_last_test_dict: Dict = None
+    tnw_test_entity_list: List = None
+    tnw_test_note_entity_list: List = None
 
 
 @st.cache(allow_output_mutation=True)
@@ -77,6 +88,7 @@ class TEINERPredWriteMap:
 
         if show_menu:
             self.ntd = ner_task.NERTaskDef(state, show_menu=False)
+            self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.show()
 
     @property
@@ -425,6 +437,174 @@ class TEINERPredWriteMap:
                         f"Warning: The Mapping {cur_sel_mapping[self.tnw_attr_name]} is possibly incomplete. Not every entity of the corresponding task {cur_sel_mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_name]} is assigned a tag."
                     )
             st.markdown(" ")  # only for layouting reasons (placeholder)
+            
+    def mark_entities_in_text(self, text, entitylist, all_entities, show_entity_names):
+        newtext = transform_arbitrary_text_to_latex(text)
+        colorindex = 0
+        for entity in all_entities:
+            if entity in entitylist:
+
+                newtext = newtext.replace(
+                    "<" + entity + ">",
+                    "<**s>$\\text{\\textcolor{" + latex_color_list[colorindex] + "}{",
+                )
+                if show_entity_names:
+                    newtext = newtext.replace("</" + entity + ">", " (" + entity + ")}}$<**e>")
+                else:
+                    newtext = newtext.replace("</" + entity + ">", "}}$<**e>")
+            else:
+                newtext = newtext.replace("<" + entity + ">", "").replace("</" + entity + ">", "")
+            colorindex += 1
+        # workaround for nested entities
+        open = 0
+        while newtext.find("<**s>$\\text{") >= 0 or newtext.find("}$<**e>") >= 0:
+            start = newtext.find("<**s>$\\text{")
+            end = newtext.find("}$<**e>")
+            if start > 0:
+                if start < end:
+                    open += 1
+                    if open > 1:
+                        newtext = newtext.replace("<**s>$\\text{", "", 1)
+                    else:
+                        newtext = newtext.replace("<**s>$\\text{", "$\\text{", 1)
+                else:
+                    open += -1
+                    if open > 0:
+                        newtext = newtext.replace("}$<**e>", "", 1)
+                    else:
+                        newtext = newtext.replace("}$<**e>", "}$", 1)
+            elif end > 0:
+                newtext = newtext.replace("}$<**e>", "}$", 1)
+        return newtext
+
+    def show_test_environment(self):
+        tnw_test_expander = st.beta_expander("Test TEI NER Prediction Writer Mapping", expanded=False)
+        with tnw_test_expander:
+            self.tei_ner_writer_params.tnw_test_selected_config_name = selectbox_widget(
+                "Select a TEI Reader Config for the mapping test!",
+                list(self.tr.configdict.keys()),
+                index=list(self.tr.configdict.keys()).index(self.tei_ner_writer_params.tnw_test_selected_config_name)
+                if self.tei_ner_writer_params.tnw_test_selected_config_name
+                else 0,
+                key="tnw_tr_test",
+            )
+            config = self.tr.configdict[self.tei_ner_writer_params.tnw_test_selected_config_name]
+            self.tei_ner_writer_params.tnw_test_selected_mapping_name = selectbox_widget(
+                "Select a TEI NER Prediction Writer Mapping to test!",
+                list(self.mappingdict.keys()),
+                index=list(self.mappingdict.keys()).index(self.tei_ner_writer_params.tnw_test_selected_mapping_name)
+                if self.tei_ner_writer_params.tnw_test_selected_mapping_name
+                else 0,
+                key="tnw_tnw_test",
+            )
+            mapping = self.mappingdict[self.tei_ner_writer_params.tnw_test_selected_mapping_name]
+            self.tei_ner_writer_params.tnw_teifile = small_file_selector(
+                label="Choose a TEI-File",
+                value=self.tei_ner_writer_params.tnw_teifile if self.tei_ner_writer_params.tnw_teifile else local_save_path,
+                key="tnw_test_choose_TEI",
+                help="Choose a TEI file for testing the chosen TEI NER Prediction Writer Mapping",
+            )
+            if st.button(
+                "Test TEI NER Prediction Writer Mapping",
+                key="tnw_Button_Test",
+                help="Test TEI NER Prediction Writer Mapping on the chosen Mapping and TEI-File.",
+            ):
+                if os.path.isfile(self.tei_ner_writer_params.tnw_teifile):
+                    self.tei_ner_writer_params.tnw_last_test_dict = {
+                        "teifile": self.tei_ner_writer_params.tnw_teifile,
+                        "tr": config,
+                        "tnw": self.tnw_attr_entity_dict,
+                    }
+                else:
+                    st.error(f"The chosen path {self.tei_ner_writer_params.tnw_teifile} is not a file!")
+                    self.tei_ner_writer_params.tnw_last_test_dict = {}
+            if self.tei_ner_writer_params.tnw_last_test_dict and len(self.tei_ner_writer_params.tnw_last_test_dict.keys()) > 0:
+                tei = tp.TEIFile(
+                    self.tei_ner_writer_params.tnw_last_test_dict["teifile"],
+                    self.tei_ner_writer_params.tnw_last_test_dict["tr"],
+                    entity_dict=mapping[self.tei_ner_writer_params.tnw_last_test_dict["tnw"]],
+                )
+                col1, col2 = st.beta_columns([0.2, 0.8])
+                statistics = tei.get_statistics()
+                self.tei_ner_writer_params.tnw_test_entity_list = []
+                with col1:
+                    st.subheader("Tagged Entites:")
+                    for entity in sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                        if entity in statistics.keys():
+                            if st.checkbox(
+                                "Show Entity " + entity + " (" + str(statistics[entity][0]) + ")",
+                                True,
+                                key="tnw" + entity + "text",
+                            ):
+                                self.tei_ner_writer_params.tnw_test_entity_list.append(entity)
+                    st.subheader("Display Options:")
+                    tnw_test_show_entity_name = st.checkbox(
+                        "Display Entity names", False, key="tnw_display_entity_names"
+                    )
+                    st.subheader("Legend:")
+                    index = 0
+                    for entity in sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                        if entity in statistics.keys():
+                            st.write(
+                                "$\\color{"
+                                + latex_color_list[index % len(latex_color_list)]
+                                + "}{\\Large\\bullet}$ "
+                                + entity
+                            )
+                        index += 1
+
+                with col2:
+                    st.subheader("Tagged Text Content:")
+                    st.write(
+                        self.mark_entities_in_text(
+                            tei.get_tagged_text(),
+                            self.tei_ner_writer_params.tnw_test_entity_list,
+                            sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                            show_entity_names=tnw_test_show_entity_name,
+                        )
+                    )
+                if config[self.tr.tr_config_attr_use_notes]:
+                    col1_note, col2_note = st.beta_columns([0.2, 0.8])
+                    note_statistics = tei.get_note_statistics()
+                    self.tei_ner_writer_params.tnw_test_note_entity_list = []
+                    with col1_note:
+                        st.subheader("Tagged Entites:")
+                        for entity in sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                            if entity in note_statistics.keys():
+                                if st.checkbox(
+                                    "Show Entity " + entity + " (" + str(note_statistics[entity][0]) + ")",
+                                    True,
+                                    key="tnw" + entity + "note",
+                                ):
+                                    self.tei_ner_writer_params.tnw_test_note_entity_list.append(entity)
+                        st.subheader("Display Options:")
+                        tnw_test_note_show_entity_name = st.checkbox(
+                            "Display Entity names",
+                            False,
+                            key="tnw_display_entity_names_note",
+                        )
+                        st.subheader("Legend: ")
+                        index = 0
+                        for entity in sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                            if entity in note_statistics.keys():
+                                st.write(
+                                    "$\\color{"
+                                    + latex_color_list[index % len(latex_color_list)]
+                                    + "}{\\bullet}$ "
+                                    + entity
+                                )
+                            index += 1
+
+                    with col2_note:
+                        st.subheader("Tagged Note Content:")
+                        st.write(
+                            self.mark_entities_in_text(
+                                tei.get_tagged_notes(),
+                                self.tei_ner_writer_params.tnw_test_note_entity_list,
+                                sorted(mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                                show_entity_names=tnw_test_note_show_entity_name,
+                            )
+                        )
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")
@@ -433,3 +613,4 @@ class TEINERPredWriteMap:
             self.show_tnws()
         with col2:
             self.show_edit_environment()
+        self.show_test_environment()

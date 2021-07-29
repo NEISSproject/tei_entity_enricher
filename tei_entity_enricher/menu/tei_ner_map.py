@@ -15,13 +15,18 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_gb as gb
 import tei_entity_enricher.util.tei_parser as tp
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 from dataclasses_json import dataclass_json
 
 @dataclass
 @dataclass_json
 class TEINERMapParams:
-    ntd_edit_options: str = None
+    tnm_test_selected_config_name: str = None
+    tnm_test_selected_mapping_name: str = None
+    tnm_teifile: str = None
+    tnm_last_test_dict: Dict = None
+    tnm_test_entity_list: List = None
+    tnm_test_note_entity_list = None
 
 @st.cache(allow_output_mutation=True)
 def get_params() -> TEINERMapParams:
@@ -360,33 +365,27 @@ class TEINERMap:
     def show_test_environment(self):
         tnm_test_expander = st.beta_expander("Test TEI Read NER Entity Mapping", expanded=False)
         with tnm_test_expander:
-            self.state.tnm_test_selected_config_name = st.selectbox(
+            self.tei_ner_map_params.tnm_test_selected_config_name = selectbox_widget(
                 "Select a TEI Reader Config for the mapping test!",
                 list(self.tr.configdict.keys()),
-                index=list(self.tr.configdict.keys()).index(self.state.tnm_test_selected_config_name)
-                if self.state.tnm_test_selected_config_name
+                index=list(self.tr.configdict.keys()).index(self.tei_ner_map_params.tnm_test_selected_config_name)
+                if self.tei_ner_map_params.tnm_test_selected_config_name
                 else 0,
                 key="tnm_tr_test",
             )
-            config = self.tr.configdict[self.state.tnm_test_selected_config_name]
-            self.state.tnm_test_selected_mapping_name = st.selectbox(
+            config = self.tr.configdict[self.tei_ner_map_params.tnm_test_selected_config_name]
+            self.tei_ner_map_params.tnm_test_selected_mapping_name = selectbox_widget(
                 "Select a TEI Read NER Entity Mapping to test!",
                 list(self.mappingdict.keys()),
-                index=list(self.mappingdict.keys()).index(self.state.tnm_test_selected_mapping_name)
-                if self.state.tnm_test_selected_mapping_name
+                index=list(self.mappingdict.keys()).index(self.tei_ner_map_params.tnm_test_selected_mapping_name)
+                if self.tei_ner_map_params.tnm_test_selected_mapping_name
                 else 0,
-                key="tnm_tr_test",
+                key="tnm_tnm_test",
             )
-            mapping = self.mappingdict[self.state.tnm_test_selected_mapping_name]
-            # self.state.tnm_teifile = st.text_input(
-            #    "Choose a TEI File:",
-            #    self.state.tnm_teifile or "",
-            #    key="tnm_test_tei_file",
-            # )
-            # self.state.tnm_open_teifile = st.file_uploader("Choose a TEI-File", key="tnm_test_file_upload")
-            self.state.tnm_teifile = small_file_selector(
+            mapping = self.mappingdict[self.tei_ner_map_params.tnm_test_selected_mapping_name]
+            self.tei_ner_map_params.tnm_teifile = small_file_selector(
                 label="Choose a TEI-File",
-                value=self.state.tnm_teifile if self.state.tnm_teifile else local_save_path,
+                value=self.tei_ner_map_params.tnm_teifile if self.tei_ner_map_params.tnm_teifile else local_save_path,
                 key="tnm_test_choos_TEI",
                 help="Choose a TEI file for testing the chosen TEI Read Entity Mapping",
             )
@@ -397,25 +396,24 @@ class TEINERMap:
                 key="tnm_Button_Test",
                 help="Test TEI Read Entity Mapping on the chosen Mapping and TEI-File.",
             ):
-                self.state.avoid_rerun()
-                if os.path.isfile(self.state.tnm_teifile):
-                    self.state.tnm_last_test_dict = {
-                        "teifile": self.state.tnm_teifile,
+                if os.path.isfile(self.tei_ner_map_params.tnm_teifile):
+                    self.tei_ner_map_params.tnm_last_test_dict = {
+                        "teifile": self.tei_ner_map_params.tnm_teifile,
                         "tr": config,
                         "tnm": self.tnm_attr_entity_dict,
                     }
                 else:
-                    st.error(f"The chosen path {self.state.tnm_teifile} is not a file!")
-                    self.state.tnm_last_test_dict = {}
-            if self.state.tnm_last_test_dict and len(self.state.tnm_last_test_dict.keys()) > 0:
+                    st.error(f"The chosen path {self.tei_ner_map_params.tnm_teifile} is not a file!")
+                    self.tei_ner_map_params.tnm_last_test_dict = {}
+            if self.tei_ner_map_params.tnm_last_test_dict and len(self.tei_ner_map_params.tnm_last_test_dict.keys()) > 0:
                 tei = tp.TEIFile(
-                    self.state.tnm_last_test_dict["teifile"],
-                    self.state.tnm_last_test_dict["tr"],
-                    entity_dict=mapping[self.state.tnm_last_test_dict["tnm"]],
+                    self.tei_ner_map_params.tnm_last_test_dict["teifile"],
+                    self.tei_ner_map_params.tnm_last_test_dict["tr"],
+                    entity_dict=mapping[self.tei_ner_map_params.tnm_last_test_dict["tnm"]],
                 )
                 col1, col2 = st.beta_columns([0.2, 0.8])
                 statistics = tei.get_statistics()
-                self.state.tnm_test_entity_list = []
+                self.tei_ner_map_params.tnm_test_entity_list = []
                 with col1:
                     st.subheader("Tagged Entites:")
                     for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
@@ -425,7 +423,7 @@ class TEINERMap:
                                 True,
                                 key="tnm" + entity + "text",
                             ):
-                                self.state.tnm_test_entity_list.append(entity)
+                                self.tei_ner_map_params.tnm_test_entity_list.append(entity)
                     st.subheader("Display Options:")
                     tnm_test_show_entity_name = st.checkbox(
                         "Display Entity names", False, key="tnm_display_entity_names"
@@ -447,7 +445,7 @@ class TEINERMap:
                     st.write(
                         self.mark_entities_in_text(
                             tei.get_tagged_text(),
-                            self.state.tnm_test_entity_list,
+                            self.tei_ner_map_params.tnm_test_entity_list,
                             sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
                             show_entity_names=tnm_test_show_entity_name,
                         )
@@ -455,7 +453,7 @@ class TEINERMap:
                 if config[self.tr.tr_config_attr_use_notes]:
                     col1_note, col2_note = st.beta_columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
-                    self.state.tnm_test_note_entity_list = []
+                    self.tei_ner_map_params.tnm_test_note_entity_list = []
                     with col1_note:
                         st.subheader("Tagged Entites:")
                         for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
@@ -465,7 +463,7 @@ class TEINERMap:
                                     True,
                                     key="tnm" + entity + "note",
                                 ):
-                                    self.state.tnm_test_note_entity_list.append(entity)
+                                    self.tei_ner_map_params.tnm_test_note_entity_list.append(entity)
                         st.subheader("Display Options:")
                         tnm_test_note_show_entity_name = st.checkbox(
                             "Display Entity names",
@@ -489,7 +487,7 @@ class TEINERMap:
                         st.write(
                             self.mark_entities_in_text(
                                 tei.get_tagged_notes(),
-                                self.state.tnm_test_note_entity_list,
+                                self.tei_ner_map_params.tnm_test_note_entity_list,
                                 sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
                                 show_entity_names=tnm_test_note_show_entity_name,
                             )

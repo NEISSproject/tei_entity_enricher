@@ -23,7 +23,7 @@ latex_color_list = [
     "black",
     "yellow",
     "brown",
-    "gray",
+    "plum",
 ]
 
 
