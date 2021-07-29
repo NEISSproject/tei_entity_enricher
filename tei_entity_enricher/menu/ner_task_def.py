@@ -16,7 +16,7 @@ from tei_entity_enricher.util.components import (
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List
 
 from dataclasses_json import dataclass_json
 

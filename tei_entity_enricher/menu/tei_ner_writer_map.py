@@ -8,14 +8,41 @@ from tei_entity_enricher.util.helper import (
     makedir_if_necessary,
     get_listoutput,
 )
-from tei_entity_enricher.util.components import editable_multi_column_table, editable_single_column_table
+from tei_entity_enricher.util.components import (
+    editable_multi_column_table,
+    editable_single_column_table,
+    selectbox_widget,
+    text_input_widget,
+    radio_widget,
+)
 import tei_entity_enricher.menu.ner_task_def as ner_task
+from dataclasses import dataclass
+from typing import List
+from dataclasses_json import dataclass_json
+
+
+@dataclass
+@dataclass_json
+class TEINERWriterParams:
+    tnw_selected_display_tnw_name: str = None
+    tnw_edit_options: str = None
+    tnw_sel_wri_del_name: str = None
+    tnw_mode: str = None
+    tnw_ntd_name: str = None
+    tnw_name: str = None
+    tnw_sel_mapping_name: str = None
+    tnw_fixed_list: List[str] = None
+    tnw_entity_dict: List = None
+    tnw_edit_entity: str = None
+
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> TEINERWriterParams:
+    return TEINERWriterParams()
 
 
 class TEINERPredWriteMap:
     def __init__(self, state, show_menu=True):
-        self.state = state
-
         self.tnw_Folder = "TNW"
         self.template_tnw_Folder = os.path.join(module_path, "templates", self.tnw_Folder)
         self.tnw_Folder = os.path.join(local_save_path, self.tnw_Folder)
@@ -51,6 +78,10 @@ class TEINERPredWriteMap:
         if show_menu:
             self.ntd = ner_task.NERTaskDef(state, show_menu=False)
             self.show()
+
+    @property
+    def tei_ner_writer_params(self) -> TEINERWriterParams:
+        return get_params()
 
     def validate_and_saving_mapping(self, mapping, mode):
         val = True
@@ -155,13 +186,18 @@ class TEINERPredWriteMap:
                 )
             )
             self.reset_tnw_edit_states()
-            self.state.tnw_sel_mapping_name = None
+            self.tei_ner_writer_params.tnw_sel_mapping_name = None
+            self.tei_ner_writer_params.tnw_sel_wri_del_name = None
+            if mapping[self.tnw_attr_name] == self.tei_ner_writer_params.tnw_selected_display_tnw_name:
+                self.tei_ner_writer_params.tnw_selected_display_tnw_name = None
             st.experimental_rerun()
 
     def reset_tnw_edit_states(self):
-        self.state.tnw_name = None
-        self.state.tnw_ntd_name = None
-        self.state.tnw_entity_dict = None
+        self.tei_ner_writer_params.tnw_name = None
+        self.tei_ner_writer_params.tnw_ntd_name = None
+        self.tei_ner_writer_params.tnw_fixed_list = None
+        self.tei_ner_writer_params.tnw_entity_dict = None
+        self.tei_ner_writer_params.tnw_edit_entity = None
 
     def show_editable_fixed_tags(self, fixed_list, mode, name):
         st.markdown("Define tags in which no entities should be written.")
@@ -187,78 +223,97 @@ class TEINERPredWriteMap:
                 "There are no self-defined TEI NER Prediction Writer Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
-            if self.state.tnw_mode != mode:
+            if self.tei_ner_writer_params.tnw_mode != mode:
                 self.reset_tnw_edit_states()
-            self.state.tnw_mode = mode
+            self.tei_ner_writer_params.tnw_mode = mode
             tnw_mapping_dict = {}
-            init_tnw_ntd_name = self.state.tnw_ntd_name
+            init_tnw_ntd_name = self.tei_ner_writer_params.tnw_ntd_name
             init_tnw_entity_dict = {}
             if mode in [self.tnw_mode_dupl, self.tnw_mode_edit]:
                 if self.tnw_mode_dupl == mode:
                     options = list(self.mappingdict.keys())
                 else:
                     options = self.editable_mapping_names
-                selected_tnw_name = st.selectbox(f"Select a mapping to {mode}!", options, key="tnw" + mode)
-                if self.state.tnw_sel_mapping_name != selected_tnw_name:
+                selected_tnw_name = selectbox_widget(
+                    f"Select a mapping to {mode}!",
+                    options,
+                    options.index(self.tei_ner_writer_params.tnw_sel_mapping_name)
+                    if self.tei_ner_writer_params.tnw_sel_mapping_name
+                    else 0,
+                    key="tnw" + mode,
+                )
+                if self.tei_ner_writer_params.tnw_sel_mapping_name != selected_tnw_name:
                     self.reset_tnw_edit_states()
-                self.state.tnw_sel_mapping_name = selected_tnw_name
+                self.tei_ner_writer_params.tnw_sel_mapping_name = selected_tnw_name
                 tnw_mapping_dict = self.mappingdict[selected_tnw_name].copy()
                 init_tnw_ntd_name = tnw_mapping_dict[self.tnw_attr_ntd][self.ntd.ntd_attr_name]
                 init_tnw_entity_dict = tnw_mapping_dict[self.tnw_attr_entity_dict]
                 if mode == self.tnw_mode_dupl:
                     tnw_mapping_dict[self.tnw_attr_name] = ""
+            else:
+                selected_tnw_name = ""
             if mode == self.tnw_mode_add:
                 tnw_mapping_dict[self.tnw_attr_ntd] = {}
                 tnw_mapping_dict[self.tnw_attr_entity_dict] = {}
                 tnw_mapping_dict[self.tnw_attr_fixed_tags] = []
             if mode in [self.tnw_mode_dupl, self.tnw_mode_add]:
-                self.state.tnw_name = st.text_input(
-                    "New TEI NER Prediction Writer Mapping Name:", self.state.tnw_name or ""
+                self.tei_ner_writer_params.tnw_name = text_input_widget(
+                    "New TEI NER Prediction Writer Mapping Name:", self.tei_ner_writer_params.tnw_name or ""
                 )
-                if self.state.tnw_name:
-                    tnw_mapping_dict[self.tnw_attr_name] = self.state.tnw_name
-            sel_tnw_ntd_name = st.selectbox(
+                if self.tei_ner_writer_params.tnw_name:
+                    tnw_mapping_dict[self.tnw_attr_name] = self.tei_ner_writer_params.tnw_name
+            sel_tnw_ntd_name = selectbox_widget(
                 "Corresponding NER task definition",
                 list(self.ntd.defdict.keys()),
                 list(self.ntd.defdict.keys()).index(init_tnw_ntd_name) if init_tnw_ntd_name else 0,
-                key="tnw_ntd_sel" + mode,
+                key="tnw_ntd_sel" + mode + selected_tnw_name,
             )
+            if self.tei_ner_writer_params.tnw_ntd_name and sel_tnw_ntd_name != self.tei_ner_writer_params.tnw_ntd_name:
+                self.tei_ner_writer_params.tnw_entity_dict = None
+                self.tei_ner_writer_params.tnw_edit_entity = None
+            self.tei_ner_writer_params.tnw_ntd_name = sel_tnw_ntd_name
             init_fixed_list = tnw_mapping_dict[self.tnw_attr_fixed_tags]
-            self.state.tnw_fixed_list = self.show_editable_fixed_tags(
-                self.state.tnw_fixed_list if self.state.tnw_fixed_list else init_fixed_list,
+            self.tei_ner_writer_params.tnw_fixed_list = self.show_editable_fixed_tags(
+                self.tei_ner_writer_params.tnw_fixed_list
+                if self.tei_ner_writer_params.tnw_fixed_list
+                else init_fixed_list,
                 mode,
-                tnw_mapping_dict[self.tnw_attr_name] if self.tnw_attr_name in tnw_mapping_dict.keys() else "",
+                (tnw_mapping_dict[self.tnw_attr_name] if self.tnw_attr_name in tnw_mapping_dict.keys() else "")
+                + selected_tnw_name,
             )
-            if self.state.tnw_ntd_name and sel_tnw_ntd_name != self.state.tnw_ntd_name:
-                self.state.tnw_entity_dict = None
-            self.state.tnw_ntd_name = sel_tnw_ntd_name
-            if self.state.tnw_ntd_name:
-                tnw_edit_entity = st.selectbox(
+            if self.tei_ner_writer_params.tnw_ntd_name:
+                options = self.ntd.defdict[self.tei_ner_writer_params.tnw_ntd_name][self.ntd.ntd_attr_entitylist]
+                self.tei_ner_writer_params.tnw_edit_entity = selectbox_widget(
                     "Define mapping for entity:",
-                    self.ntd.defdict[self.state.tnw_ntd_name][self.ntd.ntd_attr_entitylist],
-                    key="tnw_ent" + mode,
+                    options,
+                    key="tnw_ent" + mode + selected_tnw_name,
+                    index=options.index(self.tei_ner_writer_params.tnw_edit_entity)
+                    if self.tei_ner_writer_params.tnw_edit_entity
+                    else 0,
                 )
-                if tnw_edit_entity:
-                    self.state.tnw_entity_dict = self.edit_entity(
+                if self.tei_ner_writer_params.tnw_edit_entity:
+                    self.tei_ner_writer_params.tnw_entity_dict = self.edit_entity(
                         mode,
-                        tnw_edit_entity,
-                        self.state.tnw_entity_dict if self.state.tnw_entity_dict else init_tnw_entity_dict,
+                        self.tei_ner_writer_params.tnw_edit_entity,
+                        self.tei_ner_writer_params.tnw_entity_dict
+                        if self.tei_ner_writer_params.tnw_entity_dict
+                        else init_tnw_entity_dict,
                     )
 
             if st.button("Save TEI NER Prediction Writer Mapping", key=mode):
-                tnw_mapping_dict[self.tnw_attr_ntd] = self.ntd.defdict[self.state.tnw_ntd_name]
-                tnw_mapping_dict[self.tnw_attr_fixed_tags] = self.state.tnw_fixed_list
-                tnw_mapping_dict[self.tnw_attr_entity_dict] = self.state.tnw_entity_dict.copy()
+                tnw_mapping_dict[self.tnw_attr_ntd] = self.ntd.defdict[self.tei_ner_writer_params.tnw_ntd_name]
+                tnw_mapping_dict[self.tnw_attr_fixed_tags] = self.tei_ner_writer_params.tnw_fixed_list
+                tnw_mapping_dict[self.tnw_attr_entity_dict] = self.tei_ner_writer_params.tnw_entity_dict.copy()
                 self.validate_and_saving_mapping(tnw_mapping_dict, mode)
 
     def edit_entity(self, mode, tnw_edit_entity, cur_entity_dict):
         if tnw_edit_entity not in cur_entity_dict.keys():
             cur_entity_dict[tnw_edit_entity] = [None, {}]
         mapping_entry = cur_entity_dict[tnw_edit_entity]
-        mapping_entry[0] = st.text_input(
+        mapping_entry[0] = text_input_widget(
             "Tag",
             mapping_entry[0] or "",
-            key="tnw" + self.state.tnw_ntd_name + tnw_edit_entity + mode,
+            key="tnw" + self.tei_ner_writer_params.tnw_ntd_name + tnw_edit_entity + mode,
         )
         if mapping_entry[0]:
             mapping_entry[1] = self.show_editable_attr_value_def(mapping_entry[1], tnw_edit_entity + mode)
@@ -274,9 +329,18 @@ class TEINERPredWriteMap:
         self.show_editable_mapping_content(self.tnw_mode_edit)
 
     def tei_ner_map_del(self):
-        selected_mapping_name = st.selectbox("Select a mapping to delete!", self.editable_mapping_names)
-        if st.button("Delete Selected Mapping"):
-            self.validate_and_delete_mapping(self.mappingdict[selected_mapping_name])
+        if len(self.editable_mapping_names) > 0:
+            self.tei_ner_writer_params.tnw_sel_wri_del_name = selectbox_widget(
+                "Select a mapping to delete!",
+                self.editable_mapping_names,
+                index=self.editable_mapping_names.index(self.tei_ner_writer_params.tnw_sel_wri_del_name)
+                if self.tei_ner_writer_params.tnw_sel_wri_del_name
+                else 0,
+            )
+            if st.button("Delete Selected Mapping"):
+                self.validate_and_delete_mapping(self.mappingdict[self.tei_ner_writer_params.tnw_sel_wri_del_name])
+        else:
+            st.info("There are no self-defined TEI NER Prediction Writer mapping to delete!")
 
     def show_edit_environment(self):
         tnw_definer = st.beta_expander("Add or edit existing TEI NER Prediction Writer Mapping", expanded=False)
@@ -287,12 +351,14 @@ class TEINERPredWriteMap:
                 "Edit TEI NER Prediction Writer Mapping": self.tei_ner_map_edit,
                 "Delete TEI NER Prediction Writer Mapping": self.tei_ner_map_del,
             }
-            self.state.tnw_edit_options = st.radio(
+            self.tei_ner_writer_params.tnw_edit_options = radio_widget(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.tnw_edit_options) if self.state.tnw_edit_options else 0,
+                tuple(options.keys()).index(self.tei_ner_writer_params.tnw_edit_options)
+                if self.tei_ner_writer_params.tnw_edit_options
+                else 0,
             )
-            options[self.state.tnw_edit_options]()
+            options[self.tei_ner_writer_params.tnw_edit_options]()
 
     def build_tnw_tablestring(self):
         tablestring = "Name | NER Task | Fixed Tags | Template \n -----|-------|-------|-------"
@@ -338,13 +404,16 @@ class TEINERPredWriteMap:
         tnw_show = st.beta_expander("Existing TEI NER Prediction Writer Mappings", expanded=True)
         with tnw_show:
             st.markdown(self.build_tnw_tablestring())
-            self.state.tnw_selected_display_tnw_name = st.selectbox(
+            self.tei_ner_writer_params.tnw_selected_display_tnw_name = selectbox_widget(
                 f"Choose a mapping for displaying its details:",
                 list(self.mappingdict.keys()),
                 key="tnw_details",
+                index=list(self.mappingdict.keys()).index(self.tei_ner_writer_params.tnw_selected_display_tnw_name)
+                if self.tei_ner_writer_params.tnw_selected_display_tnw_name
+                else 0,
             )
-            if self.state.tnw_selected_display_tnw_name:
-                cur_sel_mapping = self.mappingdict[self.state.tnw_selected_display_tnw_name]
+            if self.tei_ner_writer_params.tnw_selected_display_tnw_name:
+                cur_sel_mapping = self.mappingdict[self.tei_ner_writer_params.tnw_selected_display_tnw_name]
                 st.markdown(
                     self.build_tnw_detail_tablestring(cur_sel_mapping),
                     unsafe_allow_html=True,

@@ -6,15 +6,26 @@ from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
-    transform_arbitrary_text_to_markdown,
     transform_arbitrary_text_to_latex,
     latex_color_list,
 )
-from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector
+from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, text_input_widget, radio_widget
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_gb as gb
 import tei_entity_enricher.util.tei_parser as tp
+from dataclasses import dataclass
+from typing import List
+from dataclasses_json import dataclass_json
+
+@dataclass
+@dataclass_json
+class TEINERMapParams:
+    ntd_edit_options: str = None
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> TEINERMapParams:
+    return TEINERMapParams()
 
 
 class TEINERMap:
@@ -57,6 +68,10 @@ class TEINERMap:
             self.tr = tei_reader.TEIReader(state, show_menu=False)
             self.tng = gb.TEINERGroundtruthBuilder(state, show_menu=False)
             self.show()
+
+    @property
+    def tei_ner_map_params(self) -> TEINERMapParams:
+        return get_params()
 
     def validate_and_saving_mapping(self, mapping, mode):
         val = True
