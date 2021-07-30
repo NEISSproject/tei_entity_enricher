@@ -25,9 +25,6 @@ from tei_entity_enricher.util.components import (
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
-# from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
-
-
 @dataclass
 @dataclass_json
 class TEINERGBParams:
@@ -49,7 +46,7 @@ def get_params() -> TEINERGBParams:
 
 
 class TEINERGroundtruthBuilder:
-    def __init__(self, state, show_menu=True):
+    def __init__(self, show_menu=True):
         self.tng_Folder = "TNG"
         self.template_tng_Folder = os.path.join(module_path, "templates", self.tng_Folder)
         self.tng_Folder = os.path.join(local_save_path, self.tng_Folder)
@@ -75,9 +72,9 @@ class TEINERGroundtruthBuilder:
         self.refresh_tng_list()
 
         if show_menu:
-            self.tnm = tei_map.TEINERMap(state, show_menu=False)
-            self.tr = tei_reader.TEIReader(state, show_menu=False)
-            self.ntd = ner_task.NERTaskDef(state, show_menu=False)
+            self.tnm = tei_map.TEINERMap(show_menu=False)
+            self.tr = tei_reader.TEIReader(show_menu=False)
+            self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
 
     @property

@@ -61,8 +61,8 @@ class NERTrainer(MenuBase):
         if self.workdir() != 0:
             return
         if self.show_menu:
-            self.ntd = ner_task.NERTaskDef(self.state, show_menu=False)
-            self.tng = gb.TEINERGroundtruthBuilder(self.state, show_menu=False)
+            self.ntd = ner_task.NERTaskDef(show_menu=False)
+            self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
             
     @property

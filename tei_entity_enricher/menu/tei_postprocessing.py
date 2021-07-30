@@ -144,10 +144,9 @@ def fix_editor_content(content):
 
 
 class TEINERPostprocessing:
-    def __init__(self, state, show_menu: bool = True):
+    def __init__(self,show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
         if show_menu:
-            self.state = state
             self.init_vars()
             self.show()
 
@@ -551,4 +550,4 @@ class TEINERPostprocessing:
             self.add_entities_from_file_subcontainer_and_processes()
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(self.state, entity_library=self.pp_el_library_object, aux_cache=self.pp_aux_cache)
+        tmp.TEIManPP(entity_library=self.pp_el_library_object, aux_cache=self.pp_aux_cache)

@@ -38,7 +38,7 @@ def get_params() -> NERTaskDefParams:
 
 
 class NERTaskDef:
-    def __init__(self, state, show_menu=True):
+    def __init__(self, show_menu=True):
         self.ntd_Folder = "NTD"
         self.template_ntd_Folder = os.path.join(module_path, "templates", self.ntd_Folder)
         self.ntd_Folder = os.path.join(local_save_path, self.ntd_Folder)
@@ -70,7 +70,7 @@ class NERTaskDef:
                 self.editable_def_names.append(definition[self.ntd_attr_name])
 
         if show_menu:
-            self.tnm = tei_map.TEINERMap(state, show_menu=False)
+            self.tnm = tei_map.TEINERMap(show_menu=False)
             self.show()
 
     @property

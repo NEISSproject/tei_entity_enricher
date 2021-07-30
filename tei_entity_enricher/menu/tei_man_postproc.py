@@ -19,9 +19,6 @@ from typing import List, Dict
 
 from dataclasses_json import dataclass_json
 
-# from tei_entity_enricher.menu.tei_postprocessing import get_entity_library
-
-
 @dataclass
 @dataclass_json
 class TEIManPPParams:
@@ -47,7 +44,7 @@ def get_params() -> TEIManPPParams:
 
 
 class TEIManPP:
-    def __init__(self, state, show_menu=True, entity_library=None, aux_cache=None):
+    def __init__(self, show_menu=True, entity_library=None, aux_cache=None):
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
             "By TEI Read NER Entity Mapping",
@@ -60,9 +57,9 @@ class TEIManPP:
         self.entity_library = entity_library  # get_entity_library()
         self._aux_cache = aux_cache
         if show_menu:
-            self.tr = tei_reader.TEIReader(state, show_menu=False)
-            self.tnm = tnm_map.TEINERMap(state, show_menu=False)
-            self.tnw = tnw_map.TEINERPredWriteMap(state, show_menu=False)
+            self.tr = tei_reader.TEIReader(show_menu=False)
+            self.tnm = tnm_map.TEINERMap(show_menu=False)
+            self.tnw = tnw_map.TEINERPredWriteMap(show_menu=False)
             self.show()
 
     @property

@@ -1,10 +1,8 @@
 import logging
 import os
 import shutil
-from dataclasses import dataclass
 from typing import Optional
 
-from dataclasses_json import dataclass_json
 from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 import tei_entity_enricher.menu.tei_reader as tei_reader
@@ -12,11 +10,10 @@ import tei_entity_enricher.menu.tei_ner_writer_map as tei_ner_writer_map
 from tei_entity_enricher.util.components import (
     small_file_selector,
     small_dir_selector,
-    file_selector_expander,
     selectbox_widget,
     file_selector,
 )
-from tei_entity_enricher.util.helper import remember_cwd, module_path, state_ok, local_save_path
+from tei_entity_enricher.util.helper import module_path, state_ok, local_save_path
 from tei_entity_enricher.util.spacy_lm import lang_dict
 from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
 from tei_entity_enricher.util.processmanger.predict import (
@@ -50,11 +47,11 @@ class NERPrediction(MenuBase):
 
         if self.show_menu:
             self.workdir()
-            self.ner_trainer = NERTrainer(state=self.state, show_menu=False)
+            self.ner_trainer = NERTrainer(show_menu=False)
             self.ner_trainer.workdir()
             self.ner_trainer.load_trainer_params()
-            self.tr = tei_reader.TEIReader(self.state, show_menu=False)
-            self.tnw = tei_ner_writer_map.TEINERPredWriteMap(self.state, show_menu=False)
+            self.tr = tei_reader.TEIReader(show_menu=False)
+            self.tnw = tei_ner_writer_map.TEINERPredWriteMap(show_menu=False)
             self.show()
 
     @property
@@ -75,9 +72,6 @@ class NERPrediction(MenuBase):
         if self._check_list:
             st.error(f"Pre-configuration failed. Please correct: {', '.join(self._check_list)}!")
             return -1
-
-        # print("state", self.state.ner_prediction_params)
-        # print("self", self.ner_prediction_params)
 
         predict_process_manager = get_predict_process_manager(workdir=self._wd)
         return_code = predict_process_manager.st_manager()

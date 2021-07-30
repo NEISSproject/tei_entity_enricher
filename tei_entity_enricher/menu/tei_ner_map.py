@@ -52,7 +52,7 @@ def get_params() -> TEINERMapParams:
 
 
 class TEINERMap:
-    def __init__(self, state, show_menu=True):
+    def __init__(self, show_menu=True):
         self.tnm_Folder = "TNM"
         self.template_tnm_Folder = os.path.join(module_path, "templates", self.tnm_Folder)
         self.tnm_Folder = os.path.join(local_save_path, self.tnm_Folder)
@@ -85,9 +85,9 @@ class TEINERMap:
                 self.editable_mapping_names.append(mapping[self.tnm_attr_name])
 
         if show_menu:
-            self.ntd = ner_task.NERTaskDef(state, show_menu=False)
-            self.tr = tei_reader.TEIReader(state, show_menu=False)
-            self.tng = gb.TEINERGroundtruthBuilder(state, show_menu=False)
+            self.ntd = ner_task.NERTaskDef(show_menu=False)
+            self.tr = tei_reader.TEIReader(show_menu=False)
+            self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
 
     @property

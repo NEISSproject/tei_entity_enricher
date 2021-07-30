@@ -45,7 +45,7 @@ def get_params() -> TEINERReaderParams:
 
 
 class TEIReader:
-    def __init__(self, state, show_menu=True):
+    def __init__(self,show_menu=True):
         self.config_Folder = "TR_Configs"
         self.template_config_Folder = os.path.join(module_path, "templates", self.config_Folder)
         self.config_Folder = os.path.join(local_save_path, self.config_Folder)
@@ -78,7 +78,7 @@ class TEIReader:
             if not config[self.tr_config_attr_template]:
                 self.editable_config_names.append(config[self.tr_config_attr_name])
         if show_menu:
-            self.tng = gb.TEINERGroundtruthBuilder(state, show_menu=False)
+            self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
 
     @property

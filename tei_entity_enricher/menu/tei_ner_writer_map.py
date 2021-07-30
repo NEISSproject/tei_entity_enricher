@@ -53,7 +53,7 @@ def get_params() -> TEINERWriterParams:
 
 
 class TEINERPredWriteMap:
-    def __init__(self, state, show_menu=True):
+    def __init__(self, show_menu=True):
         self.tnw_Folder = "TNW"
         self.template_tnw_Folder = os.path.join(module_path, "templates", self.tnw_Folder)
         self.tnw_Folder = os.path.join(local_save_path, self.tnw_Folder)
@@ -87,8 +87,8 @@ class TEINERPredWriteMap:
                 self.editable_mapping_names.append(mapping[self.tnw_attr_name])
 
         if show_menu:
-            self.ntd = ner_task.NERTaskDef(state, show_menu=False)
-            self.tr = tei_reader.TEIReader(state, show_menu=False)
+            self.ntd = ner_task.NERTaskDef(show_menu=False)
+            self.tr = tei_reader.TEIReader(show_menu=False)
             self.show()
 
     @property
