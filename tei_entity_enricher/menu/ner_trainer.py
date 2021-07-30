@@ -8,7 +8,7 @@ import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_ner_gb as gb
 from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.util import config_io
-from tei_entity_enricher.util.components import small_dir_selector
+from tei_entity_enricher.util.components import small_dir_selector, selectbox_widget, radio_widget
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
@@ -18,8 +18,29 @@ from tei_entity_enricher.util.helper import (
     remember_cwd,
 )
 from tei_entity_enricher.util.processmanger.train import get_train_process_manager
+from dataclasses import dataclass
+from typing import Dict
 
+from dataclasses_json import dataclass_json
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+@dataclass_json
+class NERTrainerParams:
+    nt_trainer_params_json: Dict = None
+    nt_train_option: str = None
+    nt_sel_ntd_name: str = None
+    nt_train_list_option: str = None
+    nt_sel_tng_name: str = None
+    nt_train_dir: str = None
+    nt_val_dir: str = None
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> NERTrainerParams:
+    return NERTrainerParams()
+
+
 
 
 class NERTrainer(MenuBase):
@@ -43,6 +64,10 @@ class NERTrainer(MenuBase):
             self.ntd = ner_task.NERTaskDef(self.state, show_menu=False)
             self.tng = gb.TEINERGroundtruthBuilder(self.state, show_menu=False)
             self.show()
+            
+    @property
+    def ner_trainer_params(self) -> NERTrainerParams:
+        return get_params()
 
     def show(self):
         if self.workdir() != 0:
@@ -73,7 +98,7 @@ class NERTrainer(MenuBase):
             os.chdir(self._wd)
             with st.beta_expander("Train configuration", expanded=True):
 
-                if self.state.nt_trainer_params_json is None:
+                if self.ner_trainer_params.nt_trainer_params_json is None:
                     # only new loading if necessary, otherwise everytime the old trainer_params_json is loaded
                     logger.info("load trainer params")
                     if self.load_trainer_params() != 0:
@@ -81,49 +106,49 @@ class NERTrainer(MenuBase):
                         logger.error("Failed to load trainer_params.json")
                         return -1
 
-                self.state.nt_train_option = st.radio(
+                self.ner_trainer_params.nt_train_option = radio_widget(
                     "Train configuration options",
                     tuple(self.train_conf_options.keys()),
-                    tuple(self.train_conf_options.keys()).index(self.state.nt_train_option)
-                    if self.state.nt_train_option
+                    tuple(self.train_conf_options.keys()).index(self.ner_trainer_params.nt_train_option)
+                    if self.ner_trainer_params.nt_train_option
                     else 0,
                     key="nt_train_option",
                     help="Choose an option to define a train configuration.",
                 )
 
-                self.train_conf_options[self.state.nt_train_option]()
+                self.train_conf_options[self.ner_trainer_params.nt_train_option]()
 
                 pretrained_model = model_dir_entry_widget(
-                    self.state.nt_trainer_params_json["scenario"]["model"]["pretrained_bert"],
+                    self.ner_trainer_params.nt_trainer_params_json["scenario"]["model"]["pretrained_bert"],
                     name="model.pretrained_bert",
                     expect_saved_model=True,
                 )
                 if pretrained_model:
-                    self.state.nt_trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
+                    self.ner_trainer_params.nt_trainer_params_json["scenario"]["model"]["pretrained_bert"] = pretrained_model
                 else:
                     self._data_config_check.append("model.pretrained_bert")
 
                 # output_dir = text_entry_with_check(
-                #    string=self.state.nt_trainer_params_json["output_dir"],
+                #    string=self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                 #    name="output_dir",
                 #    check_fn=check_dir_ask_make,
                 # )
                 # if output_dir:
-                #    self.state.nt_trainer_params_json["output_dir"] = output_dir
+                #    self.ner_trainer_params.nt_trainer_params_json["output_dir"] = output_dir
                 #    self.save_train_params()
                 # else:
                 #    self._data_config_check.append("output_dir")
 
                 output_dir, output_dir_state = small_dir_selector(
                     "Output Directory",
-                    self.state.nt_trainer_params_json["output_dir"],
+                    self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                     key="nt_conf_output_dir",
                     help="Choose a directory where the training should be saved in.",
                     return_state=True,
                     ask_make=True,
                 )
-                self.state.nt_trainer_params_json["output_dir"] = output_dir
-                self.state.nt_trainer_params_json["early_stopping"]["best_model_output_dir"] = output_dir
+                self.ner_trainer_params.nt_trainer_params_json["output_dir"] = output_dir
+                self.ner_trainer_params.nt_trainer_params_json["early_stopping"]["best_model_output_dir"] = output_dir
                 if output_dir_state != state_ok:
                     self._data_config_check.append("Output Directory")
 
@@ -142,121 +167,121 @@ class NERTrainer(MenuBase):
                     return 0
 
     def data_conf_self_def(self):
-        self.state.nt_sel_ntd_name = st.selectbox(
+        self.ner_trainer_params.nt_sel_ntd_name = selectbox_widget(
             "Choose an NER Task",
             tuple(self.ntd.defdict.keys()),
-            tuple(self.ntd.defdict.keys()).index(self.state.nt_sel_ntd_name) if self.state.nt_sel_ntd_name else 0,
+            tuple(self.ntd.defdict.keys()).index(self.ner_trainer_params.nt_sel_ntd_name) if self.ner_trainer_params.nt_sel_ntd_name else 0,
             key="nt_sel_ntd",
             help="To specify which NER task you want to train choose an NER Task Entity Definition.",
         )
-        self.state.nt_trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(
-            self.state.nt_sel_ntd_name
+        self.ner_trainer_params.nt_trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(
+            self.ner_trainer_params.nt_sel_ntd_name
         )
 
-        self.state.nt_train_list_option = st.radio(
+        self.ner_trainer_params.nt_train_list_option = radio_widget(
             "Input data Source",
             tuple(self.train_list_options.keys()),
-            tuple(self.train_list_options.keys()).index(self.state.nt_train_list_option)
-            if self.state.nt_train_list_option
+            tuple(self.train_list_options.keys()).index(self.ner_trainer_params.nt_train_list_option)
+            if self.ner_trainer_params.nt_train_list_option
             else 0,
             key="nt_train_list_option",
             help="Choose an option for define where your input data should come from.",
         )
 
-        self.train_list_options[self.state.nt_train_list_option]()
+        self.train_list_options[self.ner_trainer_params.nt_train_list_option]()
 
     def data_conf_by_tei_gb(self):
-        self.state.nt_sel_tng_name = st.selectbox(
+        self.ner_trainer_params.nt_sel_tng_name = selectbox_widget(
             "Choose a Groundtruth",
             tuple(self.tng.tngdict.keys()),
-            tuple(self.tng.tngdict.keys()).index(self.state.nt_sel_tng_name) if self.state.nt_sel_tng_name else 0,
+            tuple(self.tng.tngdict.keys()).index(self.ner_trainer_params.nt_sel_tng_name) if self.ner_trainer_params.nt_sel_tng_name else 0,
             key="nt_sel_tng",
             help="Choose a TEI NER Groundtruth which you want to use for training.",
         )
-        ntd_name = self.tng.tngdict[self.state.nt_sel_tng_name][self.tng.tng_attr_tnm]["ntd"][self.ntd.ntd_attr_name]
-        self.state.nt_trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(ntd_name)
+        ntd_name = self.tng.tngdict[self.ner_trainer_params.nt_sel_tng_name][self.tng.tng_attr_tnm]["ntd"][self.ntd.ntd_attr_name]
+        self.ner_trainer_params.nt_trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(ntd_name)
         trainlistfilepath, devlistfilepath, testlistfilepath = self.tng.get_filepath_to_gt_lists(
-            self.state.nt_sel_tng_name
+            self.ner_trainer_params.nt_sel_tng_name
         )
-        self.state.nt_trainer_params_json["gen"]["train"]["lists"] = [trainlistfilepath]
-        self.state.nt_trainer_params_json["gen"]["val"]["lists"] = [devlistfilepath]
+        self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"] = [trainlistfilepath]
+        self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"] = [devlistfilepath]
 
     def data_list_conf_from_folder(self):
         train_dir, train_dir_state = small_dir_selector(
             "Folder with Train-JSON-Files",
-            self.state.nt_train_dir
-            if self.state.nt_train_dir
+            self.ner_trainer_params.nt_train_dir
+            if self.ner_trainer_params.nt_train_dir
             else (
-                os.path.dirname(self.state.nt_trainer_params_json["gen"]["train"]["lists"][0])
-                if os.path.isfile(self.state.nt_trainer_params_json["gen"]["train"]["lists"][0])
-                else self.state.nt_trainer_params_json["gen"]["train"]["lists"][0]
+                os.path.dirname(self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"][0])
+                if os.path.isfile(self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"][0])
+                else self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"][0]
             ),
             key="nt_conf_train_dir",
             help="Choose a directory with json-Files which should be used for Training.",
             return_state=True,
         )
-        if train_dir_state == state_ok and train_dir != self.state.nt_train_dir:
-            self.state.nt_train_dir = train_dir
+        if train_dir_state == state_ok and train_dir != self.ner_trainer_params.nt_train_dir:
+            self.ner_trainer_params.nt_train_dir = train_dir
         elif train_dir_state != state_ok:
             self._data_config_check.append("Folder with Train-JSON-Files")
 
         val_dir, val_dir_state = small_dir_selector(
             "Folder with Validation-JSON-Files",
-            self.state.nt_val_dir
-            if self.state.nt_val_dir
+            self.ner_trainer_params.nt_val_dir
+            if self.ner_trainer_params.nt_val_dir
             else (
-                os.path.dirname(self.state.nt_trainer_params_json["gen"]["val"]["lists"][0])
-                if os.path.isfile(self.state.nt_trainer_params_json["gen"]["val"]["lists"][0])
-                else self.state.nt_trainer_params_json["gen"]["val"]["lists"][0]
+                os.path.dirname(self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"][0])
+                if os.path.isfile(self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"][0])
+                else self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"][0]
             ),
             key="nt_conf_val_dir",
             help="Choose a directory with json-Files which should be used for the evaluation in between the training.",
             return_state=True,
         )
-        if val_dir_state == state_ok and val_dir != self.state.nt_val_dir:
-            self.state.nt_val_dir = val_dir
+        if val_dir_state == state_ok and val_dir != self.ner_trainer_params.nt_val_dir:
+            self.ner_trainer_params.nt_val_dir = val_dir
         elif val_dir_state != state_ok:
             self._data_config_check.append("Folder with Validation-JSON-Files")
 
     def data_list_conf_from_lst(self):
         train_lists = file_lists_entry_widget(
-            self.state.nt_trainer_params_json["gen"]["train"]["lists"],
+            self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"],
             name="train.lists",
             help=", separated file names",
         )
         if train_lists:
-            self.state.nt_trainer_params_json["gen"]["train"]["lists"] = train_lists
+            self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"] = train_lists
 
-        if len(train_lists) > 1 or len(self.state.nt_trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
+        if len(train_lists) > 1 or len(self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["list_ratios"]) > 1:
             train_lists_ratio = numbers_lists_entry_widget(
-                self.state.nt_trainer_params_json["gen"]["train"]["list_ratios"],
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["list_ratios"],
                 name="train.list_ratios",
                 expect_amount=len(train_lists),
                 help="e.g. '1.0, 2.0' must be same amount as file names",
             )
             if train_lists_ratio:
-                self.state.nt_trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["list_ratios"] = train_lists_ratio
             else:
                 self._data_config_check.append("train.list_ratios")
         val_lists = file_lists_entry_widget(
-            self.state.nt_trainer_params_json["gen"]["val"]["lists"],
+            self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"],
             name="val.lists",
             help=", separated file names",
         )
         if val_lists:
-            self.state.nt_trainer_params_json["gen"]["val"]["lists"] = val_lists
+            self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"] = val_lists
             # self.save_train_params()
         else:
             self._data_config_check.append("val.lists")
-        if len(val_lists) > 1 or len(self.state.nt_trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
+        if len(val_lists) > 1 or len(self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["list_ratios"]) > 1:
             val_lists_ratio = numbers_lists_entry_widget(
-                self.state.nt_trainer_params_json["gen"]["val"]["list_ratios"],
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["list_ratios"],
                 name="val.list_ratios",
                 expect_amount=len(val_lists),
                 help="e.g. '1.0, 2.0' must be same amount as file names",
             )
             if val_lists_ratio:
-                self.state.nt_trainer_params_json["gen"]["val"]["list_ratios"] = val_lists_ratio
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["list_ratios"] = val_lists_ratio
                 # self.save_train_params()
             else:
                 self._data_config_check.append("val.list_ratios")
@@ -298,44 +323,44 @@ class NERTrainer(MenuBase):
         return 0
 
     def build_lst_files_if_necessary(self):
-        if self.state.nt_train_option == "Self-Defined" and self.state.nt_train_list_option == "From Folder":
-            if os.path.isdir(self.state.nt_train_dir):
+        if self.ner_trainer_params.nt_train_option == "Self-Defined" and self.ner_trainer_params.nt_train_list_option == "From Folder":
+            if os.path.isdir(self.ner_trainer_params.nt_train_dir):
                 trainfilelist = [
-                    os.path.join(self.state.nt_train_dir, filepath + "\n")
-                    for filepath in os.listdir(self.state.nt_train_dir)
+                    os.path.join(self.ner_trainer_params.nt_train_dir, filepath + "\n")
+                    for filepath in os.listdir(self.ner_trainer_params.nt_train_dir)
                     if filepath.endswith(".json")
                 ]
                 with open(
                     os.path.join(
-                        self.state.nt_trainer_params_json["output_dir"],
+                        self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                         "train.lst",
                     ),
                     "w+",
                 ) as htrain:
                     htrain.writelines(trainfilelist)
-                self.state.nt_trainer_params_json["gen"]["train"]["lists"] = [
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["train"]["lists"] = [
                     os.path.join(
-                        self.state.nt_trainer_params_json["output_dir"],
+                        self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                         "train.lst",
                     )
                 ]
-            if os.path.isdir(self.state.nt_val_dir):
+            if os.path.isdir(self.ner_trainer_params.nt_val_dir):
                 valfilelist = [
-                    os.path.join(self.state.nt_val_dir, filepath + "\n")
-                    for filepath in os.listdir(self.state.nt_val_dir)
+                    os.path.join(self.ner_trainer_params.nt_val_dir, filepath + "\n")
+                    for filepath in os.listdir(self.ner_trainer_params.nt_val_dir)
                     if filepath.endswith(".json")
                 ]
                 with open(
                     os.path.join(
-                        self.state.nt_trainer_params_json["output_dir"],
+                        self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                         "val.lst",
                     ),
                     "w+",
                 ) as hval:
                     hval.writelines(valfilelist)
-                self.state.nt_trainer_params_json["gen"]["val"]["lists"] = [
+                self.ner_trainer_params.nt_trainer_params_json["gen"]["val"]["lists"] = [
                     os.path.join(
-                        self.state.nt_trainer_params_json["output_dir"],
+                        self.ner_trainer_params.nt_trainer_params_json["output_dir"],
                         "val.lst",
                     )
                 ]
@@ -343,12 +368,12 @@ class NERTrainer(MenuBase):
     def load_trainer_params(self):
         with remember_cwd():
             os.chdir(self._wd)
-            self.state.nt_trainer_params_json = config_io.get_config("trainer_params.json")
+            self.ner_trainer_params.nt_trainer_params_json = config_io.get_config("trainer_params.json")
         return 0
 
     def save_train_params(self):
         self.build_lst_files_if_necessary()
         with remember_cwd():
             os.chdir(self._wd)
-            config_io.set_config(self.state.nt_trainer_params_json)
+            config_io.set_config(self.ner_trainer_params.nt_trainer_params_json)
         return 0
