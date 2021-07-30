@@ -6,19 +6,46 @@ from tei_entity_enricher.util.helper import (
     get_listoutput,
     transform_arbitrary_text_to_latex,
 )
-from tei_entity_enricher.util.components import editable_single_column_table, small_file_selector
+from tei_entity_enricher.util.components import (
+    editable_single_column_table,
+    small_file_selector,
+    radio_widget,
+    selectbox_widget,
+    text_input_widget,
+)
 from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
 )
 import tei_entity_enricher.menu.tei_ner_gb as gb
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
+from typing import List,Dict
+
+
+@dataclass
+@dataclass_json
+class TEINERReaderParams:
+    tr_edit_options: str = None
+    tr_del_config_name: str = None
+    tr_test_selected_config_name: str = None
+    tr_teifile: str = None
+    tr_last_test_dict: Dict = None
+    tr_mode: str = None
+    tr_sel_config_name: str = None
+    tr_name: str = None
+    tr_exclude_list: List = None
+    tr_note_tags: List = None
+
+
+@st.cache(allow_output_mutation=True)
+def get_params() -> TEINERReaderParams:
+    return TEINERReaderParams()
 
 
 class TEIReader:
     def __init__(self, state, show_menu=True):
-        self.state = state
-
         self.config_Folder = "TR_Configs"
         self.template_config_Folder = os.path.join(module_path, "templates", self.config_Folder)
         self.config_Folder = os.path.join(local_save_path, self.config_Folder)
@@ -53,6 +80,10 @@ class TEIReader:
         if show_menu:
             self.tng = gb.TEINERGroundtruthBuilder(state, show_menu=False)
             self.show()
+
+    @property
+    def tei_ner_reader_params(self) -> TEINERReaderParams:
+        return get_params()
 
     def validate_and_saving_config(self, config, mode):
         val = True
@@ -120,7 +151,6 @@ class TEIReader:
                 json.dump(config, f)
             self.reset_tr_edit_states()
             st.experimental_rerun()
-            # st.success(config[tr_config_attr_name]+' saved.')
 
     def validate_and_delete_config(self, config):
         val = True
@@ -139,7 +169,11 @@ class TEIReader:
                 )
             )
             self.reset_tr_edit_states()
-            self.state.tr_test_selected_config_name = None
+            if config[self.tr_config_attr_name] == self.tei_ner_reader_params.tr_test_selected_config_name:
+                self.tei_ner_reader_params.tr_test_selected_config_name = None
+            if config[self.tr_config_attr_name] == self.tei_ner_reader_params.tr_sel_config_name:
+                self.tei_ner_reader_params.tr_sel_config_name = None
+            self.tei_ner_reader_params.tr_del_config_name = None
             st.experimental_rerun()
 
     def show_editable_exclude_tags(self, excl_list, mode, name, dupl_name):
@@ -155,9 +189,9 @@ class TEIReader:
         )
 
     def reset_tr_edit_states(self):
-        self.state.tr_exclude_list = None
-        self.state.tr_note_tags = None
-        self.state.tr_name = None
+        self.tei_ner_reader_params.tr_exclude_list = None
+        self.tei_ner_reader_params.tr_note_tags = None
+        self.tei_ner_reader_params.tr_name = None
 
     def are_configs_equal(self, config1, config2):
         for key in config1.keys():
@@ -171,9 +205,9 @@ class TEIReader:
                 "There are no self-defined TEI Reader Configs to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
-            if self.state.tr_mode != mode:
+            if self.tei_ner_reader_params.tr_mode != mode:
                 self.reset_tr_edit_states()
-            self.state.tr_mode = mode
+            self.tei_ner_reader_params.tr_mode = mode
             tr_config_dict = {}
             init_use_notes = True
             if mode in [self.tr_config_mode_dupl, self.tr_config_mode_edit]:
@@ -181,10 +215,19 @@ class TEIReader:
                     options = list(self.configdict.keys())
                 else:
                     options = self.editable_config_names
-                selected_config_name = st.selectbox(f"Select a config to {mode}!", options, key=mode)
-                if self.state.tr_sel_config_name != selected_config_name:
+                    if self.tei_ner_reader_params.tr_sel_config_name not in self.editable_config_names:
+                        self.tei_ner_reader_params.tr_sel_config_name= None
+                selected_config_name = selectbox_widget(
+                    f"Select a config to {mode}!",
+                    options,
+                    key=mode,
+                    index=options.index(self.tei_ner_reader_params.tr_sel_config_name)
+                    if self.tei_ner_reader_params.tr_sel_config_name
+                    else 0,
+                )
+                if self.tei_ner_reader_params.tr_sel_config_name != selected_config_name:
                     self.reset_tr_edit_states()
-                self.state.tr_sel_config_name = selected_config_name
+                self.tei_ner_reader_params.tr_sel_config_name = selected_config_name
                 tr_config_dict = self.configdict[selected_config_name].copy()
                 init_use_notes = tr_config_dict[self.tr_config_attr_use_notes]
                 if mode == self.tr_config_mode_dupl:
@@ -195,24 +238,23 @@ class TEIReader:
                 tr_config_dict[self.tr_config_attr_excl_tags] = []
                 tr_config_dict[self.tr_config_attr_note_tags] = []
             if mode in [self.tr_config_mode_dupl, self.tr_config_mode_add]:
-                self.state.tr_name = st.text_input("New TEI Reader Config Name:", self.state.tr_name or "")
-                if self.state.tr_name:
-                    tr_config_dict[self.tr_config_attr_name] = self.state.tr_name
+                self.tei_ner_reader_params.tr_name = text_input_widget("New TEI Reader Config Name:", self.tei_ner_reader_params.tr_name or "")
+                if self.tei_ner_reader_params.tr_name:
+                    tr_config_dict[self.tr_config_attr_name] = self.tei_ner_reader_params.tr_name
             init_exclude_list = tr_config_dict[self.tr_config_attr_excl_tags]
 
-            self.state.tr_exclude_list = self.show_editable_exclude_tags(
-                self.state.tr_exclude_list if self.state.tr_exclude_list else init_exclude_list,
+            self.tei_ner_reader_params.tr_exclude_list = self.show_editable_exclude_tags(
+                self.tei_ner_reader_params.tr_exclude_list if self.tei_ner_reader_params.tr_exclude_list else init_exclude_list,
                 mode,
                 tr_config_dict[self.tr_config_attr_name] if self.tr_config_attr_name in tr_config_dict.keys() else "",
                 selected_config_name,
             )
-            # st.write('Tags to exclude: '+ self.get_listoutput(self.state.tr_exclude_list))
             init_note_tags = tr_config_dict[self.tr_config_attr_note_tags]
             use_notes = st.checkbox("Tag Notes", init_use_notes)
             tr_config_dict[self.tr_config_attr_use_notes] = use_notes
             if tr_config_dict[self.tr_config_attr_use_notes]:
-                self.state.tr_note_tags = self.show_editable_note_tags(
-                    self.state.tr_note_tags if self.state.tr_note_tags else init_note_tags,
+                self.tei_ner_reader_params.tr_note_tags = self.show_editable_note_tags(
+                    self.tei_ner_reader_params.tr_note_tags if self.tei_ner_reader_params.tr_note_tags else init_note_tags,
                     mode,
                     tr_config_dict[self.tr_config_attr_name]
                     if self.tr_config_attr_name in tr_config_dict.keys()
@@ -220,10 +262,10 @@ class TEIReader:
                     selected_config_name,
                 )
             if st.button("Save TEI Reader Config", key=mode):
-                tr_config_dict[self.tr_config_attr_excl_tags] = self.state.tr_exclude_list
+                tr_config_dict[self.tr_config_attr_excl_tags] = self.tei_ner_reader_params.tr_exclude_list
                 tr_config_dict[self.tr_config_attr_note_tags] = (
-                    self.state.tr_note_tags
-                    if self.state.tr_note_tags and tr_config_dict[self.tr_config_attr_use_notes]
+                    self.tei_ner_reader_params.tr_note_tags
+                    if self.tei_ner_reader_params.tr_note_tags and tr_config_dict[self.tr_config_attr_use_notes]
                     else []
                 )
                 self.validate_and_saving_config(tr_config_dict, mode)
@@ -238,9 +280,18 @@ class TEIReader:
         self.show_editable_config_content(self.tr_config_mode_edit)
 
     def teireaderdel(self):
-        selected_config_name = st.selectbox("Select a config to delete!", self.editable_config_names)
-        if st.button("Delete Selected Config"):
-            self.validate_and_delete_config(self.configdict[selected_config_name])
+        if len(self.editable_config_names) > 0:
+            self.tei_ner_reader_params.tr_del_config_name = selectbox_widget(
+                "Select a config to delete!",
+                self.editable_config_names,
+                index=self.editable_config_names.index(self.tei_ner_reader_params.tr_del_config_name)
+                if self.tei_ner_reader_params.tr_del_config_name
+                else 0,
+            )
+            if st.button("Delete Selected Config"):
+                self.validate_and_delete_config(self.configdict[self.tei_ner_reader_params.tr_del_config_name])
+        else:
+            st.info("There are no self-defined TEI Read NER Reader Configs to delete!")
 
     def show_edit_environment(self):
         tr_config_definer = st.beta_expander("Add or edit existing Config", expanded=False)
@@ -251,28 +302,32 @@ class TEIReader:
                 "Edit TEI Reader Config": self.tei_reader_edit,
                 "Delete TEI Reader Config": self.teireaderdel,
             }
-            self.state.tr_edit_options = st.radio(
+            self.tei_ner_reader_params.tr_edit_options = radio_widget(
                 "Edit Options",
                 tuple(options.keys()),
-                tuple(options.keys()).index(self.state.tr_edit_options) if self.state.tr_edit_options else 0,
+                tuple(options.keys()).index(self.tei_ner_reader_params.tr_edit_options)
+                if self.tei_ner_reader_params.tr_edit_options
+                else 0,
             )
-            options[self.state.tr_edit_options]()
+            options[self.tei_ner_reader_params.tr_edit_options]()
 
     def show_test_environment(self):
         tr_test_expander = st.beta_expander("Test TEI Reader Config", expanded=False)
         with tr_test_expander:
-            self.state.tr_test_selected_config_name = st.selectbox(
+            self.tei_ner_reader_params.tr_test_selected_config_name = selectbox_widget(
                 "Select a TEI Reader Config to test!",
                 list(self.configdict.keys()),
-                index=list(self.configdict.keys()).index(self.state.tr_test_selected_config_name)
-                if self.state.tr_test_selected_config_name
+                index=list(self.configdict.keys()).index(self.tei_ner_reader_params.tr_test_selected_config_name)
+                if self.tei_ner_reader_params.tr_test_selected_config_name
                 else 0,
                 key="tr_test",
             )
-            config = self.configdict[self.state.tr_test_selected_config_name]
-            self.state.tr_teifile = small_file_selector(
+            config = self.configdict[self.tei_ner_reader_params.tr_test_selected_config_name]
+            self.tei_ner_reader_params.tr_teifile = small_file_selector(
                 label="Choose a TEI-File",
-                value=self.state.tr_teifile if self.state.tr_teifile else local_save_path,
+                value=self.tei_ner_reader_params.tr_teifile
+                if self.tei_ner_reader_params.tr_teifile
+                else local_save_path,
                 key="tr_test_choose_tei",
                 help="Choose a TEI file for testing the chosen TEI Reader Config",
             )
@@ -281,17 +336,22 @@ class TEIReader:
                 key="tr_Button_Test",
                 help="Test TEI Reader Config on the chosen Config and TEI-File.",
             ):
-                self.state.avoid_rerun()
-                if os.path.isfile(self.state.tr_teifile):
-                    self.state.tr_last_test_dict = {
-                        "teifile": self.state.tr_teifile,
+                if os.path.isfile(self.tei_ner_reader_params.tr_teifile):
+                    self.tei_ner_reader_params.tr_last_test_dict = {
+                        "teifile": self.tei_ner_reader_params.tr_teifile,
                         "tr": config,
                     }
                 else:
-                    st.error(f"The chosen path {self.state.tr_teifile} is not a file!")
-                    self.state.tr_last_test_dict = {}
-            if self.state.tr_last_test_dict and len(self.state.tr_last_test_dict.keys()) > 0:
-                tei = tp.TEIFile(self.state.tr_last_test_dict["teifile"], self.state.tr_last_test_dict["tr"])
+                    st.error(f"The chosen path {self.tei_ner_reader_params.tr_teifile} is not a file!")
+                    self.tei_ner_reader_params.tr_last_test_dict = {}
+            if (
+                self.tei_ner_reader_params.tr_last_test_dict
+                and len(self.tei_ner_reader_params.tr_last_test_dict.keys()) > 0
+            ):
+                tei = tp.TEIFile(
+                    self.tei_ner_reader_params.tr_last_test_dict["teifile"],
+                    self.tei_ner_reader_params.tr_last_test_dict["tr"],
+                )
                 st.subheader("Text Content:")
                 st.write(transform_arbitrary_text_to_latex(tei.get_text()))
                 if config[self.tr_config_attr_use_notes]:
