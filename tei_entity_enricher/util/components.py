@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import streamlit as st
+from streamlit.widgets import NoValue
 from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
@@ -429,4 +430,37 @@ def checkbox_widget(label, value=False, key=None, help=None, st_element=st):
         ret_value = checkbox_placeholder.checkbox(
             label, value=ret_value, key=key, help=help
         )
+    return ret_value
+
+def number_input_widget(
+        label,
+        min_value=None,
+        max_value=None,
+        value=NoValue(),
+        step=None,
+        format=None,
+        key=None,
+        help=None,
+        st_element=st,
+    ):
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
+    number_input_placeholder=st_element.empty()
+
+    ret_value=number_input_placeholder.number_input(label=label,
+        min_value=min_value,
+        max_value=max_value,
+        value=value,
+        step=step,
+        format=format,
+        key=key,
+        help=help)
+    if value != ret_value:
+        ret_value=number_input_placeholder.number_input(label=label,
+            min_value=min_value,
+            max_value=max_value,
+            value=ret_value,
+            step=step,
+            format=format,
+            key=key,
+            help=help)
     return ret_value
