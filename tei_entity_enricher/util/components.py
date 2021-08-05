@@ -2,7 +2,6 @@ import os
 
 import pandas as pd
 import streamlit as st
-from streamlit.widgets import NoValue
 from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
@@ -436,7 +435,7 @@ def number_input_widget(
         label,
         min_value=None,
         max_value=None,
-        value=NoValue(),
+        value=None,
         step=None,
         format=None,
         key=None,
@@ -445,7 +444,6 @@ def number_input_widget(
     ):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
     number_input_placeholder=st_element.empty()
-
     ret_value=number_input_placeholder.number_input(label=label,
         min_value=min_value,
         max_value=max_value,
