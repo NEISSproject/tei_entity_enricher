@@ -130,7 +130,7 @@ class NERPrediction(MenuBase):
         )
 
         target = f"Select input json-file: {self.ner_prediction_params.input_json_file}"
-        with st.beta_expander(target, expanded=False):
+        with st.expander(target, expanded=False):
             input_file = file_selector(folder_path=self._wd_ner_prediction, parent=target, init_file=init)
 
             if st.button("select"):
@@ -141,7 +141,7 @@ class NERPrediction(MenuBase):
                     st.experimental_rerun()
 
     def select_tei_input_data(self):
-        np_tei_input_expander = st.beta_expander("Select a TEI Prediction Configuration", expanded=False)
+        np_tei_input_expander = st.expander("Select a TEI Prediction Configuration", expanded=False)
         with np_tei_input_expander:
             tr_name = selectbox_widget(
                 "Select a TEI Reader Config which should be used for the prediction!",

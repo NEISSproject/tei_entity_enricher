@@ -353,7 +353,7 @@ class TEINERMap:
             st.info("There are no self-defined TEI Read NER Entity mappings to delete!")
 
     def show_edit_environment(self):
-        tnm_definer = st.beta_expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
+        tnm_definer = st.expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
         with tnm_definer:
             options = {
                 "Add TEI Read NER Entity Mapping": self.tei_ner_map_add,
@@ -410,7 +410,7 @@ class TEINERMap:
         return newtext
 
     def show_test_environment(self):
-        tnm_test_expander = st.beta_expander("Test TEI Read NER Entity Mapping", expanded=False)
+        tnm_test_expander = st.expander("Test TEI Read NER Entity Mapping", expanded=False)
         with tnm_test_expander:
             self.tei_ner_map_params.tnm_test_selected_config_name = selectbox_widget(
                 "Select a TEI Reader Config for the mapping test!",
@@ -459,7 +459,7 @@ class TEINERMap:
                     self.tei_ner_map_params.tnm_last_test_dict["tr"],
                     entity_dict=mapping[self.tei_ner_map_params.tnm_last_test_dict["tnm"]],
                 )
-                col1, col2 = st.beta_columns([0.2, 0.8])
+                col1, col2 = st.columns([0.2, 0.8])
                 statistics = tei.get_statistics()
                 self.tei_ner_map_params.tnm_test_entity_list = []
                 with col1:
@@ -499,7 +499,7 @@ class TEINERMap:
                         )
                     )
                 if config[self.tr.tr_config_attr_use_notes]:
-                    col1_note, col2_note = st.beta_columns([0.2, 0.8])
+                    col1_note, col2_note = st.columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
                     self.tei_ner_map_params.tnm_test_note_entity_list = []
                     with col1_note:
@@ -583,7 +583,7 @@ class TEINERMap:
         return tablestring
 
     def show_tnms(self):
-        tnm_show = st.beta_expander("Existing TEI Read NER Entity Mappings", expanded=True)
+        tnm_show = st.expander("Existing TEI Read NER Entity Mappings", expanded=True)
         with tnm_show:
             st.markdown(self.build_tnm_tablestring())
             self.tei_ner_map_params.tnm_selected_display_tnm_name = selectbox_widget(
@@ -610,7 +610,7 @@ class TEINERMap:
 
     def show(self):
         st.latex("\\text{\Huge{TEI Read NER Entity Mapping}}")
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             self.show_tnms()
         with col2:

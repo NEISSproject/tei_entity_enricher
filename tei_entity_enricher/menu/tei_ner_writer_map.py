@@ -355,7 +355,7 @@ class TEINERPredWriteMap:
             st.info("There are no self-defined TEI NER Prediction Writer mapping to delete!")
 
     def show_edit_environment(self):
-        tnw_definer = st.beta_expander("Add or edit existing TEI NER Prediction Writer Mapping", expanded=False)
+        tnw_definer = st.expander("Add or edit existing TEI NER Prediction Writer Mapping", expanded=False)
         with tnw_definer:
             options = {
                 "Add TEI NER Prediction Writer Mapping": self.tei_ner_map_add,
@@ -413,7 +413,7 @@ class TEINERPredWriteMap:
         return tablestring
 
     def show_tnws(self):
-        tnw_show = st.beta_expander("Existing TEI NER Prediction Writer Mappings", expanded=True)
+        tnw_show = st.expander("Existing TEI NER Prediction Writer Mappings", expanded=True)
         with tnw_show:
             st.markdown(self.build_tnw_tablestring())
             self.tei_ner_writer_params.tnw_selected_display_tnw_name = selectbox_widget(
@@ -478,7 +478,7 @@ class TEINERPredWriteMap:
         return newtext
 
     def show_test_environment(self):
-        tnw_test_expander = st.beta_expander("Test TEI NER Prediction Writer Mapping", expanded=False)
+        tnw_test_expander = st.expander("Test TEI NER Prediction Writer Mapping", expanded=False)
         with tnw_test_expander:
             self.tei_ner_writer_params.tnw_test_selected_config_name = selectbox_widget(
                 "Select a TEI Reader Config for the mapping test!",
@@ -524,7 +524,7 @@ class TEINERPredWriteMap:
                     self.tei_ner_writer_params.tnw_last_test_dict["tr"],
                     entity_dict=mapping[self.tei_ner_writer_params.tnw_last_test_dict["tnw"]],
                 )
-                col1, col2 = st.beta_columns([0.2, 0.8])
+                col1, col2 = st.columns([0.2, 0.8])
                 statistics = tei.get_statistics()
                 self.tei_ner_writer_params.tnw_test_entity_list = []
                 with col1:
@@ -564,7 +564,7 @@ class TEINERPredWriteMap:
                         )
                     )
                 if config[self.tr.tr_config_attr_use_notes]:
-                    col1_note, col2_note = st.beta_columns([0.2, 0.8])
+                    col1_note, col2_note = st.columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
                     self.tei_ner_writer_params.tnw_test_note_entity_list = []
                     with col1_note:
@@ -608,7 +608,7 @@ class TEINERPredWriteMap:
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             self.show_tnws()
         with col2:

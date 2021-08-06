@@ -1,4 +1,4 @@
-streamlit == 0.83.0
+streamlit == 0.86.0
 streamlit-ace
 streamlit-aggrid
 Pillow

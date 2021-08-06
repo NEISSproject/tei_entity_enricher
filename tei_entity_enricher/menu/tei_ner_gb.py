@@ -361,7 +361,7 @@ class TEINERGroundtruthBuilder:
 
     def show_build_gt_environment(self):
         tng_dict = {}
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             self.tei_ner_gb_params.tng_name = text_input_widget(
                 "Define a name for the groundtruth:", self.tei_ner_gb_params.tng_name or ""
@@ -398,8 +398,8 @@ class TEINERGroundtruthBuilder:
             if self.tei_ner_gb_params.tng_tnm_name:
                 tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[self.tei_ner_gb_params.tng_tnm_name]
 
-        col3, col4 = st.beta_columns(2)
-        col5, col6, col7 = st.beta_columns([0.25, 0.25, 0.5])
+        col3, col4 = st.columns(2)
+        col5, col6, col7 = st.columns([0.25, 0.25, 0.5])
         with col3:
             st.markdown("Define a ratio for the partition into train- development- and testset.")
         with col5:
@@ -427,7 +427,7 @@ class TEINERGroundtruthBuilder:
                 else 0,
             )
             tng_dict[self.tng_attr_shuffle_type] = self.tei_ner_gb_params.tng_shuffle_options
-        col8, col9 = st.beta_columns(2)
+        col8, col9 = st.columns(2)
         with col8:
             st.write(
                 "With this configuration you have ",
@@ -533,13 +533,13 @@ class TEINERGroundtruthBuilder:
 
     def show(self):
         st.latex("\\text{\Huge{TEI NER Groundtruth Builder}}")
-        tng_build_new = st.beta_expander("Build new TEI NER Groundtruth", expanded=False)
+        tng_build_new = st.expander("Build new TEI NER Groundtruth", expanded=False)
         with tng_build_new:
             self.show_build_gt_environment()
-        tng_delete = st.beta_expander("Delete existing TEI NER Groundtruth", expanded=False)
+        tng_delete = st.expander("Delete existing TEI NER Groundtruth", expanded=False)
         with tng_delete:
             self.show_del_environment()
-        tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
+        tng_show = st.expander("Show existing TEI NER Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
 

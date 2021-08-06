@@ -136,7 +136,7 @@ class TEIManPP:
         tag_entry["tagbegin"] = new_tagbegin
 
     def tei_edit_specific_entity(self, tag_entry, tr):
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             tag_entry["delete"] = checkbox_widget(
                 "Remove this tag from the TEI-File",
@@ -199,7 +199,7 @@ class TEIManPP:
             )
             input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
             link_identifier.input = [input_tuple]
-            col1, col2, col3 = st.beta_columns([0.25, 0.25, 0.5])
+            col1, col2, col3 = st.columns([0.25, 0.25, 0.5])
             if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
                 simple_search = True
             else:
@@ -234,7 +234,7 @@ class TEIManPP:
                         help='Define the source where links should be added from when pressing an "Add link"-Button',
                         st_element=col3,
                     )
-                    scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.beta_columns(7)
+                    scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
                     scol1.markdown("### Name")
                     scol2.markdown("### Further Names")
                     scol3.markdown("### Description")
@@ -244,7 +244,7 @@ class TEIManPP:
                     scol7.markdown("### Entity Library")
                     for suggestion in tag_entry["link_suggestions"]:
                         # workaround: new column definition because of unique row height
-                        scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.beta_columns(7)
+                        scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
@@ -380,7 +380,7 @@ class TEIManPP:
                 self.tei_man_pp_params.tmp_tr_from_last_search,
             )
             st.markdown("### Save the changes!")
-            col1, col2 = st.beta_columns([0.1, 0.9])
+            col1, col2 = st.columns([0.1, 0.9])
             with col1:
                 save_button_result = st.button(
                     "Save to",
@@ -427,7 +427,7 @@ class TEIManPP:
         return ""
 
     def define_search_criterion(self):
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             self.tei_man_pp_params.tmp_search_options = radio_widget(
                 "Search Options",
@@ -523,7 +523,7 @@ class TEIManPP:
 
     def show(self):
         st.subheader("Manual TEI Postprocessing")
-        man_tei = st.beta_expander("Manual TEI Postprocessing", expanded=True)
+        man_tei = st.expander("Manual TEI Postprocessing", expanded=True)
         with man_tei:
             self.tei_edit_environment()
 
