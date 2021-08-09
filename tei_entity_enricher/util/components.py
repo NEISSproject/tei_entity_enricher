@@ -499,21 +499,74 @@ def number_input_widget(
     key=None,
     help=None,
     st_element=st,
+    is_placeholder=False,
 ):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
-    number_input_placeholder = st_element.empty()
+    if is_placeholder:
+        number_input_placeholder = st_element
+    else:
+        number_input_placeholder = st_element.empty()
     ret_value = number_input_placeholder.number_input(
         label=label, min_value=min_value, max_value=max_value, value=value, step=step, format=format, key=key, help=help
     )
     if value != ret_value:
-        ret_value = number_input_placeholder.number_input(
-            label=label,
-            min_value=min_value,
-            max_value=max_value,
-            value=ret_value,
-            step=step,
-            format=format,
-            key=key,
-            help=help,
-        )
+        try:
+            ret_value = number_input_placeholder.number_input(
+                label=label,
+                min_value=min_value,
+                max_value=max_value,
+                value=ret_value,
+                step=step,
+                format=format,
+                key=key,
+                help=help,
+            )
+        except st.errors.DuplicateWidgetID:
+            pass
+    return ret_value
+
+
+def slider_widget(
+    label: str,
+    min_value=None,
+    max_value=None,
+    value=None,
+    step=None,
+    format=None,
+    key=None,
+    help=None,
+    on_change=None,
+    st_element=st,
+    is_placeholder=False,
+):
+    if is_placeholder:
+        slider_placeholder = st_element
+    else:
+        slider_placeholder = st_element.empty()
+    ret_value = slider_placeholder.slider(
+        label=label,
+        min_value=min_value,
+        max_value=max_value,
+        value=value,
+        step=step,
+        format=format,
+        key=key,
+        help=help,
+        on_change=on_change,
+    )
+    if value != ret_value:
+        try:
+            ret_value = slider_placeholder.slider(
+                label=label,
+                min_value=min_value,
+                max_value=max_value,
+                value=ret_value,
+                step=step,
+                format=format,
+                key=key,
+                help=help,
+                on_change=on_change,
+            )
+        except st.errors.DuplicateWidgetID:
+            pass
     return ret_value

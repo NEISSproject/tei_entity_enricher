@@ -4,7 +4,7 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
-from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, radio_widget, text_input_widget, checkbox_widget
+from tei_entity_enricher.util.components import editable_multi_column_table, small_file_selector, selectbox_widget, radio_widget, text_input_widget, checkbox_widget, number_input_widget
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     transform_xml_to_markdown,
@@ -340,39 +340,31 @@ class TEIManPP:
                     1,
                     len(self.tei_man_pp_params.tmp_matching_tag_list),
                     old_loop_element if old_loop_element else 1,
-                    key="tmp_loop_slider",
+                    #key="tmp_loop_slider",
                 )
                 if old_loop_element != new_loop_element:
-                    self.tei_man_pp_params.tmp_current_loop_element = slider_placeholder.slider(
-                        f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
-                        1,
-                        len(self.tei_man_pp_params.tmp_matching_tag_list),
-                        new_loop_element,
-                        key="tmp_loop_slider",
-                    )
+                    try:
+                        self.tei_man_pp_params.tmp_current_loop_element = slider_placeholder.slider(
+                            f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
+                            1,
+                            len(self.tei_man_pp_params.tmp_matching_tag_list),
+                            new_loop_element,
+                        )
+                    except st.errors.DuplicateWidgetID:
+                        self.tei_man_pp_params.tmp_current_loop_element = new_loop_element
                     old_loop_element = new_loop_element
                 new_loop_element = number_input_placeholder.number_input(
-                    "Goto Search Result with Index:",
-                    1,
-                    len(self.tei_man_pp_params.tmp_matching_tag_list),
-                    new_loop_element,
+                    label="Goto Search Result with Index:",
+                    min_value=1,
+                    max_value=len(self.tei_man_pp_params.tmp_matching_tag_list),
+                    value=new_loop_element,
                 )
                 if old_loop_element != new_loop_element:
-                    new_loop_element = slider_placeholder.slider(
-                        f"Matching tags in the TEI file (found {str(len(self.tei_man_pp_params.tmp_matching_tag_list))} entries) ",
-                        1,
-                        len(self.tei_man_pp_params.tmp_matching_tag_list),
-                        new_loop_element,
-                        key="tmp_loop_slider",
-                    )
-                    new_loop_element = number_input_placeholder.number_input(
-                        "Goto Search Result with Index:",
-                        1,
-                        len(self.tei_man_pp_params.tmp_matching_tag_list),
-                        new_loop_element,
-                    )
+                    self.tei_man_pp_params.tmp_current_loop_element = new_loop_element
+                    st.experimental_rerun()
                 self.tei_man_pp_params.tmp_current_loop_element = new_loop_element
             st.markdown("### Modify manually!")
+            print(self.tei_man_pp_params.tmp_current_loop_element,type(self.tei_man_pp_params.tmp_current_loop_element))
             self.tei_man_pp_params.tmp_matching_tag_list[
                 self.tei_man_pp_params.tmp_current_loop_element - 1
             ] = self.tei_edit_specific_entity(
