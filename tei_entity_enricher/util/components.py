@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import streamlit as st
+from streamlit.widgets import NoValue
 from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
@@ -77,13 +78,13 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
 
 
 def file_selector_expander(folder_path="", target="Select file...", init_file=""):
-    with st.expander(target, expanded=False):
+    with st.beta_expander(target, expanded=False):
         selected_file = file_selector(folder_path, parent=target, init_file=init_file)
     return selected_file
 
 
 def dir_selector_expander(folder_path="", target="Select directory..."):
-    with st.expander(target):
+    with st.beta_expander(target):
         selected_dir = dir_selector(folder_path, parent=target)
     return selected_dir
 
@@ -92,7 +93,7 @@ def file_selector(folder_path="", sub_level=0, max_level=10, parent="", init_fil
     filenames = [
         f for f in os.listdir(os.path.join(os.getcwd(), folder_path)) if not f[0] == "."
     ]  # get file names from dir excluding hidden files
-    a, b = st.columns([sub_level + 1, 2 * max_level])
+    a, b = st.beta_columns([sub_level + 1, 2 * max_level])
     if os.path.isfile(os.path.join(folder_path, init_file)) and os.path.isdir(os.path.join(os.getcwd(), folder_path)):
         # norm_init_file = os.path.normpath(init_file)
         init_file_lst = init_file.split(os.sep)
@@ -126,7 +127,7 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
         for f in os.listdir(os.path.join(os.getcwd(), folder_path))
         if not f[0] == "." and os.path.isdir(os.path.join(folder_path, f))
     ]  # get file names from dir excluding hidden files
-    a, b, c = st.columns([sub_level + 1, 2 * max_level, 2])
+    a, b, c = st.beta_columns([sub_level + 1, 2 * max_level, 2])
     selected_dirname = b.selectbox(f"{folder_path}", filenames, key=f"{parent}{folder_path}")
     if selected_dirname is None:
         return None
@@ -150,16 +151,16 @@ def get_sel_dict():
 
 def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     sel_dict = get_sel_dict()
-    col1, col2 = st.columns([10, 1])
-    col3, col4, col5 = st.columns([25, 25, 50])
+    col1, col2 = st.beta_columns([10, 1])
+    col3, col4, col5 = st.beta_columns([25, 25, 50])
     dirpath_placeholder = col1.empty()
     state_placeholder = col2.empty()
     parent_button_placeholder = col3.empty()
     subelement_button_placeholder = col4.empty()
     chosen_subdir_placeholder = col5.empty()
-    dirpath = text_input_widget(
-        label=label, value=value, help=help, st_element=dirpath_placeholder, is_placeholder=True
-    )
+    dirpath = dirpath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    if dirpath != value:
+        dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
     if os.path.isdir(dirpath):
         state_placeholder.latex(state_ok)
         ret_state = state_ok
@@ -168,44 +169,34 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
         ):
             dirpath = os.path.dirname(dirpath)
             sel_dict[key + "_chosen_subdir"] = None
-            dirpath = text_input_widget(
-                label=label, value=dirpath, help=help, st_element=dirpath_placeholder, is_placeholder=True
-            )
+            dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
         subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
         if len(subdirlist) > 0:
             if key + "_chosen_subdir" not in sel_dict.keys():
                 sel_dict[key + "_chosen_subdir"] = None
-            sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                label="Subdirectories:",
-                options=subdirlist,
-                index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+            sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                "Subdirectories:",
+                subdirlist,
+                subdirlist.index(sel_dict[key + "_chosen_subdir"])
                 if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                 else 0,
-                st_element=chosen_subdir_placeholder,
-                is_placeholder=True,
+                key=key + "_chosen_subdir",
             )
             if subelement_button_placeholder.button(
                 "Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."
             ):
                 dirpath = os.path.join(dirpath, sel_dict[key + "_chosen_subdir"])
                 sel_dict[key + "_chosen_subdir"] = None
-                dirpath = text_input_widget(
-                    label=label,
-                    value=dirpath,
-                    help=help,
-                    st_element=dirpath_placeholder,
-                    is_placeholder=True,
-                )
+                dirpath = dirpath_placeholder.text_input(label=label, value=dirpath, key=key + "_text_input", help=help)
                 subdirlist = [name for name in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, name))]
                 if len(subdirlist) > 0:
-                    sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                        label="Subdirectories:",
-                        options=subdirlist,
-                        index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                    sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                        "Subdirectories:",
+                        subdirlist,
+                        subdirlist.index(sel_dict[key + "_chosen_subdir"])
                         if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                         else 0,
-                        st_element=chosen_subdir_placeholder,
-                        is_placeholder=True,
+                        key=key + "_chosen_subdir",
                     )
                 else:
                     subelement_button_placeholder.empty()
@@ -214,15 +205,15 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
         state_placeholder.latex(state_failed)
         ret_state = state_failed
         sel_dict[key + "_chosen_subdir"] = None
-        col6, col7 = st.columns([30, 70])
+        col6, col7 = st.beta_columns([30, 70])
         reset_button_placeholder = col6.empty()
         error_placeholder = col7.empty()
         error_placeholder.error(f"The path {dirpath} is not a folder.")
         if reset_button_placeholder.button(
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
-            dirpath = text_input_widget(
-                label=label, value=local_save_path, help=help, st_element=dirpath_placeholder, is_placeholder=True
+            dirpath = dirpath_placeholder.text_input(
+                label=label, value=local_save_path, key=key + "_text_input", help=help
             )
             state_placeholder.latex(state_ok)
             ret_state = state_ok
@@ -236,14 +227,13 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
             if len(subdirlist) > 0:
                 if key + "_chosen_subdir" not in sel_dict.keys():
                     sel_dict[key + "_chosen_subdir"] = None
-                sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                    label="Subdirectories:",
-                    options=subdirlist,
-                    index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                    "Subdirectories:",
+                    subdirlist,
+                    subdirlist.index(sel_dict[key + "_chosen_subdir"])
                     if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                     else 0,
-                    st_element=chosen_subdir_placeholder,
-                    is_placeholder=True,
+                    key=key + "_chosen_subdir",
                 )
                 if subelement_button_placeholder.button(
                     "Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory."
@@ -264,8 +254,8 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
                 ):
                     dirpath = os.path.dirname(dirpath)
                     sel_dict[key + "_chosen_subdir"] = None
-                    dirpath = text_input_widget(
-                        label=label, value=dirpath, help=help, st_element=dirpath_placeholder, is_placeholder=True
+                    dirpath = dirpath_placeholder.text_input(
+                        label=label, value=dirpath, key=key + "_text_input", help=help
                     )
     if return_state:
         return dirpath, ret_state
@@ -274,21 +264,17 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
 
 def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
     sel_dict = get_sel_dict()
-    col1, col2 = st.columns([10, 1])
-    col3, col4, col5 = st.columns([25, 25, 50])
+    col1, col2 = st.beta_columns([10, 1])
+    col3, col4, col5 = st.beta_columns([25, 25, 50])
     filepath_placeholder = col1.empty()
     state_placeholder = col2.empty()
     parent_button_placeholder = col3.empty()
     subelement_button_placeholder = col4.empty()
     chosen_subdir_placeholder = col5.empty()
     warning_placeholder = st.empty()
-    filepath = text_input_widget(
-        label=label,
-        value=value,
-        help=help,
-        st_element=filepath_placeholder,
-        is_placeholder=True,
-    )
+    filepath = filepath_placeholder.text_input(label=label, value=value, key=key + "_text_input", help=help)
+    if filepath != value:
+        filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
     if os.path.isfile(filepath) or os.path.isdir(filepath):
         if os.path.isfile(filepath):
             state_placeholder.latex(state_ok)
@@ -302,13 +288,7 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
         ):
             filepath = os.path.dirname(filepath)
             sel_dict[key + "_chosen_subdir"] = None
-            filepath = text_input_widget(
-                label=label,
-                value=filepath,
-                help=help,
-                st_element=filepath_placeholder,
-                is_placeholder=True,
-            )
+            filepath = filepath_placeholder.text_input(label=label, value=filepath, key=key + "_text_input", help=help)
             warning_placeholder.warning("You have currently chosen a folder, but you have to choose a file here.")
             state_placeholder.latex(state_uncertain)
             ret_state = state_uncertain
@@ -317,38 +297,30 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
             if len(subdirlist) > 0:
                 if key + "_chosen_subdir" not in sel_dict.keys():
                     sel_dict[key + "_chosen_subdir"] = None
-                sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                    label="Subelements:",
-                    options=subdirlist,
-                    index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                    "Subelements:",
+                    subdirlist,
+                    subdirlist.index(sel_dict[key + "_chosen_subdir"])
                     if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                     else 0,
-                    st_element=chosen_subdir_placeholder,
-                    is_placeholder=True,
                 )
                 if subelement_button_placeholder.button(
                     "Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."
                 ):
                     filepath = os.path.join(filepath, sel_dict[key + "_chosen_subdir"])
                     sel_dict[key + "_chosen_subdir"] = None
-                    filepath = text_input_widget(
-                        label=label,
-                        value=filepath,
-                        help=help,
-                        st_element=filepath_placeholder,
-                        is_placeholder=True,
+                    filepath = filepath_placeholder.text_input(
+                        label=label, value=filepath, key=key + "_text_input", help=help
                     )
                     if os.path.isdir(filepath):
                         subdirlist = os.listdir(filepath)
                         if len(subdirlist) > 0:
-                            sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                                label="Subelements:",
-                                options=subdirlist,
-                                index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                            sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                                "Subelements:",
+                                subdirlist,
+                                subdirlist.index(sel_dict[key + "_chosen_subdir"])
                                 if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                                 else 0,
-                                st_element=chosen_subdir_placeholder,
-                                is_placeholder=True,
                             )
                         else:
                             subelement_button_placeholder.empty()
@@ -363,7 +335,7 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
         state_placeholder.latex(state_failed)
         ret_state = state_failed
         sel_dict[key + "_chosen_subdir"] = None
-        col6, col7 = st.columns([30, 70])
+        col6, col7 = st.beta_columns([30, 70])
         reset_button_placeholder = col6.empty()
         error_placeholder = col7.empty()
         error_placeholder.error(f"The path {filepath} is not a valid path.")
@@ -371,12 +343,8 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
         if reset_button_placeholder.button(
             "Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}"
         ):
-            filepath = text_input_widget(
-                label=label,
-                value=local_save_path,
-                help=help,
-                st_element=filepath_placeholder,
-                is_placeholder=True,
+            filepath = filepath_placeholder.text_input(
+                label=label, value=local_save_path, key=key + "_text_input", help=help
             )
             warning_placeholder.warning("You have currently chosen a folder, but you have to choose a file here.")
             state_placeholder.latex(state_uncertain)
@@ -392,26 +360,20 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
                 if len(subdirlist) > 0:
                     if key + "_chosen_subdir" not in sel_dict.keys():
                         sel_dict[key + "_chosen_subdir"] = None
-                    sel_dict[key + "_chosen_subdir"] = selectbox_widget(
-                        label="Subelements:",
-                        options=subdirlist,
-                        index=subdirlist.index(sel_dict[key + "_chosen_subdir"])
+                    sel_dict[key + "_chosen_subdir"] = chosen_subdir_placeholder.selectbox(
+                        "Subelements:",
+                        subdirlist,
+                        subdirlist.index(sel_dict[key + "_chosen_subdir"])
                         if sel_dict[key + "_chosen_subdir"] and sel_dict[key + "_chosen_subdir"] in subdirlist
                         else 0,
-                        st_element=chosen_subdir_placeholder,
-                        is_placeholder=True,
                     )
                     if subelement_button_placeholder.button(
                         "Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement."
                     ):
                         filepath = os.path.join(filepath, sel_dict[key + "_chosen_subdir"])
                         sel_dict[key + "_chosen_subdir"] = None
-                        filepath = text_input_widget(
-                            label=label,
-                            value=filepath,
-                            help=help,
-                            st_element=filepath_placeholder,
-                            is_placeholder=True,
+                        filepath = filepath_placeholder.text_input(
+                            label=label, value=filepath, key=key + "_text_input", help=help
                         )
                         pass
 
@@ -420,29 +382,16 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
     return filepath
 
 
-def selectbox_widget(
-    label, options, index=0, format_func=str, key=None, help=None, st_element=st, is_placeholder=False
-):
+def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
-    if is_placeholder:
-        sel_box_placeholder = st_element
-    else:
-        sel_box_placeholder = st_element.empty()
+    sel_box_placeholder = st_element.empty()
     ret_value = sel_box_placeholder.selectbox(
         label=label, options=options, index=index, format_func=format_func, key=key, help=help
     )
     if options.index(ret_value) != index:
-        try:
-            ret_value = sel_box_placeholder.selectbox(
-                label=label,
-                options=options,
-                index=options.index(ret_value),
-                format_func=format_func,
-                key=key,
-                help=help,
-            )
-        except st.errors.DuplicateWidgetID:
-            pass
+        ret_value = sel_box_placeholder.selectbox(
+            label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
+        )
     return ret_value
 
 
@@ -459,114 +408,59 @@ def radio_widget(label, options, index=0, format_func=str, key=None, help=None, 
     return ret_value
 
 
-def text_input_widget(
-    label, value="", max_chars=None, key=None, type="default", help=None, st_element=st, is_placeholder=False
-):
+def text_input_widget(label, value="", max_chars=None, key=None, type="default", help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of text input.
-    if is_placeholder:
-        text_input_placeholder = st_element
-    else:
-        text_input_placeholder = st_element.empty()
+    text_input_placeholder = st_element.empty()
     ret_value = text_input_placeholder.text_input(
         label, value=value, max_chars=max_chars, key=key, type=type, help=help
     )
     if value != ret_value:
-        try:
-            ret_value = text_input_placeholder.text_input(
-                label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
-            )
-        except st.errors.DuplicateWidgetID:
-            pass
+        ret_value = text_input_placeholder.text_input(
+            label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
+        )
     return ret_value
-
 
 def checkbox_widget(label, value=False, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a checkbox.
     checkbox_placeholder = st_element.empty()
-    ret_value = checkbox_placeholder.checkbox(label, value=value, key=key, help=help)
-    if value != ret_value:
-        ret_value = checkbox_placeholder.checkbox(label, value=ret_value, key=key, help=help)
-    return ret_value
-
-
-def number_input_widget(
-    label,
-    min_value=None,
-    max_value=None,
-    value=None,
-    step=None,
-    format=None,
-    key=None,
-    help=None,
-    st_element=st,
-    is_placeholder=False,
-):
-    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
-    if is_placeholder:
-        number_input_placeholder = st_element
-    else:
-        number_input_placeholder = st_element.empty()
-    ret_value = number_input_placeholder.number_input(
-        label=label, min_value=min_value, max_value=max_value, value=value, step=step, format=format, key=key, help=help
+    ret_value = checkbox_placeholder.checkbox(
+        label, value=value, key=key, help=help
     )
     if value != ret_value:
-        try:
-            ret_value = number_input_placeholder.number_input(
-                label=label,
-                min_value=min_value,
-                max_value=max_value,
-                value=ret_value,
-                step=step,
-                format=format,
-                key=key,
-                help=help,
-            )
-        except st.errors.DuplicateWidgetID:
-            pass
+        ret_value = checkbox_placeholder.checkbox(
+            label, value=ret_value, key=key, help=help
+        )
     return ret_value
 
+def number_input_widget(
+        label,
+        min_value=None,
+        max_value=None,
+        value=NoValue(),
+        step=None,
+        format=None,
+        key=None,
+        help=None,
+        st_element=st,
+    ):
+    # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
+    number_input_placeholder=st_element.empty()
 
-def slider_widget(
-    label: str,
-    min_value=None,
-    max_value=None,
-    value=None,
-    step=None,
-    format=None,
-    key=None,
-    help=None,
-    on_change=None,
-    st_element=st,
-    is_placeholder=False,
-):
-    if is_placeholder:
-        slider_placeholder = st_element
-    else:
-        slider_placeholder = st_element.empty()
-    ret_value = slider_placeholder.slider(
-        label=label,
+    ret_value=number_input_placeholder.number_input(label=label,
         min_value=min_value,
         max_value=max_value,
         value=value,
         step=step,
         format=format,
         key=key,
-        help=help,
-        on_change=on_change,
-    )
+        help=help)
     if value != ret_value:
-        try:
-            ret_value = slider_placeholder.slider(
-                label=label,
-                min_value=min_value,
-                max_value=max_value,
-                value=ret_value,
-                step=step,
-                format=format,
-                key=key,
-                help=help,
-                on_change=on_change,
-            )
-        except st.errors.DuplicateWidgetID:
-            pass
+        ret_value=number_input_placeholder.number_input(label=label,
+            min_value=min_value,
+            max_value=max_value,
+            value=ret_value,
+            step=step,
+            format=format,
+            key=key,
+            help=help)
     return ret_value

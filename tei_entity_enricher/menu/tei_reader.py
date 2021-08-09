@@ -294,7 +294,7 @@ class TEIReader:
             st.info("There are no self-defined TEI Read NER Reader Configs to delete!")
 
     def show_edit_environment(self):
-        tr_config_definer = st.expander("Add or edit existing Config", expanded=False)
+        tr_config_definer = st.beta_expander("Add or edit existing Config", expanded=False)
         with tr_config_definer:
             options = {
                 "Add TEI Reader Config": self.tei_reader_add,
@@ -312,7 +312,7 @@ class TEIReader:
             options[self.tei_ner_reader_params.tr_edit_options]()
 
     def show_test_environment(self):
-        tr_test_expander = st.expander("Test TEI Reader Config", expanded=False)
+        tr_test_expander = st.beta_expander("Test TEI Reader Config", expanded=False)
         with tr_test_expander:
             self.tei_ner_reader_params.tr_test_selected_config_name = selectbox_widget(
                 "Select a TEI Reader Config to test!",
@@ -386,14 +386,14 @@ class TEIReader:
         return tablestring
 
     def show_configs(self):
-        tr_show_configs = st.expander("Existing TEI Reader Configs", expanded=True)
+        tr_show_configs = st.beta_expander("Existing TEI Reader Configs", expanded=True)
         with tr_show_configs:
             st.markdown(self.build_config_tablestring())
             st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{TEI Reader Config}}")
-        col1, col2 = st.columns(2)
+        col1, col2 = st.beta_columns(2)
         with col1:
             self.show_configs()
         with col2:

@@ -96,7 +96,7 @@ class NERTrainer(MenuBase):
 
         with remember_cwd():
             os.chdir(self._wd)
-            with st.expander("Train configuration", expanded=True):
+            with st.beta_expander("Train configuration", expanded=True):
 
                 if self.ner_trainer_params.nt_trainer_params_json is None:
                     # only new loading if necessary, otherwise everytime the old trainer_params_json is loaded

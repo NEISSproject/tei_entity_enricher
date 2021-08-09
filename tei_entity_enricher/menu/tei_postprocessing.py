@@ -158,9 +158,9 @@ class TEINERPostprocessing:
         ) if self.pp_aux_cache.el_filepath is None else None
 
     def filepath_subcontainer(self):
-        self.el_filepath_container = st.container()
+        self.el_filepath_container = st.beta_container()
         with self.el_filepath_container:
-            self.el_filepath_field_col, self.el_filepath_state_col = st.columns([10, 1])
+            self.el_filepath_field_col, self.el_filepath_state_col = st.beta_columns([10, 1])
             self.el_filepath_field = self.el_filepath_field_col.text_input(
                 label="Filepath to load from",
                 value=self.pp_aux_cache.el_filepath,
@@ -177,7 +177,7 @@ class TEINERPostprocessing:
                 self.el_col_save_button,
                 self.el_col_export_button,
                 self.el_col_add_missing_ids_button,
-            ) = st.columns(5)
+            ) = st.beta_columns(5)
             with self.el_col_init_button:
                 self.el_init_button_placeholder = st.empty()
             with self.el_col_quit_button:
@@ -212,7 +212,7 @@ class TEINERPostprocessing:
             self.el_file_view_message_placeholder = st.empty()
 
     def add_entities_from_file_subcontainer_and_processes(self):
-        self.el_add_entities_from_file_subcontainer = st.container()
+        self.el_add_entities_from_file_subcontainer = st.beta_container()
         with self.el_add_entities_from_file_subcontainer:
             self.el_add_entities_from_file_loader_placeholder = st.empty()
             self.el_add_entities_from_file_button_placeholder = st.empty()
@@ -250,7 +250,7 @@ class TEINERPostprocessing:
                                 result_messages.append(
                                     f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result[0]} entity/ies successfully added to entity library. {el_add_entities_from_file_single_file_result[1]} entity/ies ignored due to redundance issues."
                                 )
-                            with self.el_add_entities_from_file_success_message_placeholder.container():
+                            with self.el_add_entities_from_file_success_message_placeholder.beta_container():
                                 for message in result_messages:
                                     if "success" in message:
                                         st.success(message)
@@ -306,7 +306,7 @@ class TEINERPostprocessing:
             if self.el_export_button == True or self.pp_aux_cache.button_export_el == True:
                 if self.pp_el_library_object.data_file is not None:
                     self.pp_aux_cache.button_export_el = True
-                    el_export_filepath_field_container = self.el_export_filepath_placeholder.container()
+                    el_export_filepath_field_container = self.el_export_filepath_placeholder.beta_container()
                     el_export_filepath_field = el_export_filepath_field_container.text_input(
                         label="Filepath to export to",
                         value=os.path.join(local_save_path, "config", "postprocessing", "export.json"),
@@ -358,7 +358,7 @@ class TEINERPostprocessing:
             if self.el_add_missing_ids_button == True or self.pp_aux_cache.button_add_missing_ids == True:
                 if self.pp_el_library_object.data_file is not None:
                     self.pp_aux_cache.button_add_missing_ids = True
-                    with self.el_add_missing_ids_menu_placeholder.container():
+                    with self.el_add_missing_ids_menu_placeholder.beta_container():
                         progress_bar = st.progress(0)
                         checkbox_state = st.checkbox(
                             label="Try to identify entities without any ids",
@@ -423,10 +423,10 @@ class TEINERPostprocessing:
                                 self.pp_aux_cache.add_missing_ids_query_result["cases_to_ignore"] = cases_to_ignore
                                 self.pp_aux_cache.add_missing_ids_query_result["identified_cases"] = identified_cases
                                 self.pp_aux_cache.add_missing_ids_query_result["cases_to_choose"] = cases_to_choose
-                            with self.el_misc_message_placeholder.container():
+                            with self.el_misc_message_placeholder.beta_container():
                                 # display query results in gui
                                 for case in identified_cases:
-                                    col1, col2, col3 = st.columns(3)
+                                    col1, col2, col3 = st.beta_columns(3)
                                     with col1:
                                         st.write(case[0][0][0]["name"])
                                     with col2:
@@ -436,7 +436,7 @@ class TEINERPostprocessing:
                                 for index, case in enumerate(cases_to_choose):
                                     description_list = [i["description"] for i in case[0][0]]
                                     description_list.append("-- Select none --")
-                                    col1, col2, col3 = st.columns(3)
+                                    col1, col2, col3 = st.beta_columns(3)
                                     with col1:
                                         st.write(case[0][0][0]["name"])
                                     with col2:
@@ -513,13 +513,13 @@ class TEINERPostprocessing:
                     el_editor_content_check_result = el_editor_content_check(editor_content)
                     if type(el_editor_content_check_result) == str:
                         with self.el_file_view_message_placeholder:
-                            with st.container():
+                            with st.beta_container():
                                 st.info(f"Error: {el_editor_content_check_result}")
                     else:
                         self.pp_el_library_object.data = json.loads(editor_content)
                         self.pp_aux_cache.last_editor_state = editor_content
                         with self.el_file_view_message_placeholder:
-                            with st.container():
+                            with st.beta_container():
                                 st.success(
                                     "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
                                 )
@@ -528,7 +528,7 @@ class TEINERPostprocessing:
         st.latex("\\text{\Huge{NER Postprocessing}}")
         ## 1. Entity Library
         st.subheader("Entity Library")
-        el_container = st.expander(label="Entity Library", expanded=True)
+        el_container = st.beta_expander(label="Entity Library", expanded=True)
         with el_container:
             # basic layout: filepath subcontainer
             self.filepath_subcontainer()

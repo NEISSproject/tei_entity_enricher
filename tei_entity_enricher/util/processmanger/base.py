@@ -166,12 +166,12 @@ class ProcessManagerBase:
         out.close()
 
     def st_manager(self):
-        with st.container():
+        with st.beta_container():
             st.text(self.name)
             # if st.button("Set trainer params"):
             #     train_process_manager.set_params(self.state.nt_trainer_params_json)
             #     logger.info("trainer params set!")
-            b1, b2, b3, b4, process_status = st.columns([2, 2, 2, 2, 6])
+            b1, b2, b3, b4, process_status = st.beta_columns([2, 2, 2, 2, 6])
             if b1.button("Start"):
                 self.start()
             if b2.button("Stop"):
@@ -183,12 +183,12 @@ class ProcessManagerBase:
             self.process_state(st_element=process_status)
 
             if self.has_process():
-                with st.expander("Progress", expanded=True):
+                with st.beta_expander("Progress", expanded=True):
                     progress_str = self.read_progress()
                     logger.info(progress_str)
                     st.text(progress_str)
             if self.has_process():
-                with st.expander("Log-file", expanded=True):
+                with st.beta_expander("Log-file", expanded=True):
                     log_str = self.log_content()
                     st_ace(
                         log_str,

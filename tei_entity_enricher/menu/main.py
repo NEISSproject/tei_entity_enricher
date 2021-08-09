@@ -50,7 +50,7 @@ class Main:
             "NER Prediction": self.ner_prediction,
             "NER Postprocessing": self.ner_postprocessing,
         }
-        logo_frame, heading_frame = st.sidebar.columns([1, 2])
+        logo_frame, heading_frame = st.sidebar.beta_columns([1, 2])
         heading_frame.latex("\\text{\Huge{N-TEE}}")
         st.sidebar.latex("\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}")
 
@@ -70,7 +70,7 @@ class Main:
         st.sidebar.markdown("### Funded by")
         # Include EU Logos
         st.sidebar.image(eu_fonds)
-        colesf, colbm = st.sidebar.columns(2)
+        colesf, colbm = st.sidebar.beta_columns(2)
         colesf.image(eu_esf)
         colbm.image(mv_bm)
 
