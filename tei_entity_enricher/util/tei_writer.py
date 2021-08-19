@@ -802,6 +802,44 @@ def get_pure_text_of_tree_element(cur_element, tr, first=True, id_to_mark=None):
         return cur_element
 
 
+def get_pure_note_text_of_tree_element(cur_element, tr, id_to_mark=None, is_note=False, is_marked=False):
+    if isinstance(cur_element, dict):
+        text = ""
+        if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"]:
+            if cur_element["name"] in tr["note_tags"]:
+                note_text,marked=get_pure_note_text_of_tree_element(cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=True, is_marked=is_marked)
+                if marked and not is_marked:
+                    return note_text,marked
+                else:
+                    return "",is_marked
+            if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"] == id_to_mark:
+                new_text, _ = get_pure_note_text_of_tree_element(
+                    cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=is_note, is_marked=is_marked
+                )
+                return "<marked_id>" + new_text + "</marked_id>", True
+            else:
+                return get_pure_note_text_of_tree_element(
+                    cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=is_note, is_marked=is_marked
+                )
+        return text, is_marked
+    elif isinstance(cur_element, list):
+        text = ""
+        marked = is_marked
+        for element in cur_element:
+            new_text, cur_marked = get_pure_note_text_of_tree_element(
+                element, tr, id_to_mark=id_to_mark, is_note=is_note, is_marked=is_marked
+            )
+            if cur_marked:
+                marked = cur_marked
+            text = text + new_text
+        return text, marked
+    elif isinstance(cur_element, str):
+        if is_note:
+            return cur_element, is_marked
+        else:
+            return "", is_marked
+
+
 def build_tag_list_from_entity_dict(entity_dict, mode="tnw"):
     tag_list = []
     for entity in entity_dict:

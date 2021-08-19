@@ -157,7 +157,7 @@ class TEIManPP:
                 tag_entry["tagbegin"] = self.show_editable_attr_value_def(tag_entry["name"], tag_entry["tagbegin"])
                 if "tagend" in tag_entry.keys():
                     tag_entry["tagend"] = "</" + tag_entry["name"] + ">"
-                if old_tagbegin!= tag_entry["tagbegin"]:
+                if old_tagbegin != tag_entry["tagbegin"]:
                     # unfortunately an necessary workaround because in an aggrid component you can not use a placeholder,
                     # thus you can not easily replace the widget itself like in the workaround for the other widgets
                     st.experimental_rerun()
@@ -415,6 +415,12 @@ class TEIManPP:
                 )
             )
             splitted_text = marked_text.split("<marked_id>")
+            if len(splitted_text)<=1 and tr[self.tr.tr_config_attr_use_notes]:
+                #Is the entity possibly in a note?
+                marked_text, marked = tei_writer.get_pure_note_text_of_tree_element(self.tei_man_pp_params.tmp_current_search_text_tree, tr, id_to_mark=id)
+                if not marked:
+                    return ""
+                splitted_text = marked_text.split("<marked_id>")
             before_text = splitted_text[0]
             splitted_second_text = splitted_text[1].split("</marked_id>")
             entity_text = splitted_second_text[0]

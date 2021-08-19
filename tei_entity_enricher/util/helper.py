@@ -20,7 +20,7 @@ latex_color_list = [
     "orange",
     "purple",
     "aqua",
-    "black",
+    "magenta",
     "yellow",
     "brown",
     "plum",
