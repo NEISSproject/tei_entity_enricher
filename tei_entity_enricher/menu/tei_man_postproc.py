@@ -268,6 +268,9 @@ class TEIManPP:
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
                             st.experimental_rerun()
                         if scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id)):
+                            entity_to_add = suggestion
+                            if "type" in entity_to_add.keys() and entity_to_add["type"]==self.tmp_base_ls_search_type_options[0]:
+                                entity_to_add["type"] = ""
                             ret_value = self.entity_library.add_entities([suggestion])
                             if isinstance(ret_value, str):
                                 st.warning(ret_value)
