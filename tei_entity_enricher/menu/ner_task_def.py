@@ -196,6 +196,7 @@ class NERTaskDef:
         else:
             if self.ner_task_def_params.ntd_mode != mode:
                 self.reset_ntd_edit_states()
+                self.ner_task_def_params.ntd_sel_definition_name = None
             self.ner_task_def_params.ntd_mode = mode
             ntd_definition_dict = {}
             # init_use_notes=True

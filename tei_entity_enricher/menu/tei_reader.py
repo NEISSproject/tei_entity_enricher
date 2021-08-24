@@ -169,6 +169,7 @@ class TEIReader:
                 )
             )
             self.reset_tr_edit_states()
+            self.tei_ner_reader_params.tr_sel_config_name = None
             if config[self.tr_config_attr_name] == self.tei_ner_reader_params.tr_test_selected_config_name:
                 self.tei_ner_reader_params.tr_test_selected_config_name = None
             if config[self.tr_config_attr_name] == self.tei_ner_reader_params.tr_sel_config_name:
@@ -193,6 +194,7 @@ class TEIReader:
         self.tei_ner_reader_params.tr_note_tags = None
         self.tei_ner_reader_params.tr_name = None
 
+
     def are_configs_equal(self, config1, config2):
         for key in config1.keys():
             if config1[key] != config2[key]:
@@ -207,6 +209,7 @@ class TEIReader:
         else:
             if self.tei_ner_reader_params.tr_mode != mode:
                 self.reset_tr_edit_states()
+                self.tei_ner_reader_params.tr_sel_config_name = None
             self.tei_ner_reader_params.tr_mode = mode
             tr_config_dict = {}
             init_use_notes = True

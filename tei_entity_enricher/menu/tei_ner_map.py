@@ -240,6 +240,7 @@ class TEINERMap:
         else:
             if self.tei_ner_map_params.tnm_mode != mode:
                 self.reset_tnm_edit_states()
+                self.tei_ner_map_params.tnm_sel_mapping_name = None
             self.tei_ner_map_params.tnm_mode = mode
             tnm_mapping_dict = {}
             init_tnm_ntd_name = self.tei_ner_map_params.tnm_ntd_name

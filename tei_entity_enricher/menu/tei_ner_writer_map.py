@@ -199,6 +199,7 @@ class TEINERPredWriteMap:
             )
             self.reset_tnw_edit_states()
             self.tei_ner_writer_params.tnw_sel_mapping_name = None
+            self.tei_ner_writer_params.tnw_sel_mapping_name = None
             self.tei_ner_writer_params.tnw_sel_wri_del_name = None
             if mapping[self.tnw_attr_name] == self.tei_ner_writer_params.tnw_selected_display_tnw_name:
                 self.tei_ner_writer_params.tnw_selected_display_tnw_name = None
@@ -237,6 +238,7 @@ class TEINERPredWriteMap:
         else:
             if self.tei_ner_writer_params.tnw_mode != mode:
                 self.reset_tnw_edit_states()
+                self.tei_ner_writer_params.tnw_sel_mapping_name = None
             self.tei_ner_writer_params.tnw_mode = mode
             tnw_mapping_dict = {}
             init_tnw_ntd_name = self.tei_ner_writer_params.tnw_ntd_name
