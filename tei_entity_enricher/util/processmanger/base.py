@@ -134,6 +134,7 @@ class ProcessManagerBase:
             self.process = None
         else:
             self.message("Stop process before clearing it.", "warning")
+        return 0
 
     def has_process(self):
         return True if self.process is not None else False
@@ -177,7 +178,8 @@ class ProcessManagerBase:
             if b2.button("Stop"):
                 self.stop()
             if b3.button("Clear"):
-                self.clear_process()
+                if self.clear_process() == 0:
+                    st.experimental_rerun()
             if b4.button("refresh"):
                 logger.info("refresh streamlit")
             self.process_state(st_element=process_status)
