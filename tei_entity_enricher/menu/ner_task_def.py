@@ -264,7 +264,7 @@ class NERTaskDef:
             st.info("There are no self-defined ner task definitions to delete!")
 
     def show_edit_environment(self):
-        ntd_definer = st.beta_expander("Add or edit existing NER Task Entity Definition", expanded=False)
+        ntd_definer = st.expander("Add or edit existing NER Task Entity Definition", expanded=False)
         with ntd_definer:
             options = {
                 "Add NER Task Entity Definition": self.tei_ner_map_add,
@@ -299,7 +299,7 @@ class NERTaskDef:
         return tablestring
 
     def show_ntds(self):
-        ntd_show = st.beta_expander("Existing NER Task Entity Definitions", expanded=True)
+        ntd_show = st.expander("Existing NER Task Entity Definitions", expanded=True)
         with ntd_show:
             st.markdown(self.build_ntd_tablestring())
             st.markdown(" ")  # only for layouting reasons (placeholder)

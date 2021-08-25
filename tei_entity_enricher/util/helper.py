@@ -93,7 +93,7 @@ def file_lists_entry_widget(list_param: list, name: str, help=None) -> list:
     lists_str = clean_list_str(str(list_param))
     logger.debug(f"cleaned str: {lists_str}")
 
-    lists_field, lists_state = st.beta_columns([10, 1])
+    lists_field, lists_state = st.columns([10, 1])
     lists_field = lists_field.text_input(name, value=lists_str, help=help)
 
     if lists_field:
@@ -131,7 +131,7 @@ def numbers_lists_entry_widget(
     lists_str = clean_list_str(str(list_param))
     logger.debug(f"cleaned str: {lists_str}")
 
-    lists_field, lists_state = st.beta_columns([10, 1])
+    lists_field, lists_state = st.columns([10, 1])
     lists_field = lists_field.text_input(name, value=lists_str, help=help)
     if lists_field:
         lists_field = clean_list_str(lists_field)
@@ -174,7 +174,7 @@ def replace_empty_string(input_string, replace_string="-"):
 
 
 def text_entry_with_check(string: str, name: str, check_fn: callable, help=None):
-    string_field, string_state = st.beta_columns([10, 1])
+    string_field, string_state = st.columns([10, 1])
     string_field = string_field.text_input(name, value=string, help=help)
     if check_fn(string_field):
         logger.info(f"Check {name}: ok: {string_field}")
@@ -206,7 +206,7 @@ def model_dir_entry_widget(
     ask_make_dir=False,
     help=None,
 ) -> str:
-    string_field, string_state = st.beta_columns([10, 1])
+    string_field, string_state = st.columns([10, 1])
     string_field = string_field.text_input(name, value=string_param, help=help)
     ok = True
     if string_field:

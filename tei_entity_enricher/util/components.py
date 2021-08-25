@@ -78,13 +78,13 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
 
 
 def file_selector_expander(folder_path="", target="Select file...", init_file=""):
-    with st.beta_expander(target, expanded=False):
+    with st.expander(target, expanded=False):
         selected_file = file_selector(folder_path, parent=target, init_file=init_file)
     return selected_file
 
 
 def dir_selector_expander(folder_path="", target="Select directory..."):
-    with st.beta_expander(target):
+    with st.expander(target):
         selected_dir = dir_selector(folder_path, parent=target)
     return selected_dir
 
@@ -93,7 +93,7 @@ def file_selector(folder_path="", sub_level=0, max_level=10, parent="", init_fil
     filenames = [
         f for f in os.listdir(os.path.join(os.getcwd(), folder_path)) if not f[0] == "."
     ]  # get file names from dir excluding hidden files
-    a, b = st.beta_columns([sub_level + 1, 2 * max_level])
+    a, b = st.columns([sub_level + 1, 2 * max_level])
     if os.path.isfile(os.path.join(folder_path, init_file)) and os.path.isdir(os.path.join(os.getcwd(), folder_path)):
         # norm_init_file = os.path.normpath(init_file)
         init_file_lst = init_file.split(os.sep)
@@ -127,7 +127,7 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
         for f in os.listdir(os.path.join(os.getcwd(), folder_path))
         if not f[0] == "." and os.path.isdir(os.path.join(folder_path, f))
     ]  # get file names from dir excluding hidden files
-    a, b, c = st.beta_columns([sub_level + 1, 2 * max_level, 2])
+    a, b, c = st.columns([sub_level + 1, 2 * max_level, 2])
     selected_dirname = b.selectbox(f"{folder_path}", filenames, key=f"{parent}{folder_path}")
     if selected_dirname is None:
         return None
@@ -151,8 +151,8 @@ def get_sel_dict():
 
 def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     sel_dict = get_sel_dict()
-    col1, col2 = st.beta_columns([10, 1])
-    col3, col4, col5 = st.beta_columns([25, 25, 50])
+    col1, col2 = st.columns([10, 1])
+    col3, col4, col5 = st.columns([25, 25, 50])
     dirpath_placeholder = col1.empty()
     state_placeholder = col2.empty()
     parent_button_placeholder = col3.empty()
@@ -205,7 +205,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
         state_placeholder.latex(state_failed)
         ret_state = state_failed
         sel_dict[key + "_chosen_subdir"] = None
-        col6, col7 = st.beta_columns([30, 70])
+        col6, col7 = st.columns([30, 70])
         reset_button_placeholder = col6.empty()
         error_placeholder = col7.empty()
         error_placeholder.error(f"The path {dirpath} is not a folder.")
@@ -264,8 +264,8 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
 
 def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
     sel_dict = get_sel_dict()
-    col1, col2 = st.beta_columns([10, 1])
-    col3, col4, col5 = st.beta_columns([25, 25, 50])
+    col1, col2 = st.columns([10, 1])
+    col3, col4, col5 = st.columns([25, 25, 50])
     filepath_placeholder = col1.empty()
     state_placeholder = col2.empty()
     parent_button_placeholder = col3.empty()
@@ -335,7 +335,7 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
         state_placeholder.latex(state_failed)
         ret_state = state_failed
         sel_dict[key + "_chosen_subdir"] = None
-        col6, col7 = st.beta_columns([30, 70])
+        col6, col7 = st.columns([30, 70])
         reset_button_placeholder = col6.empty()
         error_placeholder = col7.empty()
         error_placeholder.error(f"The path {filepath} is not a valid path.")
