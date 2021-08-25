@@ -400,40 +400,49 @@ def selectbox_widget(label, options, index=0, format_func=str, key=None, help=No
 
 def radio_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a radio button.
-    radio_placeholder = st_element.empty()
-    ret_value = radio_placeholder.radio(
+    #radio_placeholder = st_element.empty()
+    #ret_value = radio_placeholder.radio(
+    #    label=label, options=options, index=index, format_func=format_func, key=key, help=help
+    #)
+    #if options.index(ret_value) != index:
+    #    radio_placeholder.radio(
+    #        label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
+    #    )
+    #return ret_value
+    return st_element.radio(
         label=label, options=options, index=index, format_func=format_func, key=key, help=help
     )
-    if options.index(ret_value) != index:
-        radio_placeholder.radio(
-            label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
-        )
-    return ret_value
 
 
 def text_input_widget(label, value="", max_chars=None, key=None, type="default", help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of text input.
-    text_input_placeholder = st_element.empty()
-    ret_value = text_input_placeholder.text_input(
+    #text_input_placeholder = st_element.empty()
+    #ret_value = text_input_placeholder.text_input(
+    #    label, value=value, max_chars=max_chars, key=key, type=type, help=help
+    #)
+    #if value != ret_value:
+    #    ret_value = text_input_placeholder.text_input(
+    #        label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
+    #    )
+    #return ret_value
+    return st_element.text_input(
         label, value=value, max_chars=max_chars, key=key, type=type, help=help
     )
-    if value != ret_value:
-        ret_value = text_input_placeholder.text_input(
-            label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
-        )
-    return ret_value
 
 def checkbox_widget(label, value=False, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a checkbox.
-    checkbox_placeholder = st_element.empty()
-    ret_value = checkbox_placeholder.checkbox(
+    #checkbox_placeholder = st_element.empty()
+    #ret_value = checkbox_placeholder.checkbox(
+    #    label, value=value, key=key, help=help
+    #)
+    #if value != ret_value:
+    #    ret_value = checkbox_placeholder.checkbox(
+    #        label, value=ret_value, key=key, help=help
+    #    )
+    #return ret_value
+    return st_element.checkbox(
         label, value=value, key=key, help=help
     )
-    if value != ret_value:
-        ret_value = checkbox_placeholder.checkbox(
-            label, value=ret_value, key=key, help=help
-        )
-    return ret_value
 
 def number_input_widget(
         label,
@@ -447,9 +456,27 @@ def number_input_widget(
         st_element=st,
     ):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
-    number_input_placeholder=st_element.empty()
+    #number_input_placeholder=st_element.empty()
 
-    ret_value=number_input_placeholder.number_input(label=label,
+    #ret_value=number_input_placeholder.number_input(label=label,
+    #    min_value=min_value,
+    #    max_value=max_value,
+    #    value=value,
+    #    step=step,
+    #    format=format,
+    #    key=key,
+    #    help=help)
+    #if value != ret_value:
+    #    ret_value=number_input_placeholder.number_input(label=label,
+    #        min_value=min_value,
+    #        max_value=max_value,
+    #        value=ret_value,
+    #        step=step,
+    #        format=format,
+    #        key=key,
+    #        help=help)
+    #return ret_value
+    return st_element.number_input(label=label,
         min_value=min_value,
         max_value=max_value,
         value=value,
@@ -457,13 +484,3 @@ def number_input_widget(
         format=format,
         key=key,
         help=help)
-    if value != ret_value:
-        ret_value=number_input_placeholder.number_input(label=label,
-            min_value=min_value,
-            max_value=max_value,
-            value=ret_value,
-            step=step,
-            format=format,
-            key=key,
-            help=help)
-    return ret_value
