@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 import streamlit as st
-from streamlit.widgets import NoValue
+#from streamlit.widgets import NoValue
 from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
@@ -384,15 +384,18 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
 
 def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
-    sel_box_placeholder = st_element.empty()
-    ret_value = sel_box_placeholder.selectbox(
+    #sel_box_placeholder = st_element.empty()
+    #ret_value = sel_box_placeholder.selectbox(
+    #    label=label, options=options, index=index, format_func=format_func, key=key, help=help
+    #)
+    #if options.index(ret_value) != index:
+    #    ret_value = sel_box_placeholder.selectbox(
+    #        label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
+    #    )
+    #return ret_value
+    return st_element.selectbox(
         label=label, options=options, index=index, format_func=format_func, key=key, help=help
     )
-    if options.index(ret_value) != index:
-        ret_value = sel_box_placeholder.selectbox(
-            label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
-        )
-    return ret_value
 
 
 def radio_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
@@ -436,7 +439,7 @@ def number_input_widget(
         label,
         min_value=None,
         max_value=None,
-        value=NoValue(),
+        value=None,
         step=None,
         format=None,
         key=None,
