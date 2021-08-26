@@ -262,7 +262,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
     return dirpath
 
 
-def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
+def small_file_selector_old(label=None, value=local_save_path, key="", help=None, return_state=False):
     sel_dict = get_sel_dict()
     col1, col2 = st.columns([10, 1])
     col3, col4, col5 = st.columns([25, 25, 50])
@@ -380,6 +380,53 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
     if return_state:
         return filepath, ret_state
     return filepath
+
+def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
+    col1, col2 = st.columns([10, 1])
+    col3, col4, col5 = st.columns([25, 25, 50])
+    def fs_level_up():
+        st.session_state[key] = os.path.dirname(st.session_state[key])
+    def fs_goto():
+        st.session_state[key] = os.path.join(st.session_state[key], st.session_state[key+'cur_subdir'])
+        del st.session_state[key+'cur_subdir']
+    def fs_reset():
+        st.session_state[key] = local_save_path
+
+    if key in st.session_state:
+        col1.text_input(label=label, key=key, help=help)
+    else:
+        col1.text_input(label=label, value=value, key=key, help=help)
+    if os.path.isfile(st.session_state[key]) or os.path.isdir(st.session_state[key]):
+        if os.path.isfile(st.session_state[key]):
+            col2.latex(state_ok)
+            ret_state = state_ok
+        else:
+            col2.latex(state_uncertain)
+            ret_state = state_uncertain
+            st.warning("You have currently chosen a folder, but you have to choose a file here.")
+        col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up.",on_click=fs_level_up)
+        if os.path.isdir(st.session_state[key]):
+            st.session_state[key+'subdirlist'] = os.listdir(st.session_state[key])
+            if len(st.session_state[key+'subdirlist']) > 0:
+                if key+'cur_subdir' in st.session_state and st.session_state[key+'cur_subdir'] not in st.session_state[key+'subdirlist']:
+                    del st.session_state[key+'cur_subdir']
+                col5.selectbox(
+                    label="Subelements:",
+                    options=st.session_state[key+'subdirlist'],
+                    key=key+'cur_subdir'
+                )
+                col4.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement.",on_click=fs_goto)
+    else:
+        col2.latex(state_failed)
+        ret_state = state_failed
+        col6, col7 = st.columns([30, 70])
+        col7.error(f"The path {st.session_state[key]} is not a valid path.")
+        col6.button("Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}",on_click=fs_reset)
+
+
+    if return_state:
+        return st.session_state[key], ret_state
+    return st.session_state[key]
 
 
 def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):

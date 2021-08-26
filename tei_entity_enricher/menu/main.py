@@ -12,31 +12,12 @@ import tei_entity_enricher.menu.tei_ner_gb as tng
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 import tei_entity_enricher.menu.tei_postprocessing as pp
 from tei_entity_enricher.util.helper import load_images
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 
 logger = logging.getLogger(__name__)
-
-
-
-
-@dataclass
-@dataclass_json
-class MainMenuParams:
-    mm_page: str = None
-
-@st.cache(allow_output_mutation=True)
-def get_params() -> MainMenuParams:
-    return MainMenuParams()
-
 
 class Main:
     def __init__(self, args):
         self.show(args)
-
-    @property
-    def main_menu_params(self) -> MainMenuParams:
-        return get_params()
 
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
@@ -60,11 +41,11 @@ class Main:
         logo_frame.image(neiss_logo)
 
         # Define sidebar as radiobuttons
-        self.main_menu_params.mm_page = radio_widget(
-            "Main Menu",
-            tuple(pages.keys()),
-            tuple(pages.keys()).index(self.main_menu_params.mm_page) if self.main_menu_params.mm_page else int(args.start_state),
-            st_element=st.sidebar
+        st.sidebar.radio(
+            label="Main Menu",
+            options=tuple(pages.keys()),
+            index=int(args.start_state),
+            key="main_menu_page"
         )
 
         st.sidebar.markdown("### Funded by")
@@ -75,7 +56,7 @@ class Main:
         colbm.image(mv_bm)
 
         # Display the selected page
-        pages[self.main_menu_params.mm_page]()
+        pages[st.session_state.main_menu_page]()
 
     def tei_reader(self):
         tr.TEIReader()

@@ -365,14 +365,14 @@ class TEINERPredWriteMap:
                 "Edit TEI NER Prediction Writer Mapping": self.tei_ner_map_edit,
                 "Delete TEI NER Prediction Writer Mapping": self.tei_ner_map_del,
             }
-            self.tei_ner_writer_params.tnw_edit_options = radio_widget(
-                "Edit Options",
-                tuple(options.keys()),
-                tuple(options.keys()).index(self.tei_ner_writer_params.tnw_edit_options)
-                if self.tei_ner_writer_params.tnw_edit_options
-                else 0,
+            #self.tei_ner_writer_params.tnw_edit_options = radio_widget(
+            st.radio(
+                label="Edit Options",
+                options=tuple(options.keys()),
+                key='tnm_choose_edit_option'
+
             )
-            options[self.tei_ner_writer_params.tnw_edit_options]()
+            options[st.session_state.tnm_choose_edit_option]()
 
     def build_tnw_tablestring(self):
         tablestring = "Name | NER Task | Fixed Tags | Template \n -----|-------|-------|-------"
