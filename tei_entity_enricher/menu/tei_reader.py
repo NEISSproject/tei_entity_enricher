@@ -351,19 +351,6 @@ class TEIReader:
 
     def show(self):
         st.latex("\\text{\Huge{TEI Reader Config}}")
-        # -----------
-        def update_first():
-            st.session_state.second = st.session_state.first
-
-        def update_second():
-            st.session_state.first = st.session_state.second
-
-        st.title("🪞 Mirrored Widgets using Session State")
-
-        st.text_input(label="Textbox 1", key="first", on_change=update_first)
-        st.text_input(label="Textbox 2", key="second", on_change=update_second)
-
-        # ----------
         col1, col2 = st.columns(2)
         with col1:
             self.show_configs()
