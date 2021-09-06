@@ -31,6 +31,11 @@ class TEIReader:
         self.tr_config_mode_add = "add"
         self.tr_config_mode_dupl = "duplicate"
         self.tr_config_mode_edit = "edit"
+        if "tr_save_message" in st.session_state and st.session_state.tr_save_message is not None:
+            self.tr_save_message = st.session_state.tr_save_message
+            st.session_state.tr_save_message=None
+        else:
+            self.tr_save_message = None
 
         self.configslist = []
         makedir_if_necessary(self.config_Folder)
@@ -110,16 +115,16 @@ class TEIReader:
                 )
         return val
 
-    def show_editable_exclude_tags(self, excl_list, mode, name, dupl_name):
+    def show_editable_exclude_tags(self, excl_list, key):
         st.markdown("Define Tags to Exclude from the text which should be considered.")
         return editable_single_column_table(
-            entry_list=excl_list, key="tr_excl" + mode + name + dupl_name, head="Exclude"
+            entry_list=excl_list, key=key, head="Exclude"
         )
 
-    def show_editable_note_tags(self, note_list, mode, name, dupl_name):
+    def show_editable_note_tags(self, note_list, key):
         st.markdown("Define Tags that contain notes.")
         return editable_single_column_table(
-            entry_list=note_list, key="tr_note" + mode + name + dupl_name, head="Note tags"
+            entry_list=note_list, key=key, head="Note tags"
         )
 
     def are_configs_equal(self, config1, config2):
@@ -127,6 +132,28 @@ class TEIReader:
             if config1[key] != config2[key]:
                 return False
         return True
+
+    def build_excl_tag_key(self, mode):
+        return (
+            "tr_exclude_tags_"
+            + mode
+            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+        )
+
+    def build_note_tag_key(self, mode):
+        return (
+            "tr_note_tags_"
+            + mode
+            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+        )
+
+    def build_use_not_tag_key(self,mode):
+        return (
+            "use_tr_note_tags_"
+            + mode
+            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+        )
+
 
     def show_editable_config_content(self, mode):
         if mode == self.tr_config_mode_edit and len(self.editable_config_names) < 1:
@@ -159,29 +186,22 @@ class TEIReader:
                     label="New TEI Reader Config Name:", key='tr_name_'+mode
                 )
                 tr_config_dict[self.tr_config_attr_name] = st.session_state['tr_name_'+mode]
-            if 'tr_exclude_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode] not in st.session_state:
-                st.session_state['tr_exclude_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]=tr_config_dict[self.tr_config_attr_excl_tags]
+            init_exclude_tags = tr_config_dict[self.tr_config_attr_excl_tags]
+            #if self.build_excl_tag_key(mode) in st.session_state and st.session_state[self.build_excl_tag_key(mode)] is not None:
+            #    st.write(st.session_state[self.build_excl_tag_key(mode)])
 
-
-            st.session_state['tr_exclude_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]] = self.show_editable_exclude_tags(
-                st.session_state['tr_exclude_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]],
-                mode,
-                tr_config_dict[self.tr_config_attr_name] if self.tr_config_attr_name in tr_config_dict.keys() else "",
-                "" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode],
+            tr_config_dict[self.tr_config_attr_excl_tags] = self.show_editable_exclude_tags(
+                excl_list=init_exclude_tags,
+                key=self.build_excl_tag_key(mode),
             )
-            if 'tr_note_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode] not in st.session_state:
-                st.session_state['tr_note_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]=tr_config_dict[self.tr_config_attr_excl_tags]
+            init_note_tags=tr_config_dict[self.tr_config_attr_note_tags]
 
-            st.checkbox("Tag Notes", init_use_notes,key='tr_tag_notes_'+mode+tr_config_dict[self.tr_config_attr_name]+("" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]))
-            tr_config_dict[self.tr_config_attr_use_notes] = st.session_state['tr_tag_notes_'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]
+            st.checkbox(label="Tag Notes",value= init_use_notes,key=self.build_use_not_tag_key(mode))
+            tr_config_dict[self.tr_config_attr_use_notes] = st.session_state[self.build_use_not_tag_key(mode)]
             if tr_config_dict[self.tr_config_attr_use_notes]:
-                st.session_state['tr_note_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]] = self.show_editable_note_tags(
-                    st.session_state['tr_note_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]],
-                    mode,
-                    tr_config_dict[self.tr_config_attr_name]
-                    if self.tr_config_attr_name in tr_config_dict.keys()
-                    else "",
-                    "" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode],
+                tr_config_dict[self.tr_config_attr_note_tags] = self.show_editable_note_tags(
+                    note_list=init_note_tags,
+                    key=self.build_note_tag_key(mode),
                 )
             def save_config(config):
                 config[self.tr_config_attr_template] = False
@@ -193,12 +213,12 @@ class TEIReader:
                     "w+",
                 ) as f:
                     json.dump(config, f)
-            tr_config_dict[self.tr_config_attr_excl_tags] = st.session_state['tr_exclude_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]
-            tr_config_dict[self.tr_config_attr_note_tags] = (
-                st.session_state['tr_note_tags'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]
-                if st.session_state['tr_tag_notes_'+mode+tr_config_dict[self.tr_config_attr_name]+"" if mode==self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode]]
-                else []
-            )
+                if mode != self.tr_config_mode_edit:
+                    st.session_state["tr_name_" + mode] = ""
+                for key in st.session_state:
+                    if key.startswith("tr_exclude_tags_" + mode) or key.startswith("tr_note_tags_" + mode) or key.startswith("use_tr_note_tags_" + mode):
+                        del st.session_state[key]
+                st.session_state.tr_save_message = f'TEI Reader Config {config[self.tr_config_attr_name]} succesfully saved!'
             if self.validate_config_for_save(tr_config_dict, mode):
                 st.button("Save TEI Reader Config", key="tr_save_" + mode, on_click=save_config,args=(tr_config_dict,))
 
@@ -230,6 +250,7 @@ class TEIReader:
                     config[self.tr_config_attr_name].replace(" ", "_") + ".json",
                 )
             )
+            st.session_state.tr_save_message = f'TEI Reader Config {config[self.tr_config_attr_name]} succesfully deleted!'
             if (
                 "tr_test_selected_config_name" in st.session_state
                 and config[self.tr_config_attr_name] == st.session_state.tr_test_selected_config_name
@@ -237,7 +258,11 @@ class TEIReader:
                 del st.session_state["tr_test_selected_config_name"]
             if "tr_sel_config_name" in st.session_state and config[self.tr_config_attr_name] == st.session_state.tr_sel_config_name:
                 del st.session_state.tr_sel_config_name
+            for mode in [self.tr_config_mode_dupl, self.tr_config_mode_edit]:
+                if 'tr_sel_config_name_' + mode in st.session_state and st.session_state['tr_sel_config_name_'+mode]==config[self.tr_config_attr_name]:
+                    del st.session_state['tr_sel_config_name_' + mode]
             del st.session_state["tr_del_config_name"]
+
 
         if len(self.editable_config_names) > 0:
             st.selectbox(
@@ -257,6 +282,9 @@ class TEIReader:
     def show_edit_environment(self):
         tr_config_definer = st.expander("Add or edit existing Config", expanded=False)
         with tr_config_definer:
+            if self.tr_save_message is not None:
+                st.success(self.tr_save_message)
+                self.tr_save_message=None
             options = {
                 "Add TEI Reader Config": self.tei_reader_add,
                 "Duplicate TEI Reader Config": self.tei_reader_dupl,
