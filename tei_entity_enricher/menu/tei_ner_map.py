@@ -12,34 +12,11 @@ from tei_entity_enricher.util.helper import (
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
     small_file_selector,
-    selectbox_widget,
-    text_input_widget,
-    radio_widget,
 )
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_gb as gb
 import tei_entity_enricher.util.tei_parser as tp
-from dataclasses import dataclass
-from typing import List, Dict
-from dataclasses_json import dataclass_json
-
-
-@dataclass
-@dataclass_json
-class TEINERMapParams:
-    tnm_sel_wri_del_name: str = None
-    tnm_mode: str = None
-    tnm_sel_mapping_name: str = None
-    tnm_name: str = None
-    tnm_ntd_name: str = None
-    tnm_edit_entity: str = None
-    tnm_entity_dict: List = None
-
-
-@st.cache(allow_output_mutation=True)
-def get_params() -> TEINERMapParams:
-    return TEINERMapParams()
 
 
 class TEINERMap:
@@ -81,10 +58,6 @@ class TEINERMap:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
-
-    @property
-    def tei_ner_map_params(self) -> TEINERMapParams:
-        return get_params()
 
     def check_one_time_attributes(self):
         if "tnm_save_message" in st.session_state and st.session_state.tnm_save_message is not None:
@@ -364,13 +337,17 @@ class TEINERMap:
                 f"TEI Read NER Entity Mapping {mapping[self.tnm_attr_name]} succesfully deleted!"
             )
             st.session_state.tnm_reload_aggrids = True
-            self.tei_ner_map_params.tnm_sel_mapping_name = None
             del st.session_state["tnm_sel_wri_del_name"]
             if (
                 "tnm_sel_details_name" in st.session_state
                 and mapping[self.tnm_attr_name] == st.session_state.tnm_sel_details_name
             ):
                 del st.session_state["tnm_sel_details_name"]
+            for mode in [self.tnm_mode_dupl, self.tnm_mode_edit]:
+                if "tnm_sel_mapping_name_" + mode in st.session_state:
+                    del st.session_state["tnm_sel_mapping_name_" + mode]
+            if "tnm_tnm_test" in st.session_state:
+                del st.session_state["tnm_tnm_test"]
 
         if len(self.editable_mapping_names) > 0:
             st.selectbox(
