@@ -28,7 +28,6 @@ from dataclasses_json import dataclass_json
 @dataclass
 @dataclass_json
 class TEINERMapParams:
-    tnm_selected_display_tnm_name: str = None
     tnm_sel_wri_del_name: str = None
     tnm_mode: str = None
     tnm_sel_mapping_name: str = None
@@ -209,8 +208,8 @@ class TEINERMap:
             self.reset_tnm_edit_states()
             self.tei_ner_map_params.tnm_sel_mapping_name = None
             self.tei_ner_map_params.tnm_sel_wri_del_name = None
-            if mapping[self.tnm_attr_name] == self.tei_ner_map_params.tnm_selected_display_tnm_name:
-                self.tei_ner_map_params.tnm_selected_display_tnm_name = None
+            if 'tnm_sel_details_name' in st.session_state and mapping[self.tnm_attr_name] == st.session_state.tnm_sel_details_name:
+                del st.session_state['tnm_sel_details_name']
             st.experimental_rerun()
 
     def reset_tnm_edit_states(self):
@@ -587,16 +586,14 @@ class TEINERMap:
         tnm_show = st.expander("Existing TEI Read NER Entity Mappings", expanded=True)
         with tnm_show:
             st.markdown(self.build_tnm_tablestring())
-            self.tei_ner_map_params.tnm_selected_display_tnm_name = selectbox_widget(
-                f"Choose a mapping for displaying its details:",
-                list(self.mappingdict.keys()),
-                key="tnm_details",
-                index=list(self.mappingdict.keys()).index(self.tei_ner_map_params.tnm_selected_display_tnm_name)
-                if self.tei_ner_map_params.tnm_selected_display_tnm_name
-                else 0,
+            st.selectbox(
+                label=f"Choose a mapping for displaying its details:",
+                options=list(self.mappingdict.keys()),
+                key="tnm_sel_details_name",
+                index=0,
             )
-            if self.tei_ner_map_params.tnm_selected_display_tnm_name:
-                cur_sel_mapping = self.mappingdict[self.tei_ner_map_params.tnm_selected_display_tnm_name]
+            if "tnm_sel_details_name" in st.session_state:
+                cur_sel_mapping = self.mappingdict[st.session_state.tnm_sel_details_name]
                 st.markdown(
                     self.build_tnm_detail_tablestring(cur_sel_mapping),
                     unsafe_allow_html=True,

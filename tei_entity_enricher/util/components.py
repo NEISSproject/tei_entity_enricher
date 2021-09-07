@@ -7,7 +7,7 @@ from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
 
-def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1):
+def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1, reload=False):
     if key in st.session_state and st.session_state[key] is not None:
         init_list=[]
         for ent_dictio in st.session_state[key]["rowData"]:
@@ -27,7 +27,7 @@ def editable_single_column_table(entry_list, key, head, openentrys=100, height=1
         defaultWidth=width,
         fit_columns_on_grid_load=True,
         key=key,
-        reload_data=True
+        reload_data=reload
     )
     st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     returnlist = []

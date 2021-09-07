@@ -24,11 +24,8 @@ class NERTaskDef:
         self.ntd_mode_add = "add"
         self.ntd_mode_dupl = "duplicate"
         self.ntd_mode_edit = "edit"
-        if "ntd_save_message" in st.session_state and st.session_state.ntd_save_message is not None:
-            self.ntd_save_message = st.session_state.ntd_save_message
-            st.session_state.ntd_save_message=None
-        else:
-            self.ntd_save_message = None
+        self.check_one_time_attributes()
+
 
         makedir_if_necessary(self.ntd_Folder)
         makedir_if_necessary(self.template_ntd_Folder)
@@ -53,6 +50,19 @@ class NERTaskDef:
         if show_menu:
             self.tnm = tei_map.TEINERMap(show_menu=False)
             self.show()
+
+    def check_one_time_attributes(self):
+        if "ntd_save_message" in st.session_state and st.session_state.ntd_save_message is not None:
+            self.ntd_save_message = st.session_state.ntd_save_message
+            st.session_state.ntd_save_message=None
+        else:
+            self.ntd_save_message = None
+
+        if "ntd_reload_aggrids" in st.session_state and st.session_state.ntd_reload_aggrids==True:
+            self.ntd_reload_aggrids = True
+            st.session_state.ntd_reload_aggrids=False
+        else:
+            self.ntd_reload_aggrids = False
 
     def get_tag_filepath_to_ntdname(self, name):
         if self.defdict[name][self.ntd_attr_template]:
@@ -115,7 +125,7 @@ class NERTaskDef:
 
     def show_editable_entitylist(self, entitylist, key):
         st.markdown("Define a list of entities for the ner task.")
-        return editable_single_column_table(entry_list=entitylist, key=key, head="Entities")
+        return editable_single_column_table(entry_list=entitylist, key=key, head="Entities",reload=self.ntd_reload_aggrids)
 
     def build_entitylist_key(self, mode):
         return (
@@ -181,6 +191,7 @@ class NERTaskDef:
                 ) as f:
                     f.writelines(blines)
                 st.session_state.ntd_save_message = f'NER Task Entity Definition {definition[self.ntd_attr_name]} succesfully saved!'
+                st.session_state.ntd_reload_aggrids=True
                 if mode != self.ntd_mode_edit:
                     st.session_state["ntd_name_" + mode] = ""
                 for key in st.session_state:
@@ -221,6 +232,7 @@ class NERTaskDef:
                 )
             )
             st.session_state.ntd_save_message = f'NER Task Entity Definition {definition[self.ntd_attr_name]} succesfully deleted!'
+            st.session_state.ntd_reload_aggrids=True
             del st.session_state["ntd_sel_del_def_name"]
             for mode in [self.ntd_mode_dupl, self.ntd_mode_edit]:
                 if (

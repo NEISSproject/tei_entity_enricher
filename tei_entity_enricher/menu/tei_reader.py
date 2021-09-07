@@ -31,11 +31,7 @@ class TEIReader:
         self.tr_config_mode_add = "add"
         self.tr_config_mode_dupl = "duplicate"
         self.tr_config_mode_edit = "edit"
-        if "tr_save_message" in st.session_state and st.session_state.tr_save_message is not None:
-            self.tr_save_message = st.session_state.tr_save_message
-            st.session_state.tr_save_message=None
-        else:
-            self.tr_save_message = None
+        self.check_one_time_attributes()
 
         self.configslist = []
         makedir_if_necessary(self.config_Folder)
@@ -59,6 +55,19 @@ class TEIReader:
         if show_menu:
             self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
+
+    def check_one_time_attributes(self):
+        if "tr_save_message" in st.session_state and st.session_state.tr_save_message is not None:
+            self.tr_save_message = st.session_state.tr_save_message
+            st.session_state.tr_save_message = None
+        else:
+            self.tr_save_message = None
+
+        if "tr_reload_aggrids" in st.session_state and st.session_state.tr_reload_aggrids==True:
+            self.tr_reload_aggrids = True
+            st.session_state.tr_reload_aggrids=False
+        else:
+            self.tr_reload_aggrids = False
 
     def validate_config_for_save(self, config, mode):
         val = True
@@ -117,15 +126,11 @@ class TEIReader:
 
     def show_editable_exclude_tags(self, excl_list, key):
         st.markdown("Define Tags to Exclude from the text which should be considered.")
-        return editable_single_column_table(
-            entry_list=excl_list, key=key, head="Exclude"
-        )
+        return editable_single_column_table(entry_list=excl_list, key=key, head="Exclude",reload=self.tr_reload_aggrids)
 
     def show_editable_note_tags(self, note_list, key):
         st.markdown("Define Tags that contain notes.")
-        return editable_single_column_table(
-            entry_list=note_list, key=key, head="Note tags"
-        )
+        return editable_single_column_table(entry_list=note_list, key=key, head="Note tags",reload=self.tr_reload_aggrids)
 
     def are_configs_equal(self, config1, config2):
         for key in config1.keys():
@@ -137,23 +142,22 @@ class TEIReader:
         return (
             "tr_exclude_tags_"
             + mode
-            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+            + ("" if mode == self.tr_config_mode_add else st.session_state["tr_sel_config_name_" + mode])
         )
 
     def build_note_tag_key(self, mode):
         return (
             "tr_note_tags_"
             + mode
-            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+            + ("" if mode == self.tr_config_mode_add else st.session_state["tr_sel_config_name_" + mode])
         )
 
-    def build_use_not_tag_key(self,mode):
+    def build_use_not_tag_key(self, mode):
         return (
             "use_tr_note_tags_"
             + mode
-            + ("" if mode == self.tr_config_mode_add else st.session_state['tr_sel_config_name_'+mode])
+            + ("" if mode == self.tr_config_mode_add else st.session_state["tr_sel_config_name_" + mode])
         )
-
 
     def show_editable_config_content(self, mode):
         if mode == self.tr_config_mode_edit and len(self.editable_config_names) < 1:
@@ -171,10 +175,10 @@ class TEIReader:
                 st.selectbox(
                     label=f"Select a config to {mode}!",
                     options=options,
-                    key='tr_sel_config_name_'+mode,
+                    key="tr_sel_config_name_" + mode,
                     index=0,
                 )
-                tr_config_dict = self.configdict[st.session_state['tr_sel_config_name_'+mode]].copy()
+                tr_config_dict = self.configdict[st.session_state["tr_sel_config_name_" + mode]].copy()
                 init_use_notes = tr_config_dict[self.tr_config_attr_use_notes]
                 if mode == self.tr_config_mode_dupl:
                     tr_config_dict[self.tr_config_attr_name] = ""
@@ -182,27 +186,26 @@ class TEIReader:
                 tr_config_dict[self.tr_config_attr_excl_tags] = []
                 tr_config_dict[self.tr_config_attr_note_tags] = []
             if mode in [self.tr_config_mode_dupl, self.tr_config_mode_add]:
-                st.text_input(
-                    label="New TEI Reader Config Name:", key='tr_name_'+mode
-                )
-                tr_config_dict[self.tr_config_attr_name] = st.session_state['tr_name_'+mode]
+                st.text_input(label="New TEI Reader Config Name:", key="tr_name_" + mode)
+                tr_config_dict[self.tr_config_attr_name] = st.session_state["tr_name_" + mode]
             init_exclude_tags = tr_config_dict[self.tr_config_attr_excl_tags]
-            #if self.build_excl_tag_key(mode) in st.session_state and st.session_state[self.build_excl_tag_key(mode)] is not None:
+            # if self.build_excl_tag_key(mode) in st.session_state and st.session_state[self.build_excl_tag_key(mode)] is not None:
             #    st.write(st.session_state[self.build_excl_tag_key(mode)])
 
             tr_config_dict[self.tr_config_attr_excl_tags] = self.show_editable_exclude_tags(
                 excl_list=init_exclude_tags,
                 key=self.build_excl_tag_key(mode),
             )
-            init_note_tags=tr_config_dict[self.tr_config_attr_note_tags]
+            init_note_tags = tr_config_dict[self.tr_config_attr_note_tags]
 
-            st.checkbox(label="Tag Notes",value= init_use_notes,key=self.build_use_not_tag_key(mode))
+            st.checkbox(label="Tag Notes", value=init_use_notes, key=self.build_use_not_tag_key(mode))
             tr_config_dict[self.tr_config_attr_use_notes] = st.session_state[self.build_use_not_tag_key(mode)]
             if tr_config_dict[self.tr_config_attr_use_notes]:
                 tr_config_dict[self.tr_config_attr_note_tags] = self.show_editable_note_tags(
                     note_list=init_note_tags,
                     key=self.build_note_tag_key(mode),
                 )
+
             def save_config(config):
                 config[self.tr_config_attr_template] = False
                 with open(
@@ -216,12 +219,19 @@ class TEIReader:
                 if mode != self.tr_config_mode_edit:
                     st.session_state["tr_name_" + mode] = ""
                 for key in st.session_state:
-                    if key.startswith("tr_exclude_tags_" + mode) or key.startswith("tr_note_tags_" + mode) or key.startswith("use_tr_note_tags_" + mode):
+                    if (
+                        key.startswith("tr_exclude_tags_" + mode)
+                        or key.startswith("tr_note_tags_" + mode)
+                        or key.startswith("use_tr_note_tags_" + mode)
+                    ):
                         del st.session_state[key]
-                st.session_state.tr_save_message = f'TEI Reader Config {config[self.tr_config_attr_name]} succesfully saved!'
-            if self.validate_config_for_save(tr_config_dict, mode):
-                st.button("Save TEI Reader Config", key="tr_save_" + mode, on_click=save_config,args=(tr_config_dict,))
+                st.session_state.tr_save_message = (
+                    f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully saved!"
+                )
+                st.session_state.tr_reload_aggrids=True
 
+            if self.validate_config_for_save(tr_config_dict, mode):
+                st.button("Save TEI Reader Config", key="tr_save_" + mode, on_click=save_config, args=(tr_config_dict,))
 
     def tei_reader_add(self):
         self.show_editable_config_content(self.tr_config_mode_add)
@@ -250,19 +260,19 @@ class TEIReader:
                     config[self.tr_config_attr_name].replace(" ", "_") + ".json",
                 )
             )
-            st.session_state.tr_save_message = f'TEI Reader Config {config[self.tr_config_attr_name]} succesfully deleted!'
+            st.session_state.tr_save_message = (
+                f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully deleted!"
+            )
+            st.session_state.tr_reload_aggrids=True
             if (
                 "tr_test_selected_config_name" in st.session_state
                 and config[self.tr_config_attr_name] == st.session_state.tr_test_selected_config_name
             ):
                 del st.session_state["tr_test_selected_config_name"]
-            if "tr_sel_config_name" in st.session_state and config[self.tr_config_attr_name] == st.session_state.tr_sel_config_name:
-                del st.session_state.tr_sel_config_name
             for mode in [self.tr_config_mode_dupl, self.tr_config_mode_edit]:
-                if 'tr_sel_config_name_' + mode in st.session_state and st.session_state['tr_sel_config_name_'+mode]==config[self.tr_config_attr_name]:
-                    del st.session_state['tr_sel_config_name_' + mode]
+                if "tr_sel_config_name_" + mode in st.session_state:
+                    del st.session_state["tr_sel_config_name_" + mode]
             del st.session_state["tr_del_config_name"]
-
 
         if len(self.editable_config_names) > 0:
             st.selectbox(
@@ -284,7 +294,7 @@ class TEIReader:
         with tr_config_definer:
             if self.tr_save_message is not None:
                 st.success(self.tr_save_message)
-                self.tr_save_message=None
+                self.tr_save_message = None
             options = {
                 "Add TEI Reader Config": self.tei_reader_add,
                 "Duplicate TEI Reader Config": self.tei_reader_dupl,
@@ -316,7 +326,7 @@ class TEIReader:
                 help="Choose a TEI file for testing the chosen TEI Reader Config",
             )
             if "tr_last_test_dict" not in st.session_state:
-                st.session_state.tr_last_test_dict={}
+                st.session_state.tr_last_test_dict = {}
             if st.button(
                 "Test TEI Reader Config",
                 key="tr_Button_Test",
@@ -330,10 +340,7 @@ class TEIReader:
                 else:
                     st.error(f"The chosen path {st.session_state.tr_teifile} is not a file!")
                     st.session_state.tr_last_test_dict = {}
-            if (
-                st.session_state.tr_last_test_dict
-                and len(st.session_state.tr_last_test_dict.keys()) > 0
-            ):
+            if st.session_state.tr_last_test_dict and len(st.session_state.tr_last_test_dict.keys()) > 0:
                 tei = tp.TEIFile(
                     st.session_state.tr_last_test_dict["teifile"],
                     st.session_state.tr_last_test_dict["tr"],
@@ -378,6 +385,8 @@ class TEIReader:
             st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
+        #for key in st.session_state:
+        #    st.write(key, st.session_state[key])
         st.latex("\\text{\Huge{TEI Reader Config}}")
         col1, col2 = st.columns(2)
         with col1:
