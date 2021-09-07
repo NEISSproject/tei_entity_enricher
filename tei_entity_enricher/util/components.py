@@ -39,7 +39,7 @@ def editable_single_column_table(entry_list, key, head, openentrys=100, height=1
     return returnlist
 
 
-def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, width=1):
+def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, width=1, reload=False):
     in_data = entry_dict.copy()
     max_len = openentrys
     for entry_dict_key in in_data.keys():
@@ -62,6 +62,7 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
         defaultWidth=width,
         fit_columns_on_grid_load=True,
         key=key,
+        reload_data=reload
     )
     st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     if "data" in response:

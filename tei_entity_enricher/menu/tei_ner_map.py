@@ -36,14 +36,6 @@ class TEINERMapParams:
     tnm_edit_entity: str = None
     tnm_entity_dict: List = None
 
-    tnm_test_selected_config_name: str = None
-    tnm_test_selected_mapping_name: str = None
-    tnm_teifile: str = None
-    tnm_last_test_dict: Dict = None
-    tnm_test_entity_list: List = None
-    tnm_test_note_entity_list = None
-    tnm_edit_options: str = None
-
 
 @st.cache(allow_output_mutation=True)
 def get_params() -> TEINERMapParams:
@@ -62,6 +54,7 @@ class TEINERMap:
         self.tnm_mode_add = "add"
         self.tnm_mode_dupl = "duplicate"
         self.tnm_mode_edit = "edit"
+        self.check_one_time_attributes()
 
         makedir_if_necessary(self.tnm_Folder)
         makedir_if_necessary(self.template_tnm_Folder)
@@ -93,7 +86,20 @@ class TEINERMap:
     def tei_ner_map_params(self) -> TEINERMapParams:
         return get_params()
 
-    def validate_and_saving_mapping(self, mapping, mode):
+    def check_one_time_attributes(self):
+        if "tnm_save_message" in st.session_state and st.session_state.tnm_save_message is not None:
+            self.tnm_save_message = st.session_state.tnm_save_message
+            st.session_state.tnm_save_message = None
+        else:
+            self.tnm_save_message = None
+
+        if "tnm_reload_aggrids" in st.session_state and st.session_state.tnm_reload_aggrids == True:
+            self.tnm_reload_aggrids = True
+            st.session_state.tnm_reload_aggrids = False
+        else:
+            self.tnm_reload_aggrids = False
+
+    def validate_mapping_for_save(self, mapping, mode):
         val = True
         if (
             self.tnm_attr_name not in mapping.keys()
@@ -175,21 +181,11 @@ class TEINERMap:
                 st.error(
                     f"To edit the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
                 )
+        return val
 
-        if val:
-            mapping[self.tnm_attr_template] = False
-            with open(
-                os.path.join(
-                    self.tnm_Folder,
-                    mapping[self.tnm_attr_name].replace(" ", "_") + ".json",
-                ),
-                "w+",
-            ) as f:
-                json.dump(mapping, f)
-            self.reset_tnm_edit_states()
-            st.experimental_rerun()
 
-    def validate_and_delete_mapping(self, mapping):
+
+    def validate_mapping_for_delete(self, mapping):
         val = True
         for gt in self.tng.tnglist:
             if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
@@ -197,25 +193,7 @@ class TEINERMap:
                 st.error(
                     f"To delete the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
                 )
-
-        if val:
-            os.remove(
-                os.path.join(
-                    self.tnm_Folder,
-                    mapping[self.tnm_attr_name].replace(" ", "_") + ".json",
-                )
-            )
-            self.reset_tnm_edit_states()
-            self.tei_ner_map_params.tnm_sel_mapping_name = None
-            self.tei_ner_map_params.tnm_sel_wri_del_name = None
-            if 'tnm_sel_details_name' in st.session_state and mapping[self.tnm_attr_name] == st.session_state.tnm_sel_details_name:
-                del st.session_state['tnm_sel_details_name']
-            st.experimental_rerun()
-
-    def reset_tnm_edit_states(self):
-        self.tei_ner_map_params.tnm_name = None
-        self.tei_ner_map_params.tnm_ntd_name = None
-        self.tei_ner_map_params.tnm_entity_dict = None
+        return val
 
     def show_editable_attr_value_def(self, attr_value_dict, name):
         st.markdown("Define optionally attributes with values which have to be set for this tag!")
@@ -231,83 +209,119 @@ class TEINERMap:
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
+    def build_tnm_ntd_sel_key(self, mode):
+        return (
+            "tnm_ntd_sel_"
+            + mode
+            + ("" if mode == self.tnm_mode_add else st.session_state["tnm_sel_mapping_name_" + mode])
+        )
+
+    def build_tnm_sel_edit_entity_key(self, mode):
+        return (
+            "tnm_ent_"
+            + mode
+            + ("" if mode == self.tnm_mode_add else st.session_state["tnm_sel_mapping_name_" + mode])
+        )
+
     def show_editable_mapping_content(self, mode):
         if mode == self.tnm_mode_edit and len(self.editable_mapping_names) < 1:
             st.info(
                 "There are no self-defined TEI Read NER Entity Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
-            if self.tei_ner_map_params.tnm_mode != mode:
-                self.reset_tnm_edit_states()
-                self.tei_ner_map_params.tnm_sel_mapping_name = None
-            self.tei_ner_map_params.tnm_mode = mode
             tnm_mapping_dict = {}
-            init_tnm_ntd_name = self.tei_ner_map_params.tnm_ntd_name
+            init_tnm_ntd_name = ""
             init_tnm_entity_dict = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_edit]:
+                def tnm_sel_mapping_name_change(mode):
+                    st.session_state.tnm_reload_aggrids = True
+                    if "tnm_entity_dict" in st.session_state:
+                        del st.session_state["tnm_entity_dict"]
+
+
                 if self.tnm_mode_dupl == mode:
                     options = list(self.mappingdict.keys())
                 else:
                     options = self.editable_mapping_names
-                selected_tnm_name = selectbox_widget(
-                    f"Select a mapping to {mode}!",
-                    options,
-                    options.index(self.tei_ner_map_params.tnm_sel_mapping_name)
-                    if self.tei_ner_map_params.tnm_sel_mapping_name
-                    else 0,
-                    key="tnm" + mode,
+                st.selectbox(
+                    label=f"Select a mapping to {mode}!",
+                    options=options,
+                    key="tnm_sel_mapping_name_" + mode,
+                    on_change=tnm_sel_mapping_name_change,
+                    args=(mode,)
                 )
-                if self.tei_ner_map_params.tnm_sel_mapping_name != selected_tnm_name:
-                    self.reset_tnm_edit_states()
-                self.tei_ner_map_params.tnm_sel_mapping_name = selected_tnm_name
-                tnm_mapping_dict = self.mappingdict[selected_tnm_name].copy()
+                tnm_mapping_dict = self.mappingdict[st.session_state["tnm_sel_mapping_name_" + mode]].copy()
                 init_tnm_ntd_name = tnm_mapping_dict[self.tnm_attr_ntd][self.ntd.ntd_attr_name]
                 init_tnm_entity_dict = tnm_mapping_dict[self.tnm_attr_entity_dict]
                 if mode == self.tnm_mode_dupl:
                     tnm_mapping_dict[self.tnm_attr_name] = ""
-            else:
-                selected_tnm_name = ""
             if mode == self.tnm_mode_add:
                 tnm_mapping_dict[self.tnm_attr_ntd] = {}
                 tnm_mapping_dict[self.tnm_attr_entity_dict] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
-                self.tei_ner_map_params.tnm_name = text_input_widget(
-                    "New TEI Read NER Entity Mapping Name:", self.tei_ner_map_params.tnm_name or ""
-                )
-                if self.tei_ner_map_params.tnm_name:
-                    tnm_mapping_dict[self.tnm_attr_name] = self.tei_ner_map_params.tnm_name
+                st.text_input(label="New TEI Read NER Entity Mapping Name:", key='tnm_name_' + mode)
+                tnm_mapping_dict[self.tnm_attr_name] = st.session_state['tnm_name_' + mode]
 
-            sel_tnm_ntd_name = selectbox_widget(
-                "Corresponding NER task definition",
-                list(self.ntd.defdict.keys()),
-                list(self.ntd.defdict.keys()).index(init_tnm_ntd_name) if init_tnm_ntd_name else 0,
-                key="tnm_ntd_sel" + mode + selected_tnm_name,
+            def tnm_ntd_change_trigger(mode):
+                st.session_state.tnm_reload_aggrids = True
+                if self.build_tnm_sel_edit_entity_key(mode) in st.session_state:
+                    del st.session_state[self.build_tnm_sel_edit_entity_key(mode)]
+                if "tnm_entity_dict" in st.session_state:
+                    del st.session_state["tnm_entity_dict"]
+
+            st.selectbox(
+                label="Corresponding NER task definition",
+                options=list(self.ntd.defdict.keys()),
+                key=self.build_tnm_ntd_sel_key(mode),
+                index=list(self.ntd.defdict.keys()).index(init_tnm_ntd_name) if init_tnm_ntd_name is not None and init_tnm_ntd_name!="" else 0,
+                on_change=tnm_ntd_change_trigger,
+                args=(mode,)
             )
-            if self.tei_ner_map_params.tnm_ntd_name and sel_tnm_ntd_name != self.tei_ner_map_params.tnm_ntd_name:
-                self.tei_ner_map_params.tnm_entity_dict = None
-                self.tei_ner_map_params.tnm_edit_entity = None
-            self.tei_ner_map_params.tnm_ntd_name = sel_tnm_ntd_name
-            if self.tei_ner_map_params.tnm_ntd_name:
-                options = self.ntd.defdict[self.tei_ner_map_params.tnm_ntd_name][self.ntd.ntd_attr_entitylist]
-                self.tei_ner_map_params.tnm_edit_entity = selectbox_widget(
-                    "Define mapping for entity:",
-                    options,
-                    index=options.index(self.tei_ner_map_params.tnm_edit_entity)
-                    if self.tei_ner_map_params.tnm_edit_entity
-                    else 0,
-                    key="tnm_ent" + mode,
+            if self.build_tnm_ntd_sel_key(mode) in st.session_state:
+                options = self.ntd.defdict[st.session_state[self.build_tnm_ntd_sel_key(mode)]][self.ntd.ntd_attr_entitylist]
+                st.selectbox(
+                    label="Define mapping for entity:",
+                    options=options,
+                    key=self.build_tnm_sel_edit_entity_key(mode),
                 )
-                if self.tei_ner_map_params.tnm_edit_entity:
-                    self.tei_ner_map_params.tnm_entity_dict = self.edit_entity(
+                st.session_state.tnm_entity_dict = self.edit_entity(
                         mode,
-                        self.tei_ner_map_params.tnm_edit_entity,
-                        self.tei_ner_map_params.tnm_entity_dict if self.tei_ner_map_params.tnm_entity_dict else init_tnm_entity_dict,
+                        st.session_state[self.build_tnm_sel_edit_entity_key(mode)],
+                        st.session_state.tnm_entity_dict
+                        if "tnm_entity_dict" in st.session_state
+                        else init_tnm_entity_dict,
                     )
 
-            if st.button("Save TEI Read NER Entity Mapping", key=mode):
-                tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[self.tei_ner_map_params.tnm_ntd_name]
-                tnm_mapping_dict[self.tnm_attr_entity_dict] = self.tei_ner_map_params.tnm_entity_dict.copy()
-                self.validate_and_saving_mapping(tnm_mapping_dict, mode)
+            tnm_mapping_dict[self.tnm_attr_ntd] = self.ntd.defdict[st.session_state[self.build_tnm_ntd_sel_key(mode)]]
+            tnm_mapping_dict[self.tnm_attr_entity_dict] = st.session_state.tnm_entity_dict.copy()
+
+            def save_mapping(mapping,mode):
+                mapping[self.tnm_attr_template] = False
+                with open(
+                    os.path.join(
+                        self.tnm_Folder,
+                        mapping[self.tnm_attr_name].replace(" ", "_") + ".json",
+                    ),
+                    "w+",
+                ) as f:
+                    json.dump(mapping, f)
+                #if mode != self.tnm_mode_edit:
+                #    st.session_state["tnm_sel_mapping_name_" + mode] = ""
+                for key in st.session_state:
+                    if (
+                        key.startswith("tnm_ntd_sel_" + mode)
+                        or key.startswith("tnm_ent_" + mode)
+                    ):
+                        del st.session_state[key]
+                st.session_state.tnm_save_message = (
+                    f"TEI Reader Config {mapping[self.tnm_attr_name]} succesfully saved!"
+                )
+                st.session_state.tnm_reload_aggrids=True
+                del st.session_state["tnm_entity_dict"]
+
+            if self.validate_mapping_for_save(tnm_mapping_dict, mode):
+                st.button("Save TEI Read NER Entity Mapping", key='tnm_save_'+ mode,on_click=save_mapping,args=(tnm_mapping_dict, mode,))
+
 
     def edit_entity(self, mode, tnm_edit_entity, cur_entity_dict):
         if tnm_edit_entity not in cur_entity_dict.keys():
@@ -315,18 +329,18 @@ class TEINERMap:
         index = 0
         for mapping_entry in cur_entity_dict[tnm_edit_entity]:
             index += 1
-            mapping_entry[0] = text_input_widget(
+            mapping_entry[0] = st.text_input(
                 "Tag " + str(index),
                 mapping_entry[0] or "",
-                key="tnm" + self.tei_ner_map_params.tnm_ntd_name + tnm_edit_entity + mode + str(index),
+                #key="tnm" + self.tei_ner_map_params.tnm_ntd_name + tnm_edit_entity + mode + str(index),
             )
             if mapping_entry[0]:
                 mapping_entry[1] = self.show_editable_attr_value_def(
                     mapping_entry[1], tnm_edit_entity + mode + str(index)
                 )
-        if st.button("Add another mapping"):
-            cur_entity_dict[tnm_edit_entity].append([None, {}])
-            st.experimental_rerun()
+        def add_mapping():
+            st.session_state.tnm_entity_dict[tnm_edit_entity].append([None, {}])
+        st.button("Add another mapping",on_click=add_mapping)
         return cur_entity_dict
 
     def tei_ner_map_add(self):
@@ -339,36 +353,61 @@ class TEINERMap:
         self.show_editable_mapping_content(self.tnm_mode_edit)
 
     def tei_ner_map_del(self):
-        if len(self.editable_mapping_names) > 0:
-            self.tei_ner_map_params.tnm_sel_wri_del_name = selectbox_widget(
-                "Select a mapping to delete!",
-                self.editable_mapping_names,
-                index=self.editable_mapping_names.index(self.tei_ner_map_params.tnm_sel_wri_del_name)
-                if self.tei_ner_map_params.tnm_sel_wri_del_name
-                else 0,
+        def delete_mapping(mapping):
+            os.remove(
+                os.path.join(
+                    self.tnm_Folder,
+                    mapping[self.tnm_attr_name].replace(" ", "_") + ".json",
+                )
             )
-            if st.button("Delete Selected Mapping"):
-                self.validate_and_delete_mapping(self.mappingdict[self.tei_ner_map_params.tnm_sel_wri_del_name])
+            st.session_state.tnm_save_message = (
+                f"TEI Read NER Entity Mapping {mapping[self.tnm_attr_name]} succesfully deleted!"
+            )
+            st.session_state.tnm_reload_aggrids = True
+            self.tei_ner_map_params.tnm_sel_mapping_name = None
+            del st.session_state["tnm_sel_wri_del_name"]
+            if (
+                "tnm_sel_details_name" in st.session_state
+                and mapping[self.tnm_attr_name] == st.session_state.tnm_sel_details_name
+            ):
+                del st.session_state["tnm_sel_details_name"]
+
+        if len(self.editable_mapping_names) > 0:
+            st.selectbox(
+                label="Select a mapping to delete!",
+                options=self.editable_mapping_names,
+                key="tnm_sel_wri_del_name",
+            )
+            if self.validate_mapping_for_delete(self.mappingdict[st.session_state.tnm_sel_wri_del_name]):
+                st.button(
+                    "Delete Selected Mapping",
+                    on_click=delete_mapping,
+                    args=(self.mappingdict[st.session_state.tnm_sel_wri_del_name],),
+                )
         else:
             st.info("There are no self-defined TEI Read NER Entity mappings to delete!")
 
     def show_edit_environment(self):
         tnm_definer = st.expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
         with tnm_definer:
+            def change_edit_option_trigger():
+                st.session_state.tnm_reload_aggrids = True
+                if "tnm_entity_dict" in st.session_state:
+                    del st.session_state["tnm_entity_dict"]
+
+            if self.tnm_save_message is not None:
+                st.success(self.tnm_save_message)
+                self.tnm_save_message = None
             options = {
                 "Add TEI Read NER Entity Mapping": self.tei_ner_map_add,
                 "Duplicate TEI Read NER Entity Mapping": self.tei_ner_map_dupl,
                 "Edit TEI Read NER Entity Mapping": self.tei_ner_map_edit,
                 "Delete TEI Read NER Entity Mapping": self.tei_ner_map_del,
             }
-            self.tei_ner_map_params.tnm_edit_options = radio_widget(
-                "Edit Options",
-                tuple(options.keys()),
-                tuple(options.keys()).index(self.tei_ner_map_params.tnm_edit_options)
-                if self.tei_ner_map_params.tnm_edit_options
-                else 0,
+            st.radio(
+                label="Edit Options", options=tuple(options.keys()), index=0, key="tnm_edit_options",on_change=change_edit_option_trigger,
             )
-            options[self.tei_ner_map_params.tnm_edit_options]()
+            options[st.session_state.tnm_edit_options]()
 
     def mark_entities_in_text(self, text, entitylist, all_entities, show_entity_names):
         newtext = transform_arbitrary_text_to_latex(text)
@@ -412,73 +451,71 @@ class TEINERMap:
     def show_test_environment(self):
         tnm_test_expander = st.expander("Test TEI Read NER Entity Mapping", expanded=False)
         with tnm_test_expander:
-            self.tei_ner_map_params.tnm_test_selected_config_name = selectbox_widget(
-                "Select a TEI Reader Config for the mapping test!",
-                list(self.tr.configdict.keys()),
-                index=list(self.tr.configdict.keys()).index(self.tei_ner_map_params.tnm_test_selected_config_name)
-                if self.tei_ner_map_params.tnm_test_selected_config_name
-                else 0,
+            st.selectbox(
+                label="Select a TEI Reader Config for the mapping test!",
+                options=list(self.tr.configdict.keys()),
+                index=0,
                 key="tnm_tr_test",
             )
-            config = self.tr.configdict[self.tei_ner_map_params.tnm_test_selected_config_name]
-            self.tei_ner_map_params.tnm_test_selected_mapping_name = selectbox_widget(
-                "Select a TEI Read NER Entity Mapping to test!",
-                list(self.mappingdict.keys()),
-                index=list(self.mappingdict.keys()).index(self.tei_ner_map_params.tnm_test_selected_mapping_name)
-                if self.tei_ner_map_params.tnm_test_selected_mapping_name
-                else 0,
+            config = self.tr.configdict[st.session_state.tnm_tr_test]
+            st.selectbox(
+                label="Select a TEI Read NER Entity Mapping to test!",
+                options=list(self.mappingdict.keys()),
+                index=0,
                 key="tnm_tnm_test",
             )
-            mapping = self.mappingdict[self.tei_ner_map_params.tnm_test_selected_mapping_name]
-            self.tei_ner_map_params.tnm_teifile = small_file_selector(
+            mapping = self.mappingdict[st.session_state.tnm_tnm_test]
+            small_file_selector(
                 label="Choose a TEI-File",
-                value=self.tei_ner_map_params.tnm_teifile if self.tei_ner_map_params.tnm_teifile else local_save_path,
-                key="tnm_test_choos_TEI",
+                key="tnm_test_TEI_file",
                 help="Choose a TEI file for testing the chosen TEI Read Entity Mapping",
             )
+
             if st.button(
                 "Test TEI Read Entity Mapping",
-                key="tnm_Button_Test",
+                key="tnm_button_test",
                 help="Test TEI Read Entity Mapping on the chosen Mapping and TEI-File.",
             ):
-                if os.path.isfile(self.tei_ner_map_params.tnm_teifile):
-                    self.tei_ner_map_params.tnm_last_test_dict = {
-                        "teifile": self.tei_ner_map_params.tnm_teifile,
-                        "tr": config,
-                        "tnm": self.tnm_attr_entity_dict,
+                if os.path.isfile(st.session_state.tnm_test_TEI_file):
+                    st.session_state.tnm_last_test_dict = {
+                        "teifile": st.session_state.tnm_test_TEI_file,
+                        "tr": config.copy(),
+                        "tnm": mapping.copy(),
                     }
                 else:
-                    st.error(f"The chosen path {self.tei_ner_map_params.tnm_teifile} is not a file!")
-                    self.tei_ner_map_params.tnm_last_test_dict = {}
-            if (
-                self.tei_ner_map_params.tnm_last_test_dict
-                and len(self.tei_ner_map_params.tnm_last_test_dict.keys()) > 0
-            ):
+                    st.error(f"The chosen path {st.session_state.tnm_test_TEI_file} is not a file!")
+                    st.session_state.tnm_last_test_dict = {}
+
+            if "tnm_last_test_dict" in st.session_state and len(st.session_state.tnm_last_test_dict.keys()) > 0:
                 tei = tp.TEIFile(
-                    self.tei_ner_map_params.tnm_last_test_dict["teifile"],
-                    self.tei_ner_map_params.tnm_last_test_dict["tr"],
-                    entity_dict=mapping[self.tei_ner_map_params.tnm_last_test_dict["tnm"]],
+                    st.session_state.tnm_last_test_dict["teifile"],
+                    st.session_state.tnm_last_test_dict["tr"],
+                    entity_dict=st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_entity_dict],
                 )
                 col1, col2 = st.columns([0.2, 0.8])
                 statistics = tei.get_statistics()
-                self.tei_ner_map_params.tnm_test_entity_list = []
+                st.session_state.tnm_test_entity_list = []
                 with col1:
                     st.subheader("Tagged Entites:")
-                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                    for entity in sorted(
+                        st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                    ):
                         if entity in statistics.keys():
                             if st.checkbox(
                                 "Show Entity " + entity + " (" + str(statistics[entity][0]) + ")",
                                 True,
                                 key="tnm" + entity + "text",
                             ):
-                                self.tei_ner_map_params.tnm_test_entity_list.append(entity)
+                                st.session_state.tnm_test_entity_list.append(entity)
                     st.subheader("Display Options:")
                     tnm_test_show_entity_name = st.checkbox(
                         "Display Entity names", False, key="tnm_display_entity_names"
                     )
                     st.subheader("Legend:")
                     index = 0
-                    for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                    for entity in sorted(
+                        st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                    ):
                         if entity in statistics.keys():
                             st.write(
                                 "$\\color{"
@@ -493,25 +530,31 @@ class TEINERMap:
                     st.write(
                         self.mark_entities_in_text(
                             tei.get_tagged_text(),
-                            self.tei_ner_map_params.tnm_test_entity_list,
-                            sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                            st.session_state.tnm_test_entity_list,
+                            sorted(
+                                st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][
+                                    self.ntd.ntd_attr_entitylist
+                                ]
+                            ),
                             show_entity_names=tnm_test_show_entity_name,
                         )
                     )
                 if config[self.tr.tr_config_attr_use_notes]:
                     col1_note, col2_note = st.columns([0.2, 0.8])
                     note_statistics = tei.get_note_statistics()
-                    self.tei_ner_map_params.tnm_test_note_entity_list = []
+                    st.session_state.tnm_test_note_entity_list = []
                     with col1_note:
                         st.subheader("Tagged Entites:")
-                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                        for entity in sorted(
+                            st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                        ):
                             if entity in note_statistics.keys():
                                 if st.checkbox(
                                     "Show Entity " + entity + " (" + str(note_statistics[entity][0]) + ")",
                                     True,
                                     key="tnm" + entity + "note",
                                 ):
-                                    self.tei_ner_map_params.tnm_test_note_entity_list.append(entity)
+                                    st.session_state.tnm_test_note_entity_list.append(entity)
                         st.subheader("Display Options:")
                         tnm_test_note_show_entity_name = st.checkbox(
                             "Display Entity names",
@@ -520,7 +563,9 @@ class TEINERMap:
                         )
                         st.subheader("Legend: ")
                         index = 0
-                        for entity in sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]):
+                        for entity in sorted(
+                            st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                        ):
                             if entity in note_statistics.keys():
                                 st.write(
                                     "$\\color{"
@@ -535,8 +580,12 @@ class TEINERMap:
                         st.write(
                             self.mark_entities_in_text(
                                 tei.get_tagged_notes(),
-                                self.tei_ner_map_params.tnm_test_note_entity_list,
-                                sorted(mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]),
+                                st.session_state.tnm_test_note_entity_list,
+                                sorted(
+                                    st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][
+                                        self.ntd.ntd_attr_entitylist
+                                    ]
+                                ),
                                 show_entity_names=tnm_test_note_show_entity_name,
                             )
                         )
