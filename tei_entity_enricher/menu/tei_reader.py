@@ -63,9 +63,9 @@ class TEIReader:
         else:
             self.tr_save_message = None
 
-        if "tr_reload_aggrids" in st.session_state and st.session_state.tr_reload_aggrids==True:
+        if "tr_reload_aggrids" in st.session_state and st.session_state.tr_reload_aggrids == True:
             self.tr_reload_aggrids = True
-            st.session_state.tr_reload_aggrids=False
+            st.session_state.tr_reload_aggrids = False
         else:
             self.tr_reload_aggrids = False
 
@@ -126,11 +126,15 @@ class TEIReader:
 
     def show_editable_exclude_tags(self, excl_list, key):
         st.markdown("Define Tags to Exclude from the text which should be considered.")
-        return editable_single_column_table(entry_list=excl_list, key=key, head="Exclude",reload=self.tr_reload_aggrids)
+        return editable_single_column_table(
+            entry_list=excl_list, key=key, head="Exclude", reload=self.tr_reload_aggrids
+        )
 
     def show_editable_note_tags(self, note_list, key):
         st.markdown("Define Tags that contain notes.")
-        return editable_single_column_table(entry_list=note_list, key=key, head="Note tags",reload=self.tr_reload_aggrids)
+        return editable_single_column_table(
+            entry_list=note_list, key=key, head="Note tags", reload=self.tr_reload_aggrids
+        )
 
     def are_configs_equal(self, config1, config2):
         for key in config1.keys():
@@ -228,7 +232,7 @@ class TEIReader:
                 st.session_state.tr_save_message = (
                     f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully saved!"
                 )
-                st.session_state.tr_reload_aggrids=True
+                st.session_state.tr_reload_aggrids = True
 
             if self.validate_config_for_save(tr_config_dict, mode):
                 st.button("Save TEI Reader Config", key="tr_save_" + mode, on_click=save_config, args=(tr_config_dict,))
@@ -263,7 +267,7 @@ class TEIReader:
             st.session_state.tr_save_message = (
                 f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully deleted!"
             )
-            st.session_state.tr_reload_aggrids=True
+            st.session_state.tr_reload_aggrids = True
             if (
                 "tr_test_selected_config_name" in st.session_state
                 and config[self.tr_config_attr_name] == st.session_state.tr_test_selected_config_name
@@ -385,7 +389,7 @@ class TEIReader:
             st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
-        #for key in st.session_state:
+        # for key in st.session_state:
         #    st.write(key, st.session_state[key])
         st.latex("\\text{\Huge{TEI Reader Config}}")
         col1, col2 = st.columns(2)

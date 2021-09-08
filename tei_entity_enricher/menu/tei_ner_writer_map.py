@@ -161,7 +161,9 @@ class TEINERPredWriteMap:
 
     def show_editable_fixed_tags(self, fixed_list, key):
         st.markdown("Define tags in which no entities should be written.")
-        return editable_single_column_table(entry_list=fixed_list, key=key, head="Fixed Tags",reload=self.tnw_reload_aggrids)
+        return editable_single_column_table(
+            entry_list=fixed_list, key=key, head="Fixed Tags", reload=self.tnw_reload_aggrids
+        )
 
     def show_editable_attr_value_def(self, attr_value_dict, name):
         st.markdown("Define optionally attributes with values which have to be set for this tag!")
@@ -169,7 +171,9 @@ class TEINERPredWriteMap:
         for key in attr_value_dict.keys():
             entry_dict["Attributes"].append(key)
             entry_dict["Values"].append(attr_value_dict[key])
-        answer = editable_multi_column_table(entry_dict, "tnw_attr_value" + name, openentrys=20,reload=self.tnw_reload_aggrids)
+        answer = editable_multi_column_table(
+            entry_dict, "tnw_attr_value" + name, openentrys=20, reload=self.tnw_reload_aggrids
+        )
         returndict = {}
         for i in range(len(answer["Attributes"])):
             if answer["Attributes"][i] in returndict.keys():
@@ -193,9 +197,7 @@ class TEINERPredWriteMap:
 
     def build_tnw_sel_edit_entity_key(self, mode):
         return (
-            "tnw_ent_"
-            + mode
-            + ("" if mode == self.tnw_mode_add else st.session_state["tnw_sel_mapping_name_" + mode])
+            "tnw_ent_" + mode + ("" if mode == self.tnw_mode_add else st.session_state["tnw_sel_mapping_name_" + mode])
         )
 
     def show_editable_mapping_content(self, mode):
@@ -248,10 +250,12 @@ class TEINERPredWriteMap:
             st.selectbox(
                 label="Corresponding NER task definition",
                 options=list(self.ntd.defdict.keys()),
-                index=list(self.ntd.defdict.keys()).index(init_tnw_ntd_name) if init_tnw_ntd_name is not None and init_tnw_ntd_name!="" else 0,
+                index=list(self.ntd.defdict.keys()).index(init_tnw_ntd_name)
+                if init_tnw_ntd_name is not None and init_tnw_ntd_name != ""
+                else 0,
                 key=self.build_tnw_ntd_sel_key(mode),
                 on_change=tnw_ntd_change_trigger,
-                args=(mode,)
+                args=(mode,),
             )
             init_fixed_list = tnw_mapping_dict[self.tnw_attr_fixed_tags]
             tnw_mapping_dict[self.tnw_attr_fixed_tags] = self.show_editable_fixed_tags(
@@ -259,24 +263,24 @@ class TEINERPredWriteMap:
                 key=self.build_tnw_fixed_tags_key(mode),
             )
             if self.build_tnw_ntd_sel_key(mode) in st.session_state:
-                options = self.ntd.defdict[st.session_state[self.build_tnw_ntd_sel_key(mode)]][self.ntd.ntd_attr_entitylist]
+                options = self.ntd.defdict[st.session_state[self.build_tnw_ntd_sel_key(mode)]][
+                    self.ntd.ntd_attr_entitylist
+                ]
                 st.selectbox(
                     label="Define mapping for entity:",
                     options=options,
                     key=self.build_tnw_sel_edit_entity_key(mode),
                 )
                 st.session_state.tnw_entity_dict = self.edit_entity(
-                        mode,
-                        st.session_state[self.build_tnw_sel_edit_entity_key(mode)],
-                        st.session_state.tnw_entity_dict
-                        if "tnw_entity_dict" in st.session_state
-                        else init_tnw_entity_dict,
-                    )
+                    mode,
+                    st.session_state[self.build_tnw_sel_edit_entity_key(mode)],
+                    st.session_state.tnw_entity_dict if "tnw_entity_dict" in st.session_state else init_tnw_entity_dict,
+                )
 
             tnw_mapping_dict[self.tnw_attr_ntd] = self.ntd.defdict[st.session_state[self.build_tnw_ntd_sel_key(mode)]]
             tnw_mapping_dict[self.tnw_attr_entity_dict] = st.session_state.tnw_entity_dict.copy()
 
-            def save_mapping(mapping,mode):
+            def save_mapping(mapping, mode):
                 mapping[self.tnw_attr_template] = False
                 with open(
                     os.path.join(
@@ -296,15 +300,22 @@ class TEINERPredWriteMap:
                 st.session_state.tnw_save_message = (
                     f"TEI NER Prediction Writer Mapping {mapping[self.tnw_attr_name]} succesfully saved!"
                 )
-                st.session_state.tnw_reload_aggrids=True
+                st.session_state.tnw_reload_aggrids = True
                 del st.session_state["tnw_entity_dict"]
 
             if self.tnw_save_message is not None:
                 st.success(self.tnw_save_message)
 
             if self.validate_mapping_for_saving(tnw_mapping_dict, mode):
-                st.button("Save TEI NER Prediction Writer Mapping", key='tnm_save_'+mode,on_click=save_mapping,args=(tnw_mapping_dict, mode,))
-
+                st.button(
+                    "Save TEI NER Prediction Writer Mapping",
+                    key="tnm_save_" + mode,
+                    on_click=save_mapping,
+                    args=(
+                        tnw_mapping_dict,
+                        mode,
+                    ),
+                )
 
     def edit_entity(self, mode, tnw_edit_entity, cur_entity_dict):
         if tnw_edit_entity not in cur_entity_dict.keys():
@@ -366,7 +377,7 @@ class TEINERPredWriteMap:
         else:
             st.info("There are no self-defined TEI NER Prediction Writer mapping to delete!")
         if self.tnw_save_message is not None:
-                st.success(self.tnw_save_message)
+            st.success(self.tnw_save_message)
 
     def show_edit_environment(self):
         tnw_definer = st.expander("Add or edit existing TEI NER Prediction Writer Mapping", expanded=False)

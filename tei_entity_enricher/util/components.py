@@ -2,21 +2,22 @@ import os
 
 import pandas as pd
 import streamlit as st
-#from streamlit.widgets import NoValue
+
+# from streamlit.widgets import NoValue
 from st_aggrid import AgGrid
 from tei_entity_enricher.util.helper import local_save_path, state_ok, state_failed, state_uncertain
 
 
 def editable_single_column_table(entry_list, key, head, openentrys=100, height=150, width=1, reload=False):
     if key in st.session_state and st.session_state[key] is not None:
-        init_list=[]
+        init_list = []
         for ent_dictio in st.session_state[key]["rowData"]:
-            content=ent_dictio[head]
-            if content is not None and content!="":
+            content = ent_dictio[head]
+            if content is not None and content != "":
                 init_list.append(content)
-        init_value=pd.DataFrame({head: init_list + [""] * openentrys})  # input_dataframe,
+        init_value = pd.DataFrame({head: init_list + [""] * openentrys})  # input_dataframe,
     else:
-        init_value=pd.DataFrame({head: entry_list + [""] * openentrys})  # input_dataframe,
+        init_value = pd.DataFrame({head: entry_list + [""] * openentrys})  # input_dataframe,
     response = AgGrid(
         init_value,
         height=height,
@@ -27,7 +28,7 @@ def editable_single_column_table(entry_list, key, head, openentrys=100, height=1
         defaultWidth=width,
         fit_columns_on_grid_load=True,
         key=key,
-        reload_data=reload
+        reload_data=reload,
     )
     st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     returnlist = []
@@ -62,7 +63,7 @@ def editable_multi_column_table(entry_dict, key, openentrys=100, height=150, wid
         defaultWidth=width,
         fit_columns_on_grid_load=True,
         key=key,
-        reload_data=reload
+        reload_data=reload,
     )
     st.info("Edit the table by double-click in it and press Enter after changing a cell.")
     if "data" in response:
@@ -392,14 +393,18 @@ def small_file_selector_old(label=None, value=local_save_path, key="", help=None
         return filepath, ret_state
     return filepath
 
+
 def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.columns([10, 1])
     col3, col4, col5 = st.columns([25, 25, 50])
+
     def fs_level_up():
         st.session_state[key] = os.path.dirname(st.session_state[key])
+
     def fs_goto():
-        st.session_state[key] = os.path.join(st.session_state[key], st.session_state[key+'cur_subdir'])
-        del st.session_state[key+'cur_subdir']
+        st.session_state[key] = os.path.join(st.session_state[key], st.session_state[key + "cur_subdir"])
+        del st.session_state[key + "cur_subdir"]
+
     def fs_reset():
         st.session_state[key] = local_save_path
 
@@ -415,25 +420,32 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
             col2.latex(state_uncertain)
             ret_state = state_uncertain
             st.warning("You have currently chosen a folder, but you have to choose a file here.")
-        col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up.",on_click=fs_level_up)
+        col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up.", on_click=fs_level_up)
         if os.path.isdir(st.session_state[key]):
-            st.session_state[key+'subdirlist'] = os.listdir(st.session_state[key])
-            if len(st.session_state[key+'subdirlist']) > 0:
-                if key+'cur_subdir' in st.session_state and st.session_state[key+'cur_subdir'] not in st.session_state[key+'subdirlist']:
-                    del st.session_state[key+'cur_subdir']
+            st.session_state[key + "subdirlist"] = os.listdir(st.session_state[key])
+            if len(st.session_state[key + "subdirlist"]) > 0:
+                if (
+                    key + "cur_subdir" in st.session_state
+                    and st.session_state[key + "cur_subdir"] not in st.session_state[key + "subdirlist"]
+                ):
+                    del st.session_state[key + "cur_subdir"]
                 col5.selectbox(
-                    label="Subelements:",
-                    options=st.session_state[key+'subdirlist'],
-                    key=key+'cur_subdir'
+                    label="Subelements:", options=st.session_state[key + "subdirlist"], key=key + "cur_subdir"
                 )
-                col4.button("Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement.",on_click=fs_goto)
+                col4.button(
+                    "Go to subelement:", key=key + "_go_to", help="Go to the chosen subelement.", on_click=fs_goto
+                )
     else:
         col2.latex(state_failed)
         ret_state = state_failed
         col6, col7 = st.columns([30, 70])
         col7.error(f"The path {st.session_state[key]} is not a valid path.")
-        col6.button("Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}",on_click=fs_reset)
-
+        col6.button(
+            "Reset to standard folder",
+            key=key + "_reset_button",
+            help=f"Reset folder to {local_save_path}",
+            on_click=fs_reset,
+        )
 
     if return_state:
         return st.session_state[key], ret_state
@@ -442,81 +454,75 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
 
 def selectbox_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a selectbox.
-    #sel_box_placeholder = st_element.empty()
-    #ret_value = sel_box_placeholder.selectbox(
+    # sel_box_placeholder = st_element.empty()
+    # ret_value = sel_box_placeholder.selectbox(
     #    label=label, options=options, index=index, format_func=format_func, key=key, help=help
-    #)
-    #if options.index(ret_value) != index:
+    # )
+    # if options.index(ret_value) != index:
     #    ret_value = sel_box_placeholder.selectbox(
     #        label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
     #    )
-    #return ret_value
-    return st_element.selectbox(
-        label=label, options=options, index=index, format_func=format_func, key=key, help=help
-    )
+    # return ret_value
+    return st_element.selectbox(label=label, options=options, index=index, format_func=format_func, key=key, help=help)
 
 
 def radio_widget(label, options, index=0, format_func=str, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a radio button.
-    #radio_placeholder = st_element.empty()
-    #ret_value = radio_placeholder.radio(
+    # radio_placeholder = st_element.empty()
+    # ret_value = radio_placeholder.radio(
     #    label=label, options=options, index=index, format_func=format_func, key=key, help=help
-    #)
-    #if options.index(ret_value) != index:
+    # )
+    # if options.index(ret_value) != index:
     #    radio_placeholder.radio(
     #        label=label, options=options, index=options.index(ret_value), format_func=format_func, key=key, help=help
     #    )
-    #return ret_value
-    return st_element.radio(
-        label=label, options=options, index=index, format_func=format_func, key=key, help=help
-    )
+    # return ret_value
+    return st_element.radio(label=label, options=options, index=index, format_func=format_func, key=key, help=help)
 
 
 def text_input_widget(label, value="", max_chars=None, key=None, type="default", help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of text input.
-    #text_input_placeholder = st_element.empty()
-    #ret_value = text_input_placeholder.text_input(
+    # text_input_placeholder = st_element.empty()
+    # ret_value = text_input_placeholder.text_input(
     #    label, value=value, max_chars=max_chars, key=key, type=type, help=help
-    #)
-    #if value != ret_value:
+    # )
+    # if value != ret_value:
     #    ret_value = text_input_placeholder.text_input(
     #        label, value=ret_value, max_chars=max_chars, key=key, type=type, help=help
     #    )
-    #return ret_value
-    return st_element.text_input(
-        label, value=value, max_chars=max_chars, key=key, type=type, help=help
-    )
+    # return ret_value
+    return st_element.text_input(label, value=value, max_chars=max_chars, key=key, type=type, help=help)
+
 
 def checkbox_widget(label, value=False, key=None, help=None, st_element=st):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a checkbox.
-    #checkbox_placeholder = st_element.empty()
-    #ret_value = checkbox_placeholder.checkbox(
+    # checkbox_placeholder = st_element.empty()
+    # ret_value = checkbox_placeholder.checkbox(
     #    label, value=value, key=key, help=help
-    #)
-    #if value != ret_value:
+    # )
+    # if value != ret_value:
     #    ret_value = checkbox_placeholder.checkbox(
     #        label, value=ret_value, key=key, help=help
     #    )
-    #return ret_value
-    return st_element.checkbox(
-        label, value=value, key=key, help=help
-    )
+    # return ret_value
+    return st_element.checkbox(label, value=value, key=key, help=help)
+
 
 def number_input_widget(
-        label,
-        min_value=None,
-        max_value=None,
-        value=None,
-        step=None,
-        format=None,
-        key=None,
-        help=None,
-        st_element=st,
-    ):
+    label,
+    min_value=None,
+    max_value=None,
+    value=None,
+    step=None,
+    format=None,
+    key=None,
+    help=None,
+    st_element=st,
+):
     # Use this workaround because streamlit sometimes jumps in the GUI back to the original value after a change of the value of a number_input.
-    #number_input_placeholder=st_element.empty()
+    # number_input_placeholder=st_element.empty()
 
-    #ret_value=number_input_placeholder.number_input(label=label,
+    # ret_value=number_input_placeholder.number_input(label=label,
     #    min_value=min_value,
     #    max_value=max_value,
     #    value=value,
@@ -524,7 +530,7 @@ def number_input_widget(
     #    format=format,
     #    key=key,
     #    help=help)
-    #if value != ret_value:
+    # if value != ret_value:
     #    ret_value=number_input_placeholder.number_input(label=label,
     #        min_value=min_value,
     #        max_value=max_value,
@@ -533,12 +539,7 @@ def number_input_widget(
     #        format=format,
     #        key=key,
     #        help=help)
-    #return ret_value
-    return st_element.number_input(label=label,
-        min_value=min_value,
-        max_value=max_value,
-        value=value,
-        step=step,
-        format=format,
-        key=key,
-        help=help)
+    # return ret_value
+    return st_element.number_input(
+        label=label, min_value=min_value, max_value=max_value, value=value, step=step, format=format, key=key, help=help
+    )
