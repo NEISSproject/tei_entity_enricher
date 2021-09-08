@@ -279,7 +279,7 @@ class TEINERMap:
                 ) as f:
                     json.dump(mapping, f)
                 #if mode != self.tnm_mode_edit:
-                #    st.session_state["tnm_sel_mapping_name_" + mode] = ""
+                #    del st.session_state["tnm_sel_mapping_name_" + mode]
                 for key in st.session_state:
                     if (
                         key.startswith("tnm_ntd_sel_" + mode)
@@ -291,6 +291,9 @@ class TEINERMap:
                 )
                 st.session_state.tnm_reload_aggrids=True
                 del st.session_state["tnm_entity_dict"]
+
+            if self.tnm_save_message is not None:
+                st.success(self.tnm_save_message)
 
             if self.validate_mapping_for_save(tnm_mapping_dict, mode):
                 st.button("Save TEI Read NER Entity Mapping", key='tnm_save_'+ mode,on_click=save_mapping,args=(tnm_mapping_dict, mode,))
@@ -363,6 +366,8 @@ class TEINERMap:
                 )
         else:
             st.info("There are no self-defined TEI Read NER Entity mappings to delete!")
+        if self.tnm_save_message is not None:
+                st.success(self.tnm_save_message)
 
     def show_edit_environment(self):
         tnm_definer = st.expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
@@ -374,7 +379,6 @@ class TEINERMap:
 
             if self.tnm_save_message is not None:
                 st.success(self.tnm_save_message)
-                self.tnm_save_message = None
             options = {
                 "Add TEI Read NER Entity Mapping": self.tei_ner_map_add,
                 "Duplicate TEI Read NER Entity Mapping": self.tei_ner_map_dupl,
