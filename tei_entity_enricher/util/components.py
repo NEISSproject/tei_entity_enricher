@@ -161,7 +161,7 @@ def get_sel_dict():
     return dict()
 
 
-def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
+def small_dir_selector_old(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     sel_dict = get_sel_dict()
     col1, col2 = st.columns([10, 1])
     col3, col4, col5 = st.columns([25, 25, 50])
@@ -272,6 +272,62 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
     if return_state:
         return dirpath, ret_state
     return dirpath
+
+def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
+    col1, col2 = st.columns([10, 1])
+    col3, col4, col5 = st.columns([25, 25, 50])
+
+    def ds_level_up():
+        st.session_state[key] = os.path.dirname(st.session_state[key])
+
+    def ds_goto():
+        st.session_state[key] = os.path.join(st.session_state[key], st.session_state[key + "cur_subdir"])
+        del st.session_state[key + "cur_subdir"]
+
+    def ds_reset():
+        st.session_state[key] = local_save_path
+
+    def ds_make_dir():
+        os.makedirs(st.session_state[key])
+
+
+    if key in st.session_state:
+        col1.text_input(label=label, key=key, help=help)
+    else:
+        col1.text_input(label=label, value=value, key=key, help=help)
+    if os.path.isdir(st.session_state[key]):
+        col2.latex(state_ok)
+        ret_state = state_ok
+        col3.button("Go to parent directory", key=key + "_level_up", help="Go one directory up.", on_click=ds_level_up)
+
+        st.session_state[key + "subdirlist"] = [name for name in os.listdir(st.session_state[key]) if os.path.isdir(os.path.join(st.session_state[key], name))]
+        if len(st.session_state[key + "subdirlist"]) > 0:
+            if (
+                    key + "cur_subdir" in st.session_state
+                    and st.session_state[key + "cur_subdir"] not in st.session_state[key + "subdirlist"]
+                ):
+                    del st.session_state[key + "cur_subdir"]
+            col5.selectbox(
+                label="Subdirectories:",
+                options=st.session_state[key + "subdirlist"],
+                key=key + "cur_subdir",
+            )
+            col4.button("Go to subdirectory:", key=key + "_go_to", help="Go to the chosen subdirectory.",on_click=ds_goto)
+
+    else:
+        col2.latex(state_failed)
+        ret_state = state_failed
+        if key + "cur_subdir" in st.session_state:
+            del st.session_state[key + "cur_subdir"]
+        col6, col7 = st.columns([30, 70])
+        col7.error(f"The path {st.session_state[key]} is not a folder.")
+        col6.button("Reset to standard folder", key=key + "_reset_button", help=f"Reset folder to {local_save_path}",on_click=ds_reset)
+
+        if ask_make and os.path.isdir(os.path.dirname(st.session_state[key])):
+            st.button(f"Create dir: {st.session_state[key]}", key=key + '_create_dir',help=f"Create directory {st.session_state[key]}",on_click=ds_make_dir())
+    if return_state:
+        return st.session_state[key], ret_state
+    return st.session_state[key]
 
 
 def small_file_selector_old(label=None, value=local_save_path, key="", help=None, return_state=False):
