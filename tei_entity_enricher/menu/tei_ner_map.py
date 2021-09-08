@@ -174,7 +174,7 @@ class TEINERMap:
         for key in attr_value_dict.keys():
             entry_dict["Attributes"].append(key)
             entry_dict["Values"].append(attr_value_dict[key])
-        answer = editable_multi_column_table(entry_dict, "tnm_attr_value" + name, openentrys=20)
+        answer = editable_multi_column_table(entry_dict, "tnm_attr_value" + name, openentrys=20,reload=self.tnw_reload_aggrids)
         returndict = {}
         for i in range(len(answer["Attributes"])):
             if answer["Attributes"][i] in returndict.keys():
@@ -287,7 +287,7 @@ class TEINERMap:
                     ):
                         del st.session_state[key]
                 st.session_state.tnm_save_message = (
-                    f"TEI Reader Config {mapping[self.tnm_attr_name]} succesfully saved!"
+                    f"TEI Read NER Entity Mapping {mapping[self.tnm_attr_name]} succesfully saved!"
                 )
                 st.session_state.tnm_reload_aggrids=True
                 del st.session_state["tnm_entity_dict"]
