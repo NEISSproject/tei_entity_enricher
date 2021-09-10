@@ -4,7 +4,6 @@ import streamlit as st
 from tei_entity_enricher.menu.ner_prediction import NERPrediction
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
-from tei_entity_enricher.util.components import radio_widget
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm

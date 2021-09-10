@@ -17,7 +17,7 @@ from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 
 class TEIManPP:
-    def __init__(self, show_menu=True, entity_library=None, aux_cache=None):
+    def __init__(self, show_menu=True, entity_library=None):
         self.search_options = [
             "By TEI NER Prediction Writer Mapping",
             "By TEI Read NER Entity Mapping",
@@ -29,7 +29,6 @@ class TEIManPP:
         self.tmp_base_ls_search_type_options = ["without specified type"]
         self.check_one_time_attributes()
         self.entity_library = entity_library  # get_entity_library()
-        self._aux_cache = aux_cache
         if show_menu:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tnm = tnm_map.TEINERMap(show_menu=False)
@@ -262,8 +261,8 @@ class TEIManPP:
                                 st.session_state.tmp_warn_message=ret_value
                             else:
                                 self.entity_library.save_library()
-                                self._aux_cache.last_editor_state = None
-                                self._aux_cache.is_count_up_rerun = True
+                                if "pp_ace_el_editor_content" in st.session_state:
+                                    del st.session_state["pp_ace_el_editor_content"]
                                 st.session_state.tmp_save_message=f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
                         scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id),on_click=add_entity_to_library,args=(suggestion,))
 
