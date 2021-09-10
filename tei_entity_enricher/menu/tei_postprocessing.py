@@ -17,6 +17,7 @@ from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     local_save_path,
     makedir_if_necessary,
+    print_st_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,18 +115,6 @@ class TEINERPostprocessing:
         else:
             self.pp_el_add_from_file_message_list = None
 
-    def print_st_message(self, type, message):
-        if type == "info":
-            st.info(message)
-        elif type == "success":
-            st.success(message)
-        elif type == "warning":
-            st.warning(message)
-        elif type == "error":
-            st.error(message)
-        else:
-            st.error(f'Type "{type}" for Message "{message}" not known.')
-
     def filepath_subcontainer(self):
 
         self.el_filepath_container = st.container()
@@ -190,15 +179,15 @@ class TEINERPostprocessing:
             self.el_add_missing_ids_menu_placeholder = st.empty()
             self.el_init_message_placeholder = st.empty()
             if self.pp_el_init_message is not None:
-                self.print_st_message(self.pp_el_init_message[0], self.pp_el_init_message[1])
+                print_st_message(self.pp_el_init_message[0], self.pp_el_init_message[1])
             if self.pp_el_misc_message is not None:
-                self.print_st_message(self.pp_el_misc_message[0], self.pp_el_misc_message[1])
+                print_st_message(self.pp_el_misc_message[0], self.pp_el_misc_message[1])
             self.el_misc_message_placeholder = st.empty()
             self.el_file_view_placeholder = st.empty()
             self.el_file_view_message_placeholder = st.empty()
             if self.pp_el_add_from_file_message_list is not None:
                 for message in self.pp_el_add_from_file_message_list:
-                    self.print_st_message(message[0], message[1])
+                    print_st_message(message[0], message[1])
 
     def init_button_trigger(self):
         st.session_state.pp_last_pressed_button = "init"

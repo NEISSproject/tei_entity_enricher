@@ -246,6 +246,18 @@ def model_dir_entry_widget(
 def transform_arbitrary_text_to_latex(text):
     return text.replace("\n", "\n\n")
 
+def print_st_message(type, message):
+    if type == "info":
+        st.info(message)
+    elif type == "success":
+        st.success(message)
+    elif type == "warning":
+        st.warning(message)
+    elif type == "error":
+        st.error(message)
+    else:
+        st.error(f'Type "{type}" for Message "{message}" not known.')
+
 
 @st.cache(allow_output_mutation=True)
 def load_images():
