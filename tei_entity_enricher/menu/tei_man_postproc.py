@@ -263,6 +263,7 @@ class TEIManPP:
                                 self.entity_library.save_library()
                                 if "pp_ace_el_editor_content" in st.session_state:
                                     del st.session_state["pp_ace_el_editor_content"]
+                                st.session_state.pp_ace_key_counter+=1
                                 st.session_state.tmp_save_message=f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
                         scol7.button("Add to Entity Library", key="tmp_el_" + str(suggestion_id),on_click=add_entity_to_library,args=(suggestion,))
 

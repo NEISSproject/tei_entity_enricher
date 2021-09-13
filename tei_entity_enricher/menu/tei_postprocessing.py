@@ -90,6 +90,8 @@ def fix_editor_content(content):
 class TEINERPostprocessing:
     def __init__(self, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
+        if 'pp_ace_key_counter' not in st.session_state:
+            st.session_state.pp_ace_key_counter=0
         self.check_one_time_attributes()
         if show_menu:
             self.init_vars()
@@ -408,6 +410,7 @@ class TEINERPostprocessing:
                                         del st.session_state["pp_last_pressed_button"]
                                         if "pp_ace_el_editor_content" in st.session_state:
                                             del st.session_state["pp_ace_el_editor_content"]
+                                        st.session_state.pp_ace_key_counter+=1
                                         st.session_state.add_missing_ids_query_result={}
 
 
@@ -438,6 +441,7 @@ class TEINERPostprocessing:
                     height=500,
                     language="json",
                     readonly=False,
+                    key='pp_ace_internal_key'+str(st.session_state.pp_ace_key_counter),
                 )
                 editor_content = fix_editor_content(editor_content)
                 logger.info(editor_content)
@@ -500,6 +504,7 @@ class TEINERPostprocessing:
                                         st.session_state.pp_el_add_from_file_message_list.append(['info',message])
                         if "pp_ace_el_editor_content" in st.session_state:
                             st.session_state["pp_ace_el_editor_content"] = json.dumps(self.pp_el_library_object.data, indent=4)
+                        st.session_state.pp_ace_key_counter+=1
 
 
                     self.el_add_entities_from_file_button_value = (
