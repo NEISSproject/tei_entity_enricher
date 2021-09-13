@@ -246,6 +246,7 @@ def model_dir_entry_widget(
 def transform_arbitrary_text_to_latex(text):
     return text.replace("\n", "\n\n")
 
+
 def print_st_message(type, message):
     if type == "info":
         st.info(message)

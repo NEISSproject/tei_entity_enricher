@@ -14,6 +14,7 @@ from tei_entity_enricher.util.helper import load_images
 
 logger = logging.getLogger(__name__)
 
+
 class Main:
     def __init__(self, args):
         self.show(args)
@@ -41,10 +42,7 @@ class Main:
 
         # Define sidebar as radiobuttons
         st.sidebar.radio(
-            label="Main Menu",
-            options=tuple(pages.keys()),
-            index=int(args.start_state),
-            key="main_menu_page"
+            label="Main Menu", options=tuple(pages.keys()), index=int(args.start_state), key="main_menu_page"
         )
 
         st.sidebar.markdown("### Funded by")
@@ -80,4 +78,3 @@ class Main:
 
     def ner_postprocessing(self):
         pp.TEINERPostprocessing()
-
