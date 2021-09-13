@@ -3,12 +3,11 @@ import os
 import sys
 import json
 import math
-from typing import Optional
 
 import streamlit as st
 
-from tei_entity_enricher.util.processmanger.base import ProcessManagerBase
-from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
+from tei_entity_enricher.util.aip_interface.prediction_params import NERPredictionParams, get_params
+from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 from tei_entity_enricher.util.spacy_lm import get_spacy_lm
 from tei_entity_enricher.util.tei_writer import TEI_Writer
 import tei_entity_enricher.util.tei_parser as tp
@@ -39,7 +38,7 @@ class PredictProcessManager(ProcessManagerBase):
             "python",
             self._predict_script_path,
             "--export_dir",
-            self._params.ner_model_dir,
+            os.path.join(self._params.model, "export"),
             "--input_json",
             self._params.input_json_file,
             "--out",
@@ -47,6 +46,8 @@ class PredictProcessManager(ProcessManagerBase):
         ]
 
     def do_before_start_process(self):
+        if not (os.path.isdir(self._params.model)):
+            return "Invalid ner model path!"
         if self._params.predict_conf_option == predict_option_tei:
             message_placeholder = st.empty()
             progress_bar_placeholder = st.empty()

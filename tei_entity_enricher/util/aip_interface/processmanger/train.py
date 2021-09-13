@@ -4,7 +4,7 @@ from queue import Empty
 
 import streamlit as st
 
-from tei_entity_enricher.util.processmanger.base import ProcessManagerBase
+from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 
 logger = logging.getLogger(__name__)
 ON_POSIX = "posix" in sys.builtin_module_names

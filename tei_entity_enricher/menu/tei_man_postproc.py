@@ -35,8 +35,6 @@ class TEIManPP:
         self.tmp_base_ls_search_type_options = ["without specified type"]
         self.check_one_time_attributes()
         self.entity_library = entity_library  # get_entity_library()
-        if "pp_loop_aggrid_key_counter" not in st.session_state:
-            st.session_state.pp_loop_aggrid_key_counter = 0
         if show_menu:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tnm = tnm_map.TEINERMap(show_menu=False)
@@ -76,15 +74,12 @@ class TEIManPP:
                     attr_value = element.split("=")
                     entry_dict["Attributes"].append(attr_value[0])
                     entry_dict["Values"].append(attr_value[1][1:-1])
-        aggrid_key = (
-            "tmp_loop_attr_value"
-            + st.session_state.tmp_teifile
-            + st.session_state.tmp_tr_from_last_search[self.tr.tr_config_attr_name]
-            + str(st.session_state.tmp_current_loop_element)
-            + ":"
-            + str(st.session_state.pp_loop_aggrid_key_counter)
+        answer = editable_multi_column_table(
+            entry_dict,
+            "tmp_loop_attr_value" + st.session_state.tmp_teifile + str(st.session_state.tmp_current_loop_element),
+            openentrys=20,
+            reload=self.tmp_reload_aggrids,
         )
-        answer = editable_multi_column_table(entry_dict, aggrid_key, openentrys=20, reload=self.tmp_reload_aggrids)
         new_tagbegin = "<" + tagname
         attrdict = {}
         for i in range(len(answer["Attributes"])):
@@ -138,8 +133,6 @@ class TEIManPP:
         else:
             new_tagbegin = new_tagbegin + ">"
         tag_entry["tagbegin"] = new_tagbegin
-        self.tmp_reload_aggrids = True
-        st.session_state.pp_loop_aggrid_key_counter += 1
 
     def tei_edit_specific_entity(self, tag_entry, tr):
         col1, col2 = st.columns(2)
@@ -325,6 +318,8 @@ class TEIManPP:
             key="tmp_search_entities",
             help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
         ):
+            if "tmp_last_save_path" in st.session_state:
+                del st.session_state["tmp_last_save_path"]
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
@@ -340,7 +335,9 @@ class TEIManPP:
                 st.session_state.tmp_matching_tag_list = []
                 st.warning("Please select a TEI file to be searched for entities.")
 
-        if "tmp_matching_tag_list" not in st.session_state:
+        if "tmp_last_save_path" in st.session_state:
+            st.success(f"Changes are succesfully saved to {st.session_state.tmp_last_save_path}")
+        elif "tmp_matching_tag_list" not in st.session_state:
             st.info("Use the search button to loop through a TEI file for the entities specified above.")
         elif len(st.session_state.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
@@ -389,6 +386,7 @@ class TEIManPP:
                         st.session_state.tmp_tr_from_last_search,
                     )
                     del st.session_state["tmp_matching_tag_list"]
+                    st.session_state.tmp_last_save_path = st.session_state.tmp_teifile_save
                     st.session_state.tmp_save_message = (
                         f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
                     )
@@ -400,7 +398,6 @@ class TEIManPP:
                         "Save to",
                         key="tmp_edit_save_changes_button",
                         help="Save the current changes to the the specified path.",
-                        on_click=save_changes,
                     )
                 with col2:
                     st.text_input(

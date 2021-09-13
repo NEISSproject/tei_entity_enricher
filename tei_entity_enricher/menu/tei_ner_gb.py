@@ -58,7 +58,6 @@ class TEINERGroundtruthBuilder:
         else:
             self.tng_save_message = None
 
-
     def refresh_tng_list(self):
         self.tnglist = []
         for gt_folder in sorted(os.listdir(self.template_tng_Folder)):
@@ -341,9 +340,7 @@ class TEINERGroundtruthBuilder:
         tng_dict = {}
         col1, col2 = st.columns(2)
         with col1:
-            st.text_input(
-                "Define a name for the groundtruth:", key="tng_name"
-            )
+            st.text_input("Define a name for the groundtruth:", key="tng_name")
             if "tng_name" in st.session_state:
                 tng_dict[self.tng_attr_name] = st.session_state.tng_name
             st.selectbox(
@@ -361,7 +358,7 @@ class TEINERGroundtruthBuilder:
             )
             if "tng_tr_name" in st.session_state:
                 tng_dict[self.tng_attr_tr] = self.tr.configdict[st.session_state.tng_tr_name]
-            #self.tei_ner_gb_params.tng_tnm_name =
+            # self.tei_ner_gb_params.tng_tnm_name =
             st.selectbox(
                 label="Select a TEI Read NER Entity Mapping for Building the groundtruth:",
                 options=list(self.tnm.mappingdict.keys()),
@@ -381,22 +378,19 @@ class TEINERGroundtruthBuilder:
                 max_value=100
                 - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10),
                 value=10,
-                key='tng_test_percentage',
+                key="tng_test_percentage",
             )
         with col6:
             st.number_input(
                 "Percentage for the validation set",
                 min_value=0,
-                max_value=100
-                - st.session_state.tng_test_percentage,
+                max_value=100 - st.session_state.tng_test_percentage,
                 value=10,
-                key='tng_dev_percentage'
+                key="tng_dev_percentage",
             )
         with col7:
             st.radio(
-                label="Shuffle Options",
-                options=tuple(self.shuffle_options_dict.keys()),
-                key='tng_shuffle_options'
+                label="Shuffle Options", options=tuple(self.shuffle_options_dict.keys()), key="tng_shuffle_options"
             )
             tng_dict[self.tng_attr_shuffle_type] = st.session_state.tng_shuffle_options
         col8, col9 = st.columns(2)
@@ -415,9 +409,7 @@ class TEINERGroundtruthBuilder:
             key="tng_teifile_folder",
         )
         tng_dict[self.tng_attr_ratio] = {
-            self.tng_gt_type_train: 100
-            - st.session_state.tng_dev_percentage
-            - st.session_state.tng_test_percentage,
+            self.tng_gt_type_train: 100 - st.session_state.tng_dev_percentage - st.session_state.tng_test_percentage,
             self.tng_gt_type_dev: st.session_state.tng_dev_percentage,
             self.tng_gt_type_test: st.session_state.tng_test_percentage,
         }
@@ -429,25 +421,30 @@ class TEINERGroundtruthBuilder:
         val = True
         return val
 
-
     def show_del_environment(self):
         if len(self.editable_tng_names) > 0:
-            #self.tei_ner_gb_params.tng_del_gt_name =
+            # self.tei_ner_gb_params.tng_del_gt_name =
             st.selectbox(
-                label="Select a groundtruth to delete!",
-                options=self.editable_tng_names,
-                key='tng_del_gt_name'
+                label="Select a groundtruth to delete!", options=self.editable_tng_names, key="tng_del_gt_name"
             )
+
             def delete_gt(groundtruth):
                 shutil.rmtree(os.path.join(self.tng_Folder, groundtruth[self.tng_attr_name].replace(" ", "_")))
                 if "tng_sel_display_name" in st.session_state:
                     del st.session_state["tng_sel_display_name"]
                 del st.session_state["tng_del_gt_name"]
-                st.session_state.tng_save_message = f'TEI NER Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!'
+                st.session_state.tng_save_message = (
+                    f"TEI NER Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!"
+                )
+
             if self.tng_save_message is not None:
                 st.success(self.tng_save_message)
             if self.validate_gt_for_delete(self.tngdict[st.session_state["tng_del_gt_name"]]):
-                st.button("Delete Selected Groundtruth",on_click=delete_gt,args=(self.tngdict[st.session_state["tng_del_gt_name"]],))
+                st.button(
+                    "Delete Selected Groundtruth",
+                    on_click=delete_gt,
+                    args=(self.tngdict[st.session_state["tng_del_gt_name"]],),
+                )
         else:
             st.info("There is no self-defined Groundtruth to delete!")
 
@@ -484,7 +481,7 @@ class TEINERGroundtruthBuilder:
     def show_existing_tng(self):
         st.markdown(self.build_tng_tablestring())
         st.markdown(" ")  # only for layouting reasons (placeholder)
-        #self.tei_ner_gb_params.tng_selected_display_tng_name = \
+        # self.tei_ner_gb_params.tng_selected_display_tng_name = \
         st.selectbox(
             label=f"Choose a groundtruth for displaying its statistics:",
             options=list(self.tngdict.keys()),
