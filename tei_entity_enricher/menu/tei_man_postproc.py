@@ -69,7 +69,7 @@ class TEIManPP:
                     attr_value = element.split("=")
                     entry_dict["Attributes"].append(attr_value[0])
                     entry_dict["Values"].append(attr_value[1][1:-1])
-        answer = editable_multi_column_table(entry_dict, "tmp_loop_attr_value", openentrys=20,reload=self.tmp_reload_aggrids)
+        answer = editable_multi_column_table(entry_dict, "tmp_loop_attr_value"+st.session_state.tmp_teifile+str(st.session_state.tmp_current_loop_element), openentrys=20,reload=self.tmp_reload_aggrids)
         new_tagbegin = "<" + tagname
         attrdict = {}
         for i in range(len(answer["Attributes"])):
@@ -298,7 +298,8 @@ class TEIManPP:
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
                 st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
                 st.session_state.tmp_tr_from_last_search = selected_tr
-                st.session_state.tmp_current_loop_element = 1
+                if "tmp_current_loop_element" in st.session_state:
+                    del st.session_state["tmp_current_loop_element"]
                 if len(st.session_state.tmp_matching_tag_list) > 0:
                     self.tmp_reload_aggrids=True
                     st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
@@ -318,19 +319,17 @@ class TEIManPP:
                 st.write("One tag in the TEI-File matches the search conditions.")
             else:
                 def loop_slider_change():
-                    st.session_state.tmp_current_loop_element=st.session_state.tmp_loop_slider
-                    st.session_state.tmp_loop_number_input=st.session_state.tmp_loop_slider
+                    st.session_state.tmp_loop_number_input=st.session_state.tmp_current_loop_element
                     st.session_state.tmp_reload_aggrids=True
                 def loop_number_input_change():
                     st.session_state.tmp_current_loop_element=st.session_state.tmp_loop_number_input
-                    st.session_state.tmp_loop_slider=st.session_state.tmp_loop_number_input
                     st.session_state.tmp_reload_aggrids=True
 
                 st.slider(
                     label=f"Matching tags in the TEI file (found {str(len(st.session_state.tmp_matching_tag_list))} entries) ",
                     min_value=1,
                     max_value=len(st.session_state.tmp_matching_tag_list),
-                    key="tmp_loop_slider",
+                    key="tmp_current_loop_element",
                     on_change=loop_slider_change,
                 )
                 st.number_input(

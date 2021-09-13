@@ -173,7 +173,7 @@ class TEINERMap:
             entry_dict["Attributes"].append(key)
             entry_dict["Values"].append(attr_value_dict[key])
         answer = editable_multi_column_table(
-            entry_dict, "tnm_attr_value" + name, openentrys=20, reload=self.tnw_reload_aggrids
+            entry_dict, "tnm_attr_value" + name, openentrys=20, reload=self.tnm_reload_aggrids
         )
         returndict = {}
         for i in range(len(answer["Attributes"])):
