@@ -807,11 +807,13 @@ def get_pure_note_text_of_tree_element(cur_element, tr, id_to_mark=None, is_note
         text = ""
         if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"]:
             if cur_element["name"] in tr["note_tags"]:
-                note_text,marked=get_pure_note_text_of_tree_element(cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=True, is_marked=is_marked)
+                note_text, marked = get_pure_note_text_of_tree_element(
+                    cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=True, is_marked=is_marked
+                )
                 if marked and not is_marked:
-                    return note_text,marked
+                    return note_text, marked
                 else:
-                    return "",is_marked
+                    return "", is_marked
             if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"] == id_to_mark:
                 new_text, _ = get_pure_note_text_of_tree_element(
                     cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=is_note, is_marked=is_marked

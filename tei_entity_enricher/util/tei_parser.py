@@ -50,7 +50,7 @@ class TEIFile:
         self._allowed_tags = {}
         if entity_dict is not None:
             for entity in entity_dict:
-                if len(entity_dict[entity])>0 and isinstance(entity_dict[entity][0],str):
+                if len(entity_dict[entity]) > 0 and isinstance(entity_dict[entity][0], str):
                     if entity_dict[entity][0] in self._allowed_tags.keys():
                         self._allowed_tags[entity_dict[entity][0]].append([entity, entity_dict[entity][1]])
                     else:

@@ -90,8 +90,8 @@ def fix_editor_content(content):
 class TEINERPostprocessing:
     def __init__(self, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
-        if 'pp_ace_key_counter' not in st.session_state:
-            st.session_state.pp_ace_key_counter=0
+        if "pp_ace_key_counter" not in st.session_state:
+            st.session_state.pp_ace_key_counter = 0
         self.check_one_time_attributes()
         if show_menu:
             self.init_vars()
@@ -111,7 +111,10 @@ class TEINERPostprocessing:
             del st.session_state["pp_el_misc_message"]
         else:
             self.pp_el_misc_message = None
-        if "pp_el_add_from_file_message_list" in st.session_state and st.session_state.pp_el_add_from_file_message_list is not None:
+        if (
+            "pp_el_add_from_file_message_list" in st.session_state
+            and st.session_state.pp_el_add_from_file_message_list is not None
+        ):
             self.pp_el_add_from_file_message_list = st.session_state.pp_el_add_from_file_message_list
             del st.session_state["pp_el_add_from_file_message_list"]
         else:
@@ -358,7 +361,7 @@ class TEINERPostprocessing:
                                             cases_to_choose.append((_temp_result_entity_identification, index))
                                     elif _len_temp_result > 1:
                                         cases_to_choose.append((_temp_result_entity_identification, index))
-                                st.session_state.add_missing_ids_query_result={}
+                                st.session_state.add_missing_ids_query_result = {}
                                 st.session_state.add_missing_ids_query_result["cases_to_ignore"] = cases_to_ignore
                                 st.session_state.add_missing_ids_query_result["identified_cases"] = identified_cases
                                 st.session_state.add_missing_ids_query_result["cases_to_choose"] = cases_to_choose
@@ -395,7 +398,10 @@ class TEINERPostprocessing:
                                         else:
                                             st.write("-")
                                 if len(identified_cases) > 0 or len(cases_to_choose) > 0:
-                                    def save_add_missing_ids_suggestions_to_loaded_el(identified_cases,cases_to_choose):
+
+                                    def save_add_missing_ids_suggestions_to_loaded_el(
+                                        identified_cases, cases_to_choose
+                                    ):
                                         for case in identified_cases:
                                             entity_to_update = self.pp_el_library_object.data[case[1]]
                                             entity_to_update.update(case[0][0][0])
@@ -410,20 +416,22 @@ class TEINERPostprocessing:
                                         del st.session_state["pp_last_pressed_button"]
                                         if "pp_ace_el_editor_content" in st.session_state:
                                             del st.session_state["pp_ace_el_editor_content"]
-                                        st.session_state.pp_ace_key_counter+=1
-                                        st.session_state.add_missing_ids_query_result={}
-
+                                        st.session_state.pp_ace_key_counter += 1
+                                        st.session_state.add_missing_ids_query_result = {}
 
                                     # show save button, if new information can be added to entity library
                                     st.button(
                                         label="Save to currently loaded entity library",
                                         help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
                                         on_click=save_add_missing_ids_suggestions_to_loaded_el,
-                                        args=(identified_cases,cases_to_choose,)
+                                        args=(
+                                            identified_cases,
+                                            cases_to_choose,
+                                        ),
                                     )
                                 else:
                                     st.info("No new data could be retrieved by wikidata query.")
-                                    st.session_state.add_missing_ids_query_result={}
+                                    st.session_state.add_missing_ids_query_result = {}
 
     def if_entity_library_is_loaded_processes(self):
         with self.el_filepath_container:
@@ -441,7 +449,7 @@ class TEINERPostprocessing:
                     height=500,
                     language="json",
                     readonly=False,
-                    key='pp_ace_internal_key'+str(st.session_state.pp_ace_key_counter),
+                    key="pp_ace_internal_key" + str(st.session_state.pp_ace_key_counter),
                 )
                 editor_content = fix_editor_content(editor_content)
                 logger.info(editor_content)
@@ -478,6 +486,7 @@ class TEINERPostprocessing:
                     help="Use json or csv files to add entities to the loaded library. Importing multiple files at once is possible, see the documentation for file structure requirements.",
                 )
                 if len(self.el_add_entities_from_file_loader_file_list) > 0:
+
                     def adding_process(el_add_entities_from_file_loader_file_list):
                         result_messages = []
                         for uploaded_file in el_add_entities_from_file_loader_file_list:
@@ -496,23 +505,27 @@ class TEINERPostprocessing:
                                     f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result[0]} entity/ies successfully added to entity library. {el_add_entities_from_file_single_file_result[1]} entity/ies ignored due to redundance issues."
                                 )
                             with self.el_add_entities_from_file_success_message_placeholder.container():
-                                st.session_state.pp_el_add_from_file_message_list=[]
+                                st.session_state.pp_el_add_from_file_message_list = []
                                 for message in result_messages:
                                     if "success" in message:
-                                        st.session_state.pp_el_add_from_file_message_list.append(['success',message])
+                                        st.session_state.pp_el_add_from_file_message_list.append(["success", message])
                                     else:
-                                        st.session_state.pp_el_add_from_file_message_list.append(['info',message])
+                                        st.session_state.pp_el_add_from_file_message_list.append(["info", message])
                         if "pp_ace_el_editor_content" in st.session_state:
-                            st.session_state["pp_ace_el_editor_content"] = json.dumps(self.pp_el_library_object.data, indent=4)
-                        st.session_state.pp_ace_key_counter+=1
-
+                            st.session_state["pp_ace_el_editor_content"] = json.dumps(
+                                self.pp_el_library_object.data, indent=4
+                            )
+                        st.session_state.pp_ace_key_counter += 1
 
                     self.el_add_entities_from_file_button_value = (
                         self.el_add_entities_from_file_button_placeholder.button(
-                            label="Start adding process", key=None, help=None,on_click=adding_process,args=(self.el_add_entities_from_file_loader_file_list,)
+                            label="Start adding process",
+                            key=None,
+                            help=None,
+                            on_click=adding_process,
+                            args=(self.el_add_entities_from_file_loader_file_list,),
                         )
                     )
-
 
     def show(self):
         st.latex("\\text{\Huge{NER Postprocessing}}")
