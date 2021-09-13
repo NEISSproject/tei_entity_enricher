@@ -1,6 +1,7 @@
 streamlit == 0.87.0
 streamlit-ace
 streamlit-aggrid
+streamlit-autorefresh
 Pillow
 bs4
 lxml
