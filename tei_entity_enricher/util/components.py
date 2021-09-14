@@ -334,7 +334,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
             on_click=ds_reset,
         )
 
-        if ask_make and os.path.isdir(os.path.dirname(st.session_state[key])):
+        if ask_make and (os.path.isdir(os.path.dirname(st.session_state[key])) or os.path.dirname(st.session_state[key])==""):
             st.button(
                 f"Create dir: {st.session_state[key]}",
                 key=key + "_create_dir",

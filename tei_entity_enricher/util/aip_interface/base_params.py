@@ -33,11 +33,12 @@ class AIPBaseParams(ABC):
         return 0 if possible_paths else -1
 
     def choose_model_widget(self, label="model", init=None, st_element=st):
-        model_key = st_element.selectbox(
-            f"Choose a {label}",
-            tuple(self.possible_models.keys()),
-            tuple(self.possible_models.keys()).index(init) if init in tuple(self.possible_models.keys()) else 0,
+        if init is not None and f"select_{label}" not in st.session_state and init in list(self.possible_models.keys()):
+            st.session_state[f"select_{label}"]=init
+        st_element.selectbox(
+            label=f"Choose a {label}",
+            options=tuple(self.possible_models.keys()),
             key=f"select_{label}",
             help=f"Choose a {label}, which you want to use.",
         )
-        self.model = self.possible_models[model_key]
+        self.model = self.possible_models[st.session_state[f"select_{label}"]]

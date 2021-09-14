@@ -9,7 +9,7 @@ import tei_entity_enricher.menu.tei_ner_gb as gb
 from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.util import config_io
 from tei_entity_enricher.util.aip_interface.trainer_params import NERTrainerParams, get_params
-from tei_entity_enricher.util.components import small_dir_selector, selectbox_widget, radio_widget
+from tei_entity_enricher.util.components import small_dir_selector
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
