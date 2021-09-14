@@ -290,7 +290,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
     def ds_make_dir():
         os.makedirs(st.session_state[key])
 
-    if key in st.session_state:
+    if key not in st.session_state:
         st.session_state[key] = value
 
     col1.text_input(label=label, key=key, help=help)

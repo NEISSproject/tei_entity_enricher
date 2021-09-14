@@ -128,6 +128,11 @@ class ProcessManagerBase:
         else:
             self.message(f"process is empty", level="info", st_element=st_element)
 
+    def is_process_running(self):
+        if self.process is not None and self.process.poll() is None:
+            return True
+        return False
+
     def clear_process(self):
         if self.process.poll() is not None:
             self._log_content = ""
@@ -175,11 +180,11 @@ class ProcessManagerBase:
             b3.button("Clear", on_click=self.clear_process)
             b4.button("refresh")
             b5.checkbox(
-                "auto refresh",
+                "Auto Refresh",
                 key="auto_refresh_checkbox",
                 value=False,
             )
-            if st.session_state["auto_refresh_checkbox"]:
+            if st.session_state["auto_refresh_checkbox"] and self.is_process_running():
                 count = st_autorefresh(interval=5000, limit=None, key="auto_refresh_instance")
             self.process_state(st_element=process_status)
 

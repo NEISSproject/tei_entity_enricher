@@ -12,14 +12,9 @@ from tei_entity_enricher.util.aip_interface.base_params import AIPBaseParams
 @dataclass_json
 class NERTrainerParams(AIPBaseParams):
     trainer_params_json: Dict = None
-    nt_train_option: str = None
-    nt_sel_ntd_name: str = None
-    nt_train_list_option: str = None
-    nt_sel_tng_name: str = None
     nt_train_dir: str = None
     nt_val_dir: str = None
     # nt_pretrained_model: str = None # moved to nt_train_params_json
-    nt_output_dir: str = None
 
     def path_check(self, root, subdirs, files):
         pb_file_exist = os.path.isfile(os.path.join(root, "encoder_only", "saved_model.pb"))
