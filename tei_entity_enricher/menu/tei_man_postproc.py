@@ -314,8 +314,6 @@ class TEIManPP:
             key="tmp_search_entities",
             help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
         ):
-            if "tmp_last_save_path" in st.session_state:
-                del st.session_state["tmp_last_save_path"]
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
@@ -336,8 +334,6 @@ class TEIManPP:
                 st.session_state.tmp_matching_tag_list = []
                 st.warning("Please select a TEI file to be searched for entities.")
 
-        if "tmp_last_save_path" in st.session_state:
-            st.success(f"Changes are succesfully saved to {st.session_state.tmp_last_save_path}")
         elif "tmp_matching_tag_list" not in st.session_state:
             st.info("Use the search button to loop through a TEI file for the entities specified above.")
         elif len(st.session_state.tmp_matching_tag_list) < 1:
@@ -387,7 +383,6 @@ class TEIManPP:
                         st.session_state.tmp_tr_from_last_search,
                     )
                     del st.session_state["tmp_matching_tag_list"]
-                    st.session_state.tmp_last_save_path = st.session_state.tmp_teifile_save
                     st.session_state.tmp_save_message = (
                         f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
                     )
