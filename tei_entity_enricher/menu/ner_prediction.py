@@ -18,10 +18,9 @@ from tei_entity_enricher.util.aip_interface.processmanger.predict import (
 from tei_entity_enricher.util.components import (
     small_file_selector,
     small_dir_selector,
-    selectbox_widget,
     file_selector,
 )
-from tei_entity_enricher.util.helper import module_path, state_ok, local_save_path
+from tei_entity_enricher.util.helper import module_path, state_ok
 from tei_entity_enricher.util.spacy_lm import lang_dict
 
 import streamlit as st
@@ -45,7 +44,7 @@ class NERPrediction(MenuBase):
         }
 
         if "predict_lang" not in st.session_state:
-            st.session_state.predict_lang="German"
+            st.session_state.predict_lang = "German"
 
         self._check_list = []
 

@@ -7,10 +7,6 @@ import tei_entity_enricher.util.tei_writer as tei_writer
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
     small_file_selector,
-    selectbox_widget,
-    radio_widget,
-    text_input_widget,
-    checkbox_widget,
 )
 from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
