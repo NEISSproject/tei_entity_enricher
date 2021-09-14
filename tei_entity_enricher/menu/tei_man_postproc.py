@@ -323,8 +323,13 @@ class TEIManPP:
                 st.session_state.tmp_tr_from_last_search = selected_tr
                 if "tmp_current_loop_element" in st.session_state:
                     del st.session_state["tmp_current_loop_element"]
+                if "tmp_loop_number_input" in st.session_state:
+                    del st.session_state["tmp_loop_number_input"]
                 if len(st.session_state.tmp_matching_tag_list) > 0:
                     self.tmp_reload_aggrids = True
+                    if len(st.session_state.tmp_matching_tag_list) > 1:
+                        st.session_state.tmp_current_loop_element=1
+                        st.session_state.tmp_loop_number_input=1
                     st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
                     self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
             else:
@@ -394,6 +399,7 @@ class TEIManPP:
                         "Save to",
                         key="tmp_edit_save_changes_button",
                         help="Save the current changes to the the specified path.",
+                        on_click=save_changes,
                     )
                 with col2:
                     st.text_input(
