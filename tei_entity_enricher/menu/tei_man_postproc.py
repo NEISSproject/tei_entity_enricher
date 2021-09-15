@@ -326,9 +326,10 @@ class TEIManPP:
                     del st.session_state["tmp_loop_number_input"]
                 if len(st.session_state.tmp_matching_tag_list) > 0:
                     self.tmp_reload_aggrids = True
+                    st.session_state.tmp_current_loop_element=1
                     if len(st.session_state.tmp_matching_tag_list) > 1:
-                        st.session_state.tmp_current_loop_element=1
                         st.session_state.tmp_loop_number_input=1
+                        st.session_state.tmp_loop_rerun_after_search=1
                     st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
                     self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
             else:
@@ -366,6 +367,10 @@ class TEIManPP:
                     key="tmp_loop_number_input",
                     on_change=loop_number_input_change,
                 )
+                if 'tmp_loop_rerun_after_search' in st.session_state and st.session_state.tmp_loop_rerun_after_search==1:
+                    st.session_state.tmp_loop_rerun_after_search=0
+                    st.experimental_rerun()
+
             st.markdown("### Modify manually!")
             st.session_state.tmp_matching_tag_list[
                 st.session_state.tmp_current_loop_element - 1
