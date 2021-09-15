@@ -129,6 +129,7 @@ class TEIManPP:
         else:
             new_tagbegin = new_tagbegin + ">"
         tag_entry["tagbegin"] = new_tagbegin
+        st.session_state.tmp_reload_aggrids = True
 
     def tei_edit_specific_entity(self, tag_entry, tr):
         col1, col2 = st.columns(2)
@@ -334,7 +335,7 @@ class TEIManPP:
                 st.session_state.tmp_matching_tag_list = []
                 st.warning("Please select a TEI file to be searched for entities.")
 
-        elif "tmp_matching_tag_list" not in st.session_state:
+        if "tmp_matching_tag_list" not in st.session_state:
             st.info("Use the search button to loop through a TEI file for the entities specified above.")
         elif len(st.session_state.tmp_matching_tag_list) < 1:
             st.warning("The last search resulted in no matching entities.")
