@@ -10,6 +10,7 @@ import tei_entity_enricher.menu.tei_ner_map as tnm
 import tei_entity_enricher.menu.tei_ner_gb as tng
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 import tei_entity_enricher.menu.tei_postprocessing as pp
+import tei_entity_enricher.menu.sd_sparql as sparQL
 from tei_entity_enricher.util.helper import load_images
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ class Main:
             "TEI NER Prediction Writer Mapping": self.tei_ner_writer,
             "NER Trainer": self.ner_trainer,
             "NER Prediction": self.ner_prediction,
+            "SparQL Queries": self.sd_sparql,
             "NER Postprocessing": self.ner_postprocessing,
         }
         logo_frame, heading_frame = st.sidebar.columns([1, 2])
@@ -75,6 +77,9 @@ class Main:
 
     def ner_prediction(self):
         NERPrediction()
+
+    def sd_sparql(self):
+        sparQL.SparQLDef()
 
     def ner_postprocessing(self):
         pp.TEINERPostprocessing()
