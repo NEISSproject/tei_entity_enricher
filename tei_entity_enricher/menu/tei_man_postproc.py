@@ -4,6 +4,8 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
+import tei_entity_enricher.menu.sd_sparql as sparql
+import tei_entity_enricher.menu.ner_task_def as ner_task
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
     small_file_selector,
@@ -35,6 +37,8 @@ class TEIManPP:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tnm = tnm_map.TEINERMap(show_menu=False)
             self.tnw = tnw_map.TEINERPredWriteMap(show_menu=False)
+            self.sds = sparql.SparQLDef(show_menu=False)
+            self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
 
     def check_one_time_attributes(self):
@@ -181,14 +185,21 @@ class TEIManPP:
             link_identifier = Identifier(input=[input_tuple])
             search_type_list = []
             search_type_list.extend(self.tmp_base_ls_search_type_options)
-            search_type_list.extend(link_identifier.entity_types)
-            tag_entry["ls_search_type"] = st.selectbox(
+            search_type_list.extend(list(self.sds.sparqldict.keys()))
+            def change_search_type():
+                st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1]["default_sparql_query"]=st.session_state.tmp_ls_search_type_sel_box
+
+
+            st.session_state.tmp_ls_search_type_sel_box=tag_entry["default_sparql_query"]
+
+            st.selectbox(
                 label="Link suggestion search type",
                 options=search_type_list,
                 key="tmp_ls_search_type_sel_box",
                 help="Define a search type for which link suggestions should be done!",
+                on_change=change_search_type
             )
-            input_tuple = tag_entry["pure_tagcontent"], tag_entry["ls_search_type"]
+            input_tuple = tag_entry["pure_tagcontent"], st.session_state.tmp_ls_search_type_sel_box
             link_identifier.input = [input_tuple]
             col1, col2, col3 = st.columns([0.25, 0.25, 0.5])
             if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
@@ -204,9 +215,9 @@ class TEIManPP:
                 result = link_identifier.suggest(
                     self.entity_library,
                     do_wikidata_query=full_search,
-                    wikidata_filter_for_correct_type=(not search_type_list.index(tag_entry["ls_search_type"]) == 0),
+                    wikidata_filter_for_correct_type=(not search_type_list.index(tag_entry["default_sparql_query"]) == 0),
                     entity_library_filter_for_correct_type=(
-                        not search_type_list.index(tag_entry["ls_search_type"]) == 0
+                        not search_type_list.index(tag_entry["default_sparql_query"]) == 0
                     ),
                 )
                 if input_tuple in result.keys():
@@ -303,7 +314,7 @@ class TEIManPP:
             key="tmp_selected_tr_name",
         )
         selected_tr = self.tr.configdict[st.session_state.tmp_selected_tr_name]
-        tag_list = self.define_search_criterion()
+        tag_list, sparqllist = self.define_search_criterion()
         # self.tei_man_pp_params.tmp_teifile =
         small_file_selector(
             label="Choose a TEI File:",
@@ -318,7 +329,7 @@ class TEIManPP:
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
-                st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list)
+                st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list,sparqllist)
                 st.session_state.tmp_tr_from_last_search = selected_tr
                 if "tmp_current_loop_element" in st.session_state:
                     del st.session_state["tmp_current_loop_element"]
@@ -443,6 +454,16 @@ class TEIManPP:
             return before_text + "$\\text{\\textcolor{red}{" + entity_text + "}}$" + after_text
         return ""
 
+
+    def get_sparql_list_to_entity_list(self,ntd_name, entity_list):
+        sparqllist=[]
+        for entity in entity_list:
+            if entity in self.ntd.defdict[ntd_name][self.ntd.ntd_attr_sparql_map].keys():
+                sparqllist.append(self.ntd.defdict[ntd_name][self.ntd.ntd_attr_sparql_map][entity])
+            else:
+                sparqllist.append(self.tmp_base_ls_search_type_options[0])
+        return sparqllist
+
     def define_search_criterion(self):
         col1, col2 = st.columns(2)
         with col1:
@@ -454,18 +475,20 @@ class TEIManPP:
                     options=list(self.tnw.mappingdict.keys()),
                     key="tmp_selected_tnw_name",
                 )
-                tag_list = tei_writer.build_tag_list_from_entity_dict(
+                tag_list, entity_list = tei_writer.build_tag_list_from_entity_dict(
                     self.tnw.mappingdict[st.session_state.tmp_selected_tnw_name]["entity_dict"], "tnw"
                 )
+                sparqllist=self.get_sparql_list_to_entity_list(self.tnw.mappingdict[st.session_state.tmp_selected_tnw_name][self.tnw.tnw_attr_ntd][self.ntd.ntd_attr_name],entity_list)
             elif self.search_options.index(st.session_state.tmp_search_options) == 1:
                 st.selectbox(
                     label="Select a TEI Read NER Entity Mapping as search criterion!",
                     options=list(self.tnm.mappingdict.keys()),
                     key="tmp_selected_tnm_name",
                 )
-                tag_list = tei_writer.build_tag_list_from_entity_dict(
+                tag_list, entity_list = tei_writer.build_tag_list_from_entity_dict(
                     self.tnm.mappingdict[st.session_state.tmp_selected_tnm_name]["entity_dict"], "tnm"
                 )
+                sparqllist=self.get_sparql_list_to_entity_list(self.tnm.mappingdict[st.session_state.tmp_selected_tnm_name][self.tnm.tnm_attr_ntd][self.ntd.ntd_attr_name],entity_list)
             else:
                 st.text_input(
                     label="Define a Tag as search criterion",
@@ -479,7 +502,8 @@ class TEIManPP:
                     "tmp_sd_search_tag_attr_dict",
                 )
                 tag_list = [[st.session_state.tmp_sd_search_tag, st.session_state.tmp_sd_search_tag_attr_dict]]
-        return tag_list
+                sparqllist=[self.tmp_base_ls_search_type_options[0]]
+        return tag_list, sparqllist
 
     def enrich_search_list(self, tr):
         for tag in st.session_state.tmp_matching_tag_list:
