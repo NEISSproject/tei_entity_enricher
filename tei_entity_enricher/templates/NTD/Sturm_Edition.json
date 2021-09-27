@@ -1,1 +1,1 @@
-{"entitylist": ["pers", "date", "place"], "name": "Sturm Edition", "template": true}
+{"entitylist": ["pers", "date", "place"], "name": "Sturm Edition", "template": true, "sparql": {"pers": "person", "place": "place"}}

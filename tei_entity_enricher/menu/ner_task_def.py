@@ -11,6 +11,9 @@ from tei_entity_enricher.util.components import (
     editable_single_column_table,
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
+import tei_entity_enricher.menu.sd_sparql as sparql
+
+withoutSparQLQuery = "without default SparQL Query"
 
 
 class NERTaskDef:
@@ -21,6 +24,7 @@ class NERTaskDef:
         self.ntd_attr_name = "name"
         self.ntd_attr_entitylist = "entitylist"
         self.ntd_attr_template = "template"
+        self.ntd_attr_sparql_map = "sparql"
         self.ntd_mode_add = "add"
         self.ntd_mode_dupl = "duplicate"
         self.ntd_mode_edit = "edit"
@@ -48,6 +52,7 @@ class NERTaskDef:
 
         if show_menu:
             self.tnm = tei_map.TEINERMap(show_menu=False)
+            self.sds = sparql.SparQLDef(show_menu=False)
             self.show()
 
     def check_one_time_attributes(self):
@@ -147,11 +152,14 @@ class NERTaskDef:
                     options = list(self.defdict.keys())
                 else:
                     options = self.editable_def_names
+                def change_ntd_sel_def_name():
+                    st.session_state.ntd_init_sparql_map=True
                 st.selectbox(
                     f"Select a definition to {mode}!",
                     options,
                     index=0,
                     key="ntd_sel_def_name_" + mode,
+                    on_change=change_ntd_sel_def_name
                 )
                 ntd_definition_dict = self.defdict[st.session_state["ntd_sel_def_name_" + mode]].copy()
                 if mode == self.ntd_mode_dupl:
@@ -166,6 +174,27 @@ class NERTaskDef:
                 entitylist=init_entitylist,
                 key=self.build_entitylist_key(mode),
             )
+            if len(ntd_definition_dict[self.ntd_attr_entitylist])>0:
+                st.markdown("Define a default SparQL Query for a chosen Entity:")
+                if not self.ntd_attr_sparql_map in ntd_definition_dict.keys():
+                    ntd_definition_dict[self.ntd_attr_sparql_map]={}
+                if "ntd_sparql_map" not in st.session_state:
+                    st.session_state.ntd_sparql_map={}
+                if "ntd_init_sparql_map" not in st.session_state or st.session_state.ntd_init_sparql_map:
+                    st.session_state.ntd_sparql_map=ntd_definition_dict[self.ntd_attr_sparql_map]
+                    st.session_state.ntd_init_sparql_map=False
+                else:
+                    ntd_definition_dict[self.ntd_attr_sparql_map]=st.session_state.ntd_sparql_map
+                sparql_entity=st.selectbox(label='Choose an Entity:',options=ntd_definition_dict[self.ntd_attr_entitylist])
+                sparqloptions=[withoutSparQLQuery]
+                sparqloptions.extend(list(self.sds.sparqldict.keys()))
+                init_query_index=sparqloptions.index(st.session_state.ntd_sparql_map[sparql_entity]) if sparql_entity in st.session_state.ntd_sparql_map.keys() else 0
+                sparql_query=st.selectbox(label=f'Choose a default SparQL Query for the Entity {sparql_entity}.', options=sparqloptions, index=init_query_index)
+                st.session_state.ntd_sparql_map[sparql_entity]=sparql_query
+                if st.session_state.ntd_sparql_map[sparql_entity]!=withoutSparQLQuery:
+                    ntd_definition_dict[self.ntd_attr_sparql_map][sparql_entity]=sparql_query
+                elif sparql_entity in st.session_state.ntd_sparql_map.keys():
+                    del ntd_definition_dict[self.ntd_attr_sparql_map][sparql_entity]
             # ntd_definition_dict[self.ntd_attr_entitylist] = self.get_editable_entitylist(self.build_entitylist_key(mode))
             def save_ntd(definition, mode):
                 definition[self.ntd_attr_template] = False
@@ -271,21 +300,38 @@ class NERTaskDef:
                 "Edit NER Task Entity Definition": self.tei_ner_map_edit,
                 "Delete NER Task Entity Definition": self.tei_ner_map_del,
             }
-            st.radio(label="Edit Options", options=tuple(options.keys()), index=0, key="ntd_edit_option")
+            def change_edit_option():
+                st.session_state.ntd_init_sparql_map=True
+                
+            st.radio(label="Edit Options", options=tuple(options.keys()), index=0, key="ntd_edit_option",on_change=change_edit_option)
             options[st.session_state.ntd_edit_option]()
 
     def build_ntd_tablestring(self):
-        tablestring = "Name | Entities | Template \n -----|-------|-------"
+        tablestring = "Name | Entities | SparQLMapping | Template \n -----|-------|-------|-------"
         for definition in self.defslist:
             if definition[self.ntd_attr_template]:
                 template = "yes"
             else:
                 template = "no"
+            sparql=""
+            entitystring=""
+            for entity in definition[self.ntd_attr_entitylist]:
+                    if entitystring!="":
+                        entitystring+=' <br> '
+                        sparql+=' <br> '
+                    entitystring+=entity
+                    if self.ntd_attr_sparql_map in definition.keys() and entity in definition[self.ntd_attr_sparql_map].keys():
+                        sparql+=definition[self.ntd_attr_sparql_map][entity]
+                    else:
+                        sparql+="-"
+
             tablestring += (
                 "\n "
                 + definition[self.ntd_attr_name]
                 + " | "
-                + get_listoutput(definition[self.ntd_attr_entitylist])
+                + entitystring
+                + " | "
+                + sparql
                 + " | "
                 + template
             )
@@ -294,10 +340,13 @@ class NERTaskDef:
     def show_ntds(self):
         ntd_show = st.expander("Existing NER Task Entity Definitions", expanded=True)
         with ntd_show:
-            st.markdown(self.build_ntd_tablestring())
+            st.markdown(self.build_ntd_tablestring(),unsafe_allow_html=True,)
             st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{NER Task Entity Definition}}")
-        self.show_ntds()
-        self.show_edit_environment()
+        col1, col2 = st.columns(2)
+        with col1:
+            self.show_ntds()
+        with col2:
+            self.show_edit_environment()
