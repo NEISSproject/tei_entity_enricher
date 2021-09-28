@@ -66,6 +66,7 @@ class NERPrediction(MenuBase):
         return True
 
     def show(self, **kwargs):
+        st.latex("\\text{\Huge{NER Prediction}}")
         self.select_model_dir()
 
         self.select_output_dir()

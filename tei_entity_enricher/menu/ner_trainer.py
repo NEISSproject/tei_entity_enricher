@@ -50,6 +50,7 @@ class NERTrainer(MenuBase):
         return get_params()
 
     def show(self):
+        st.latex("\\text{\Huge{NER Trainer}}")
         if self.workdir() != 0:
             return -1
 

@@ -20,6 +20,81 @@ class Main:
     def __init__(self, args):
         self.show(args)
 
+    def show_main_menu(self,pages,args):
+        # Define sidebar as radiobuttons
+        st.sidebar.radio(
+            label="Main Menu", options=tuple(pages.keys()), index=int(args.start_state), key="main_menu_page"
+        )
+
+    def show_main_menu_new(self,pages,args):
+        if "main_menu_page" not in st.session_state:
+            if args.start_state in pages.keys():
+                st.session_state.main_menu_page=args.start_state
+            else:
+                st.session_state.main_menu_page=list(pages.keys())[0]
+            st.session_state["mm_page"+str(list(pages.keys()).index(st.session_state.main_menu_page))]=True
+        def change_page(changed_page_number,pages):
+            st.session_state.main_menu_page=list(pages.keys())[changed_page_number]
+            for i in range(len(list(pages.keys()))):
+                if i!=changed_page_number:
+                    st.session_state["mm_page"+str(i)]=False
+        conf_expander = st.sidebar.expander("Configurations",expanded=True)
+        with conf_expander:
+            st.checkbox(label=list(pages.keys())[0],key='mm_page0',on_change=change_page, args=(0,pages,))
+            st.checkbox(label=list(pages.keys())[1],key='mm_page1',on_change=change_page, args=(1,pages,))
+            st.checkbox(label=list(pages.keys())[2],key='mm_page2',on_change=change_page, args=(2,pages,))
+            st.checkbox(label=list(pages.keys())[3],key='mm_page3',on_change=change_page, args=(3,pages,))
+            st.checkbox(label=list(pages.keys())[4],key='mm_page4',on_change=change_page, args=(4,pages,))
+            st.checkbox(label=list(pages.keys())[7],key='mm_page7',on_change=change_page, args=(7 ,pages,))
+        nn_expander = st.sidebar.expander("Training and Prediction",expanded=True)
+        with nn_expander:
+            st.checkbox(label=list(pages.keys())[5],key='mm_page5',on_change=change_page, args=(5,pages,))
+            st.checkbox(label=list(pages.keys())[6],key='mm_page6',on_change=change_page, args=(6,pages,))
+        pp_expander = st.sidebar.expander("Postprocessing",expanded=True)
+        with pp_expander:
+            st.checkbox(label=list(pages.keys())[8],key='mm_page8',on_change=change_page, args=(8,pages,))
+
+    def show_main_menu_new2(self,pages,args):
+        if "main_menu_page" not in st.session_state:
+            if args.start_state in pages.keys():
+                st.session_state.main_menu_page=args.start_state
+            else:
+                st.session_state.main_menu_page=list(pages.keys())[0]
+            st.session_state["mm_page"+str(list(pages.keys()).index(st.session_state.main_menu_page))]=True
+        def change_page(changed_page_number,pages):
+            st.session_state.main_menu_page=list(pages.keys())[changed_page_number]
+            for i in range(len(list(pages.keys()))):
+                if i!=changed_page_number:
+                    st.session_state["mm_page"+str(i)]=False
+        st.sidebar.markdown("#### Configurations")
+        st.sidebar.checkbox(label=list(pages.keys())[0],key='mm_page0',on_change=change_page, args=(0,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[1],key='mm_page1',on_change=change_page, args=(1,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[2],key='mm_page2',on_change=change_page, args=(2,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[3],key='mm_page3',on_change=change_page, args=(3,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[4],key='mm_page4',on_change=change_page, args=(4,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[7],key='mm_page7',on_change=change_page, args=(7 ,pages,))
+        st.sidebar.markdown("#### Training and Prediction")
+        st.sidebar.checkbox(label=list(pages.keys())[5],key='mm_page5',on_change=change_page, args=(5,pages,))
+        st.sidebar.checkbox(label=list(pages.keys())[6],key='mm_page6',on_change=change_page, args=(6,pages,))
+        st.sidebar.markdown("#### Postprocessing")
+        st.sidebar.checkbox(label=list(pages.keys())[8],key='mm_page8',on_change=change_page, args=(8,pages,))
+
+    def show_main_menu_new3(self,pages,args):
+        options=["Configurations","Training and Prediction","Postprocessing"]
+        st.sidebar.selectbox(label='Main Menu',options=options,key='mm_main_selbox')
+        if options.index(st.session_state.mm_main_selbox)==0:
+            conf_pages=pages.copy()
+            del conf_pages["NER Trainer"]
+            del conf_pages["NER Prediction"]
+            del conf_pages["NER Postprocessing"]
+        elif options.index(st.session_state.mm_main_selbox)==1:
+            conf_pages={"NER Trainer":pages["NER Trainer"],"NER Prediction":pages["NER Prediction"]}
+        else:
+            st.session_state.main_menu_page="NER Postprocessing"
+        if options.index(st.session_state.mm_main_selbox)<2:
+            st.sidebar.radio(label="Submenu",options=conf_pages,key='mm_submenu_radio'+str(options.index(st.session_state.mm_main_selbox)))
+            st.session_state.main_menu_page=st.session_state['mm_submenu_radio'+str(options.index(st.session_state.mm_main_selbox))]
+
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         pages = {
@@ -42,10 +117,7 @@ class Main:
         # Include NEISS Logo
         logo_frame.image(neiss_logo)
 
-        # Define sidebar as radiobuttons
-        st.sidebar.radio(
-            label="Main Menu", options=tuple(pages.keys()), index=int(args.start_state), key="main_menu_page"
-        )
+        self.show_main_menu_new3(pages, args)
 
         st.sidebar.markdown("### Funded by")
         # Include EU Logos
