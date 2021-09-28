@@ -230,6 +230,9 @@ class NERTaskDef:
                     if key.startswith("ntd_entitylist_" + mode):
                         del st.session_state[key]
 
+            if self.ntd_save_message is not None:
+                st.success(self.ntd_save_message)
+
             if self.validate_for_saving_definition(ntd_definition_dict, mode):
                 st.button(
                     "Save NER Task Entity Definition",
@@ -279,6 +282,8 @@ class NERTaskDef:
                 index=0,
                 key="ntd_sel_del_def_name",
             )
+            if self.ntd_save_message is not None:
+                st.success(self.ntd_save_message)
             if self.validate_definition_for_delete(self.defdict[st.session_state.ntd_sel_del_def_name]):
                 st.button(
                     "Delete Selected Definition",
@@ -293,7 +298,6 @@ class NERTaskDef:
         with ntd_definer:
             if self.ntd_save_message is not None:
                 st.success(self.ntd_save_message)
-                self.ntd_save_message = None
             options = {
                 "Add NER Task Entity Definition": self.tei_ner_map_add,
                 "Duplicate NER Task Entity Definition": self.tei_ner_map_dupl,

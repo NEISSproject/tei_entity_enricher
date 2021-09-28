@@ -68,19 +68,16 @@ class SparQLDef:
         elif name in self.sparqldict.keys() and mode != self.sds_mode_edit:
             val = False
             st.error(f"Choose another name. There is already a SparQL Query with name {name}!")
-
-        #TODO auf zugeordnete NTDs checken
         return val
 
     def validate_definition_for_delete(self, name, content):
         val = True
-        #TODO Validation, wenn NTD zugeordnet
-        #for mapping in self.tnm.mappingslist:
-        #    if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
-        #        val = False
-        #        st.error(
-        #            f"Deletion of the NER task {definition[self.ntd_attr_name]} not allowed because it is already used in the TEI Read NER entity mapping {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the NER task to the mapping."
-        #        )
+        for definition in self.ntd.defslist:
+            if self.ntd.ntd_attr_sparql_map in definition.keys():
+                for entity in definition[self.ntd.ntd_attr_sparql_map].keys():
+                    if definition[self.ntd.ntd_attr_sparql_map][entity]==name:
+                        val = False
+                        st.error(f'Deletion of the SparQL Query {name} is not allowed, because it is already used in the NER Task Entity definition {definition[self.ntd.ntd_attr_name]}. If necessary first remove the assignment of the SparQL Query from the NER Task')
         return val
 
     def reload_ace_components(self):
