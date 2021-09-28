@@ -1,4 +1,4 @@
-streamlit == 0.87.0
+streamlit == 0.88.0
 streamlit-ace
 streamlit-aggrid
 streamlit-autorefresh
