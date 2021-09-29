@@ -102,7 +102,12 @@ class Main:
                 st.session_state.main_menu_page=args.start_state
             else:
                 st.session_state.main_menu_page=list(pages.keys())[0]
-            st.session_state["mm_main_page0"]=True
+            if st.session_state.main_menu_page in ["NER Trainer","NER Prediction"]:
+                st.session_state["mm_main_page1"]=True
+            elif st.session_state.main_menu_page=="NER Postprocessing":
+                st.session_state["mm_main_page2"]=True
+            else:
+                st.session_state["mm_main_page0"]=True
         def change_main_page(changed_page_number,pages):
             st.session_state.main_menu_page=list(pages.keys())[changed_page_number]
             for i in range(len(list(pages.keys()))):
