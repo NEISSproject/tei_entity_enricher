@@ -18,6 +18,7 @@ from tei_entity_enricher.util.helper import (
     local_save_path,
     makedir_if_necessary,
     print_st_message,
+    menu_postprocessing,
 )
 
 logger = logging.getLogger(__name__)
@@ -528,7 +529,7 @@ class TEINERPostprocessing:
                     )
 
     def show(self):
-        st.latex("\\text{\Huge{NER Postprocessing}}")
+        st.latex("\\text{\Huge{" + menu_postprocessing + "}}")
         ## 1. Entity Library
         st.subheader("Entity Library")
         el_container = st.expander(label="Entity Library", expanded=True)

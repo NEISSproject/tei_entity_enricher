@@ -16,6 +16,9 @@ from tei_entity_enricher.util.helper import (
     file_lists_entry_widget,
     numbers_lists_entry_widget,
     remember_cwd,
+    menu_entity_definition,
+    menu_groundtruth_builder,
+    menu_NER_trainer,
 )
 from tei_entity_enricher.util.aip_interface.processmanger.train import get_train_process_manager
 
@@ -31,7 +34,7 @@ class NERTrainer(MenuBase):
         self.selected_train_list = None
         self.train_process_manager = None
         self.train_conf_options = {
-            "TEI NER Groundtruth": self.data_conf_by_tei_gb,
+            f"Groundtruth from {menu_groundtruth_builder}": self.data_conf_by_tei_gb,
             "Self-Defined": self.data_conf_self_def,
         }
         self.train_list_options = {
@@ -50,7 +53,7 @@ class NERTrainer(MenuBase):
         return get_params()
 
     def show(self):
-        st.latex("\\text{\Huge{NER Trainer}}")
+        st.latex("\\text{\Huge{" + menu_NER_trainer + "}}")
         if self.workdir() != 0:
             return -1
 
@@ -125,10 +128,10 @@ class NERTrainer(MenuBase):
 
     def data_conf_self_def(self):
         st.selectbox(
-            label="Choose an NER Task",
+            label=f"Choose an {menu_entity_definition}",
             options=tuple(self.ntd.defdict.keys()),
             key="nt_sel_ntd_name",
-            help="To specify which NER task you want to train choose an NER Task Entity Definition.",
+            help=f"To specify which NER task you want to train choose an {menu_entity_definition}.",
         )
         self._params.trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(
             st.session_state.nt_sel_ntd_name
@@ -151,7 +154,11 @@ class NERTrainer(MenuBase):
 
         models_ner_dir = os.path.abspath(os.path.join(self._wd, "models_ner"))
         if os.path.isdir(os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"])):
-            elements_to_delete=[os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"],element) for element in os.listdir(os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"])) if not element.endswith('.lst')]
+            elements_to_delete = [
+                os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"], element)
+                for element in os.listdir(os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"]))
+                if not element.endswith(".lst")
+            ]
             if len(elements_to_delete) > 0:
                 a, b = st.columns(2)
                 a.warning(f"Output dir is not empty! Do you really want to empty it?")
@@ -165,7 +172,8 @@ class NERTrainer(MenuBase):
 
                 b.button(
                     f'Delete all content of: {os.path.join(models_ner_dir, st.session_state["nt.ti.output_dir"])}',
-                    on_click=delete_all_content,args=(elements_to_delete,)
+                    on_click=delete_all_content,
+                    args=(elements_to_delete,),
                 )
 
                 return -1
@@ -199,9 +207,11 @@ class NERTrainer(MenuBase):
             label="Choose a Groundtruth",
             options=tuple(self.tng.tngdict.keys()),
             key="nt_sel_tng_name",
-            help="Choose a TEI NER Groundtruth which you want to use for training.",
+            help="Choose a Groundtruth which you want to use for training.",
         )
-        ntd_name = self.tng.tngdict[st.session_state.nt_sel_tng_name][self.tng.tng_attr_tnm]["ntd"][self.ntd.ntd_attr_name]
+        ntd_name = self.tng.tngdict[st.session_state.nt_sel_tng_name][self.tng.tng_attr_tnm]["ntd"][
+            self.ntd.ntd_attr_name
+        ]
         self._params.trainer_params_json["scenario"]["data"]["tags"] = self.ntd.get_tag_filepath_to_ntdname(ntd_name)
         trainlistfilepath, devlistfilepath, testlistfilepath = self.tng.get_filepath_to_gt_lists(
             st.session_state.nt_sel_tng_name
@@ -318,7 +328,10 @@ class NERTrainer(MenuBase):
         return 0
 
     def build_lst_files_if_necessary(self):
-        if st.session_state.nt_train_option == "Self-Defined" and st.session_state.nt_train_list_option == "From Folder":
+        if (
+            st.session_state.nt_train_option == "Self-Defined"
+            and st.session_state.nt_train_list_option == "From Folder"
+        ):
             if os.path.isdir(self._params.nt_train_dir):
                 trainfilelist = [
                     os.path.join(self._params.nt_train_dir, filepath + "\n")

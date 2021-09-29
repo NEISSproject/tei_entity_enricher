@@ -20,7 +20,13 @@ from tei_entity_enricher.util.components import (
     small_dir_selector,
     file_selector,
 )
-from tei_entity_enricher.util.helper import module_path, state_ok
+from tei_entity_enricher.util.helper import (
+    module_path,
+    state_ok,
+    menu_TEI_reader_config,
+    menu_TEI_write_mapping,
+    menu_NER_prediction,
+)
 from tei_entity_enricher.util.spacy_lm import lang_dict
 
 import streamlit as st
@@ -66,7 +72,7 @@ class NERPrediction(MenuBase):
         return True
 
     def show(self, **kwargs):
-        st.latex("\\text{\Huge{NER Prediction}}")
+        st.latex("\\text{\Huge{" + menu_NER_prediction + "}}")
         self.select_model_dir()
 
         self.select_output_dir()
@@ -138,13 +144,13 @@ class NERPrediction(MenuBase):
         np_tei_input_expander = st.expander("Select a TEI Prediction Configuration", expanded=False)
         with np_tei_input_expander:
             st.selectbox(
-                label="Select a TEI Reader Config which should be used for the prediction!",
+                label=f"Select a {menu_TEI_reader_config} which should be used for the prediction!",
                 options=list(self.tr.configdict.keys()),
                 key="np_tei_pred_tr_name",
             )
             self._params.predict_tei_reader = self.tr.configdict[st.session_state.np_tei_pred_tr_name]
             st.selectbox(
-                label="Select a TEI Prediction Writer Mapping which should be used for the prediction!",
+                label=f"Select a {menu_TEI_write_mapping} which should be used for the prediction!",
                 options=list(self.tnw.mappingdict.keys()),
                 key="np_tei_pred_tnw_name",
             )

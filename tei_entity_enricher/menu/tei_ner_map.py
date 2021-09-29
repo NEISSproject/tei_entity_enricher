@@ -8,6 +8,9 @@ from tei_entity_enricher.util.helper import (
     makedir_if_necessary,
     transform_arbitrary_text_to_latex,
     latex_color_list,
+    menu_entity_definition,
+    menu_TEI_reader_config,
+    menu_TEI_read_mapping,
 )
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
@@ -152,7 +155,7 @@ class TEINERMap:
             if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
                 st.error(
-                    f"To edit the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
+                    f"To edit the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
                 )
         return val
 
@@ -162,7 +165,7 @@ class TEINERMap:
             if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
                 st.error(
-                    f"To delete the Entity Mapping {mapping[self.tnm_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
+                    f"To delete the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
                 )
         return val
 
@@ -197,7 +200,7 @@ class TEINERMap:
     def show_editable_mapping_content(self, mode):
         if mode == self.tnm_mode_edit and len(self.editable_mapping_names) < 1:
             st.info(
-                "There are no self-defined TEI Read NER Entity Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
+                f"There are no self-defined {menu_TEI_read_mapping}s to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
             tnm_mapping_dict = {}
@@ -230,7 +233,7 @@ class TEINERMap:
                 tnm_mapping_dict[self.tnm_attr_ntd] = {}
                 tnm_mapping_dict[self.tnm_attr_entity_dict] = {}
             if mode in [self.tnm_mode_dupl, self.tnm_mode_add]:
-                st.text_input(label="New TEI Read NER Entity Mapping Name:", key="tnm_name_" + mode)
+                st.text_input(label=f"New {menu_TEI_read_mapping} Name:", key="tnm_name_" + mode)
                 tnm_mapping_dict[self.tnm_attr_name] = st.session_state["tnm_name_" + mode]
 
             def tnm_ntd_change_trigger(mode):
@@ -241,7 +244,7 @@ class TEINERMap:
                     del st.session_state["tnm_entity_dict"]
 
             st.selectbox(
-                label="Corresponding NER task definition",
+                label=f"Corresponding {menu_entity_definition}",
                 options=list(self.ntd.defdict.keys()),
                 key=self.build_tnm_ntd_sel_key(mode),
                 index=list(self.ntd.defdict.keys()).index(init_tnm_ntd_name)
@@ -284,7 +287,7 @@ class TEINERMap:
                     if key.startswith("tnm_ntd_sel_" + mode) or key.startswith("tnm_ent_" + mode):
                         del st.session_state[key]
                 st.session_state.tnm_save_message = (
-                    f"TEI Read NER Entity Mapping {mapping[self.tnm_attr_name]} succesfully saved!"
+                    f"{menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} succesfully saved!"
                 )
                 st.session_state.tnm_reload_aggrids = True
                 del st.session_state["tnm_entity_dict"]
@@ -294,7 +297,7 @@ class TEINERMap:
 
             if self.validate_mapping_for_save(tnm_mapping_dict, mode):
                 st.button(
-                    "Save TEI Read NER Entity Mapping",
+                    f"Save {menu_TEI_read_mapping}",
                     key="tnm_save_" + mode,
                     on_click=save_mapping,
                     args=(
@@ -343,7 +346,7 @@ class TEINERMap:
                 )
             )
             st.session_state.tnm_save_message = (
-                f"TEI Read NER Entity Mapping {mapping[self.tnm_attr_name]} succesfully deleted!"
+                f"{menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} succesfully deleted!"
             )
             st.session_state.tnm_reload_aggrids = True
             del st.session_state["tnm_sel_wri_del_name"]
@@ -371,12 +374,12 @@ class TEINERMap:
                     args=(self.mappingdict[st.session_state.tnm_sel_wri_del_name],),
                 )
         else:
-            st.info("There are no self-defined TEI Read NER Entity mappings to delete!")
+            st.info(f"There are no self-defined {menu_TEI_read_mapping}s to delete!")
         if self.tnm_save_message is not None:
             st.success(self.tnm_save_message)
 
     def show_edit_environment(self):
-        tnm_definer = st.expander("Add or edit existing TEI Read NER Entity Mapping", expanded=False)
+        tnm_definer = st.expander(f"Add or edit existing {menu_TEI_read_mapping}", expanded=False)
         with tnm_definer:
 
             def change_edit_option_trigger():
@@ -387,10 +390,10 @@ class TEINERMap:
             if self.tnm_save_message is not None:
                 st.success(self.tnm_save_message)
             options = {
-                "Add TEI Read NER Entity Mapping": self.tei_ner_map_add,
-                "Duplicate TEI Read NER Entity Mapping": self.tei_ner_map_dupl,
-                "Edit TEI Read NER Entity Mapping": self.tei_ner_map_edit,
-                "Delete TEI Read NER Entity Mapping": self.tei_ner_map_del,
+                f"Add {menu_TEI_read_mapping}": self.tei_ner_map_add,
+                f"Duplicate {menu_TEI_read_mapping}": self.tei_ner_map_dupl,
+                f"Edit {menu_TEI_read_mapping}": self.tei_ner_map_edit,
+                f"Delete {menu_TEI_read_mapping}": self.tei_ner_map_del,
             }
             st.radio(
                 label="Edit Options",
@@ -441,17 +444,17 @@ class TEINERMap:
         return newtext
 
     def show_test_environment(self):
-        tnm_test_expander = st.expander("Test TEI Read NER Entity Mapping", expanded=False)
+        tnm_test_expander = st.expander(f"Test {menu_TEI_read_mapping}", expanded=False)
         with tnm_test_expander:
             st.selectbox(
-                label="Select a TEI Reader Config for the mapping test!",
+                label=f"Select a {menu_TEI_reader_config} for the mapping test!",
                 options=list(self.tr.configdict.keys()),
                 index=0,
                 key="tnm_tr_test",
             )
             config = self.tr.configdict[st.session_state.tnm_tr_test]
             st.selectbox(
-                label="Select a TEI Read NER Entity Mapping to test!",
+                label=f"Select a {menu_TEI_read_mapping} to test!",
                 options=list(self.mappingdict.keys()),
                 index=0,
                 key="tnm_tnm_test",
@@ -460,13 +463,13 @@ class TEINERMap:
             small_file_selector(
                 label="Choose a TEI-File",
                 key="tnm_test_TEI_file",
-                help="Choose a TEI file for testing the chosen TEI Read Entity Mapping",
+                help=f"Choose a TEI file for testing the chosen {menu_TEI_read_mapping}",
             )
 
             if st.button(
-                "Test TEI Read Entity Mapping",
+                f"Test {menu_TEI_read_mapping}",
                 key="tnm_button_test",
-                help="Test TEI Read Entity Mapping on the chosen Mapping and TEI-File.",
+                help=f"Test {menu_TEI_read_mapping} on the chosen Mapping and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tnm_test_TEI_file):
                     st.session_state.tnm_last_test_dict = {
@@ -583,7 +586,7 @@ class TEINERMap:
                         )
 
     def build_tnm_tablestring(self):
-        tablestring = "Name | NER Task | Template \n -----|-------|-------"
+        tablestring = f"Name | {menu_entity_definition} | Template \n -----|-------|-------"
         for mapping in self.mappingslist:
             if mapping[self.tnm_attr_template]:
                 template = "yes"
@@ -624,7 +627,7 @@ class TEINERMap:
         return tablestring
 
     def show_tnms(self):
-        tnm_show = st.expander("Existing TEI Read NER Entity Mappings", expanded=True)
+        tnm_show = st.expander(f"Existing {menu_TEI_read_mapping}s", expanded=True)
         with tnm_show:
             st.markdown(self.build_tnm_tablestring())
             st.selectbox(
@@ -648,7 +651,7 @@ class TEINERMap:
             st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
-        st.latex("\\text{\Huge{TEI Read NER Entity Mapping}}")
+        st.latex("\\text{\Huge{" + menu_TEI_read_mapping + "}}")
         col1, col2 = st.columns(2)
         with col1:
             self.show_tnms()
