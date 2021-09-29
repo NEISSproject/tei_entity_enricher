@@ -311,7 +311,7 @@ class NERTaskDef:
             options[st.session_state.ntd_edit_option]()
 
     def build_ntd_tablestring(self):
-        tablestring = "Name | Entities | SparQLMapping | Template \n -----|-------|-------|-------"
+        tablestring = "Name | Entities | SparQL Mapping | Template \n -----|-------|-------|-------"
         for definition in self.defslist:
             if definition[self.ntd_attr_template]:
                 template = "yes"

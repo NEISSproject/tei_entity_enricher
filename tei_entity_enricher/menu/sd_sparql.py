@@ -135,7 +135,7 @@ class SparQLDef:
                     new_sparqldict[name]=self.sparqldict[name]
                 new_sparqldict[cur_name]=cur_content
                 with open(self.sds_path,"w+") as f:
-                    json.dump(new_sparqldict, f)
+                    json.dump(new_sparqldict, f,indent=4)
 
                 st.session_state.sds_save_message = (
                     f"SparQL Query {cur_name} succesfully saved!"
