@@ -72,6 +72,7 @@ class WikidataConnector:
                     """
                         q5 = human
                     """,
+                    True,
                 ],
                 "organisation": [
                     """
@@ -87,6 +88,7 @@ class WikidataConnector:
                     """
                         Q43229 = organization
                     """,
+                    True,
                 ],
                 "place": [
                     """
@@ -106,6 +108,7 @@ class WikidataConnector:
                         note: at the moment this category includes the categories 'city', 'ground' and 'water',
                         which should be differentiated
                     """,
+                    True,
                 ],
             }
             try:

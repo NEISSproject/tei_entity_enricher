@@ -28,22 +28,29 @@ class SparQLDef:
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
 
+    def check_reload(self):
+        #Check if sparql_queries.json is already in the new format otherwise rebuilt it
+        sparqlkeys=list(self.sparqldict.keys())
+        if len(self.sparqldict[sparqlkeys[0]])<3:
+            os.remove(os.path.join(self.sds_Folder,"sparql_queries.json"))
+            #Initialize Wikidata_Connector to build sparql_query templates:
+            WikidataConnector()
+            with open(self.sds_path) as f:
+                self.sparqldict=json.load(f)
+
+
+
     def init_sparql_list(self):
-        self.sds_path=os.path.join(self.sds_Folder,"self_def_sparql_queries.json")
+        self.sds_path=os.path.join(self.sds_Folder,"sparql_queries.json")
         if not os.path.isfile(self.sds_path):
-            with open(self.sds_path,"w+") as f:
-                    json.dump({}, f)
-        self.sds_template_path=os.path.join(self.sds_Folder,"sparql_queries.json")
-        if not os.path.isfile(self.sds_template_path):
             #Initialize Wikidata_Connector to build sparql_query templates:
             WikidataConnector()
 
         with open(self.sds_path) as f:
-            sparqldict=json.load(f)
-        self.editable_sparql_names = list(sparqldict.keys())
-        with open(self.sds_template_path) as f:
             self.sparqldict=json.load(f)
-        self.sparqldict.update(sparqldict)
+        self.check_reload()
+        self.editable_sparql_names = [sparql_name for sparql_name in self.sparqldict if not self.sparqldict[sparql_name][2]]
+
 
 
 
@@ -131,9 +138,13 @@ class SparQLDef:
                 cur_query_content[1]= comment_content
             def save_sds(cur_name, cur_content, mode):
                 new_sparqldict={}
-                for name in self.editable_sparql_names:
+                for name in list(self.sparqldict.keys()):
                     new_sparqldict[name]=self.sparqldict[name]
                 new_sparqldict[cur_name]=cur_content
+                if len(new_sparqldict[cur_name])<3:
+                    new_sparqldict[cur_name].append(False)
+                else:
+                    new_sparqldict[cur_name][2]=False
                 with open(self.sds_path,"w+") as f:
                     json.dump(new_sparqldict, f,indent=4)
 
@@ -168,11 +179,11 @@ class SparQLDef:
     def sparql_del(self):
         def delete_sds(sparql_name):
             new_sparqldict={}
-            for name in self.editable_sparql_names:
+            for name in list(self.sparqldict.keys()):
                 if name!=sparql_name:
                     new_sparqldict[name]=self.sparqldict[name]
             with open(self.sds_path,"w+") as f:
-                json.dump(new_sparqldict, f)
+                json.dump(new_sparqldict, f,indent=4)
 
 
             st.session_state.sds_save_message = (

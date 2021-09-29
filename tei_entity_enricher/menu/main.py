@@ -104,7 +104,7 @@ class Main:
                 st.session_state.main_menu_page=list(pages.keys())[0]
             if st.session_state.main_menu_page in ["NER Trainer","NER Prediction"]:
                 st.session_state["mm_main_page1"]=True
-            elif st.session_state.main_menu_page=="NER Postprocessing":
+            elif st.session_state.main_menu_page=="Postprocessing":
                 st.session_state["mm_main_page2"]=True
             else:
                 st.session_state["mm_main_page0"]=True
@@ -119,7 +119,7 @@ class Main:
             conf_pages=pages.copy()
             del conf_pages["NER Trainer"]
             del conf_pages["NER Prediction"]
-            del conf_pages["NER Postprocessing"]
+            del conf_pages["Postprocessing"]
             col2.radio(label="",options=conf_pages,key='mm_submenu_radio0')
             st.session_state.main_menu_page=st.session_state.mm_submenu_radio0
         st.sidebar.checkbox(label='Training and Prediction',key='mm_main_page1',on_change=change_main_page, args=(1,pages,))
@@ -130,20 +130,20 @@ class Main:
             st.session_state.main_menu_page=st.session_state.mm_submenu_radio1
         st.sidebar.checkbox(label='Postprocessing',key='mm_main_page2',on_change=change_main_page, args=(2,pages,))
         if st.session_state.mm_main_page2:
-            st.session_state.main_menu_page="NER Postprocessing"
+            st.session_state.main_menu_page="Postprocessing"
 
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         pages = {
             "TEI Reader Config": self.tei_reader,
-            "NER Task Entity Definition": self.ner_task_def,
-            "TEI Read NER Entity Mapping": self.tei_ner_map,
-            "TEI NER Groundtruth Builder": self.gt_builder,
-            "TEI Prediction Writer Mapping": self.tei_ner_writer,
+            "Entity Definition": self.ner_task_def,
+            "TEI Read Entity Mapping": self.tei_ner_map,
+            "Groundtruth Builder": self.gt_builder,
+            "TEI Write Entity Mapping": self.tei_ner_writer,
             "NER Trainer": self.ner_trainer,
             "NER Prediction": self.ner_prediction,
             "SparQL Queries": self.sd_sparql,
-            "NER Postprocessing": self.ner_postprocessing,
+            "Postprocessing": self.ner_postprocessing,
         }
         logo_frame, heading_frame = st.sidebar.columns([1, 2])
         heading_frame.latex("\\text{\Huge{N-TEE}}")
