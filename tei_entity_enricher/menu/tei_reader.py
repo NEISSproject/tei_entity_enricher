@@ -14,6 +14,7 @@ from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
+    menu_TEI_reader_config,
 )
 import tei_entity_enricher.menu.tei_ner_gb as gb
 
@@ -77,7 +78,7 @@ class TEIReader:
             or config[self.tr_config_attr_name] == ""
         ):
             val = False
-            st.error("Please define a name for the config before saving!")
+            st.error(f"Please define a name for the {menu_TEI_reader_config} before saving!")
         elif (
             os.path.isfile(
                 os.path.join(
@@ -88,7 +89,9 @@ class TEIReader:
             and mode != self.tr_config_mode_edit
         ):
             val = False
-            st.error(f"Choose another name. There is already a config with name {config[self.tr_config_attr_name]}!")
+            st.error(
+                f"Choose another name. There is already a {menu_TEI_reader_config} with name {config[self.tr_config_attr_name]}!"
+            )
         if len(config[self.tr_config_attr_excl_tags]) > 0:
             for excl_tag in config[self.tr_config_attr_excl_tags]:
                 if " " in excl_tag:
@@ -120,7 +123,7 @@ class TEIReader:
             if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
                 st.error(
-                    f"To edit the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
+                    f"To edit the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
                 )
         return val
 
@@ -166,7 +169,7 @@ class TEIReader:
     def show_editable_config_content(self, mode):
         if mode == self.tr_config_mode_edit and len(self.editable_config_names) < 1:
             st.info(
-                "There are no self-defined TEI Reader Configs to edit in the moment. If you want to edit a template you have to duplicate it."
+                f"There are no self-defined {menu_TEI_reader_config}s to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
             tr_config_dict = {}
@@ -177,7 +180,7 @@ class TEIReader:
                 else:
                     options = self.editable_config_names
                 st.selectbox(
-                    label=f"Select a config to {mode}!",
+                    label=f"Select a {menu_TEI_reader_config} to {mode}!",
                     options=options,
                     key="tr_sel_config_name_" + mode,
                     index=0,
@@ -190,7 +193,7 @@ class TEIReader:
                 tr_config_dict[self.tr_config_attr_excl_tags] = []
                 tr_config_dict[self.tr_config_attr_note_tags] = []
             if mode in [self.tr_config_mode_dupl, self.tr_config_mode_add]:
-                st.text_input(label="New TEI Reader Config Name:", key="tr_name_" + mode)
+                st.text_input(label=f"New {menu_TEI_reader_config} Name:", key="tr_name_" + mode)
                 tr_config_dict[self.tr_config_attr_name] = st.session_state["tr_name_" + mode]
             init_exclude_tags = tr_config_dict[self.tr_config_attr_excl_tags]
             # if self.build_excl_tag_key(mode) in st.session_state and st.session_state[self.build_excl_tag_key(mode)] is not None:
@@ -230,12 +233,17 @@ class TEIReader:
                     ):
                         del st.session_state[key]
                 st.session_state.tr_save_message = (
-                    f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully saved!"
+                    f"{menu_TEI_reader_config} {config[self.tr_config_attr_name]} succesfully saved!"
                 )
                 st.session_state.tr_reload_aggrids = True
 
             if self.validate_config_for_save(tr_config_dict, mode):
-                st.button("Save TEI Reader Config", key="tr_save_" + mode, on_click=save_config, args=(tr_config_dict,))
+                st.button(
+                    f"Save {menu_TEI_reader_config}",
+                    key="tr_save_" + mode,
+                    on_click=save_config,
+                    args=(tr_config_dict,),
+                )
 
     def tei_reader_add(self):
         self.show_editable_config_content(self.tr_config_mode_add)
@@ -252,7 +260,7 @@ class TEIReader:
             if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
                 st.error(
-                    f"To delete the TEI Reader Config {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
+                    f"To delete the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
                 )
         return val
 
@@ -265,7 +273,7 @@ class TEIReader:
                 )
             )
             st.session_state.tr_save_message = (
-                f"TEI Reader Config {config[self.tr_config_attr_name]} succesfully deleted!"
+                f"{menu_TEI_reader_config} {config[self.tr_config_attr_name]} succesfully deleted!"
             )
             st.session_state.tr_reload_aggrids = True
             if (
@@ -280,30 +288,30 @@ class TEIReader:
 
         if len(self.editable_config_names) > 0:
             st.selectbox(
-                label="Select a config to delete!",
+                label=f"Select a {menu_TEI_reader_config} to delete!",
                 options=self.editable_config_names,
                 key="tr_del_config_name",
             )
             if self.validate_config_for_delete(self.configdict[st.session_state.tr_del_config_name]):
                 st.button(
-                    "Delete Selected Config",
+                    f"Delete Selected {menu_TEI_reader_config}",
                     on_click=delete_config,
                     args=(self.configdict[st.session_state.tr_del_config_name],),
                 )
         else:
-            st.info("There are no self-defined TEI Read NER Reader Configs to delete!")
+            st.info(f"There are no self-defined {menu_TEI_reader_config} to delete!")
 
     def show_edit_environment(self):
-        tr_config_definer = st.expander("Add or edit existing Config", expanded=False)
+        tr_config_definer = st.expander(f"Add or edit existing {menu_TEI_reader_config}", expanded=False)
         with tr_config_definer:
             if self.tr_save_message is not None:
                 st.success(self.tr_save_message)
                 self.tr_save_message = None
             options = {
-                "Add TEI Reader Config": self.tei_reader_add,
-                "Duplicate TEI Reader Config": self.tei_reader_dupl,
-                "Edit TEI Reader Config": self.tei_reader_edit,
-                "Delete TEI Reader Config": self.teireaderdel,
+                f"Add {menu_TEI_reader_config}": self.tei_reader_add,
+                f"Duplicate {menu_TEI_reader_config}": self.tei_reader_dupl,
+                f"Edit {menu_TEI_reader_config}": self.tei_reader_edit,
+                f"Delete {menu_TEI_reader_config}": self.teireaderdel,
             }
             st.radio(
                 label="Edit Options",
@@ -313,10 +321,10 @@ class TEIReader:
             options[st.session_state.tr_edit_option]()
 
     def show_test_environment(self):
-        tr_test_expander = st.expander("Test TEI Reader Config", expanded=False)
+        tr_test_expander = st.expander(f"Test {menu_TEI_reader_config}", expanded=False)
         with tr_test_expander:
             st.selectbox(
-                "Select a TEI Reader Config to test!",
+                f"Select a {menu_TEI_reader_config} to test!",
                 list(self.configdict.keys()),
                 index=0,
                 key="tr_test_selected_config_name",
@@ -327,14 +335,14 @@ class TEIReader:
             small_file_selector(
                 label="Choose a TEI-File",
                 key="tr_teifile",
-                help="Choose a TEI file for testing the chosen TEI Reader Config",
+                help=f"Choose a TEI file for testing the chosen {menu_TEI_reader_config}",
             )
             if "tr_last_test_dict" not in st.session_state:
                 st.session_state.tr_last_test_dict = {}
             if st.button(
-                "Test TEI Reader Config",
+                f"Test {menu_TEI_reader_config}",
                 key="tr_Button_Test",
-                help="Test TEI Reader Config on the chosen Config and TEI-File.",
+                help=f"Test {menu_TEI_reader_config} on the chosen Config and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tr_teifile):
                     st.session_state.tr_last_test_dict = {
@@ -383,7 +391,7 @@ class TEIReader:
         return tablestring
 
     def show_configs(self):
-        tr_show_configs = st.expander("Existing TEI Reader Configs", expanded=True)
+        tr_show_configs = st.expander(f"Existing {menu_TEI_reader_config}s", expanded=True)
         with tr_show_configs:
             st.markdown(self.build_config_tablestring())
             st.markdown(" ")  # only for layouting reasons (placeholder)
@@ -391,7 +399,7 @@ class TEIReader:
     def show(self):
         # for key in st.session_state:
         #    st.write(key, st.session_state[key])
-        st.latex("\\text{\Huge{TEI Reader Config}}")
+        st.latex("\\text{\Huge{" + menu_TEI_reader_config + "}}")
         col1, col2 = st.columns(2)
         with col1:
             self.show_configs()

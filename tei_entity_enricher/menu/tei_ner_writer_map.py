@@ -9,6 +9,9 @@ from tei_entity_enricher.util.helper import (
     get_listoutput,
     transform_arbitrary_text_to_latex,
     latex_color_list,
+    menu_entity_definition,
+    menu_TEI_reader_config,
+    menu_TEI_write_mapping,
 )
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
@@ -203,7 +206,7 @@ class TEINERPredWriteMap:
     def show_editable_mapping_content(self, mode):
         if mode == self.tnw_mode_edit and len(self.editable_mapping_names) < 1:
             st.info(
-                "There are no self-defined TEI NER Prediction Writer Mappings to edit in the moment. If you want to edit a template you have to duplicate it."
+                f"There are no self-defined {menu_TEI_write_mapping}s to edit in the moment. If you want to edit a template you have to duplicate it."
             )
         else:
             tnw_mapping_dict = {}
@@ -237,7 +240,7 @@ class TEINERPredWriteMap:
                 tnw_mapping_dict[self.tnw_attr_entity_dict] = {}
                 tnw_mapping_dict[self.tnw_attr_fixed_tags] = []
             if mode in [self.tnw_mode_dupl, self.tnw_mode_add]:
-                st.text_input("New TEI NER Prediction Writer Mapping Name:", key="tnw_name_" + mode)
+                st.text_input(f"New {menu_TEI_write_mapping} Name:", key="tnw_name_" + mode)
                 tnw_mapping_dict[self.tnw_attr_name] = st.session_state["tnw_name_" + mode]
 
             def tnw_ntd_change_trigger(mode):
@@ -248,7 +251,7 @@ class TEINERPredWriteMap:
                     del st.session_state["tnw_entity_dict"]
 
             st.selectbox(
-                label="Corresponding NER task definition",
+                label=f"Corresponding {menu_entity_definition}",
                 options=list(self.ntd.defdict.keys()),
                 index=list(self.ntd.defdict.keys()).index(init_tnw_ntd_name)
                 if init_tnw_ntd_name is not None and init_tnw_ntd_name != ""
@@ -298,7 +301,7 @@ class TEINERPredWriteMap:
                     ):
                         del st.session_state[key]
                 st.session_state.tnw_save_message = (
-                    f"TEI NER Prediction Writer Mapping {mapping[self.tnw_attr_name]} succesfully saved!"
+                    f"{menu_TEI_write_mapping} {mapping[self.tnw_attr_name]} succesfully saved!"
                 )
                 st.session_state.tnw_reload_aggrids = True
                 del st.session_state["tnw_entity_dict"]
@@ -308,7 +311,7 @@ class TEINERPredWriteMap:
 
             if self.validate_mapping_for_saving(tnw_mapping_dict, mode):
                 st.button(
-                    "Save TEI NER Prediction Writer Mapping",
+                    f"Save {menu_TEI_write_mapping}",
                     key="tnm_save_" + mode,
                     on_click=save_mapping,
                     args=(
@@ -347,7 +350,7 @@ class TEINERPredWriteMap:
                 )
             )
             st.session_state.tnw_save_message = (
-                f"TEI NER Prediction Writer Mapping {mapping[self.tnw_attr_name]} succesfully deleted!"
+                f"{menu_TEI_write_mapping} {mapping[self.tnw_attr_name]} succesfully deleted!"
             )
             st.session_state.tnw_reload_aggrids = True
             del st.session_state["tnw_sel_wri_del_name"]
@@ -375,12 +378,12 @@ class TEINERPredWriteMap:
                     args=(self.mappingdict[st.session_state.tnw_sel_wri_del_name],),
                 )
         else:
-            st.info("There are no self-defined TEI NER Prediction Writer mapping to delete!")
+            st.info(f"There are no self-defined {menu_TEI_write_mapping}s to delete!")
         if self.tnw_save_message is not None:
             st.success(self.tnw_save_message)
 
     def show_edit_environment(self):
-        tnw_definer = st.expander("Add or edit existing TEI NER Prediction Writer Mapping", expanded=False)
+        tnw_definer = st.expander(f"Add or edit existing {menu_TEI_write_mapping}s", expanded=False)
         with tnw_definer:
 
             def change_edit_option_trigger():
@@ -392,10 +395,10 @@ class TEINERPredWriteMap:
                 st.success(self.tnw_save_message)
 
             options = {
-                "Add TEI NER Prediction Writer Mapping": self.tei_ner_map_add,
-                "Duplicate TEI NER Prediction Writer Mapping": self.tei_ner_map_dupl,
-                "Edit TEI NER Prediction Writer Mapping": self.tei_ner_map_edit,
-                "Delete TEI NER Prediction Writer Mapping": self.tei_ner_map_del,
+                f"Add {menu_TEI_write_mapping}": self.tei_ner_map_add,
+                f"Duplicate {menu_TEI_write_mapping}": self.tei_ner_map_dupl,
+                f"Edit {menu_TEI_write_mapping}": self.tei_ner_map_edit,
+                f"Delete {menu_TEI_write_mapping}": self.tei_ner_map_del,
             }
             st.radio(
                 label="Edit Options",
@@ -406,7 +409,7 @@ class TEINERPredWriteMap:
             options[st.session_state.tnw_choose_edit_option]()
 
     def build_tnw_tablestring(self):
-        tablestring = "Name | NER Task | Fixed Tags | Template \n -----|-------|-------|-------"
+        tablestring = f"Name | {menu_entity_definition} | Fixed Tags | Template \n -----|-------|-------|-------"
         for mapping in self.mappingslist:
             if mapping[self.tnw_attr_template]:
                 template = "yes"
@@ -446,7 +449,7 @@ class TEINERPredWriteMap:
         return tablestring
 
     def show_tnws(self):
-        tnw_show = st.expander("Existing TEI NER Prediction Writer Mappings", expanded=True)
+        tnw_show = st.expander(f"Existing {menu_TEI_write_mapping}s", expanded=True)
         with tnw_show:
             st.markdown(self.build_tnw_tablestring())
             st.selectbox(
@@ -508,18 +511,18 @@ class TEINERPredWriteMap:
         return newtext
 
     def show_test_environment(self):
-        tnw_test_expander = st.expander("Test TEI NER Prediction Writer Mapping", expanded=False)
+        tnw_test_expander = st.expander(f"Test {menu_TEI_write_mapping}", expanded=False)
         with tnw_test_expander:
             # self.tei_ner_writer_params.tnw_test_selected_config_name
             st.selectbox(
-                label="Select a TEI Reader Config for the mapping test!",
+                label=f"Select a {menu_TEI_reader_config} for the mapping test!",
                 options=list(self.tr.configdict.keys()),
                 key="tnw_tr_test",
             )
             config = self.tr.configdict[st.session_state.tnw_tr_test]
             # self.tei_ner_writer_params.tnw_test_selected_mapping_name
             st.selectbox(
-                label="Select a TEI NER Prediction Writer Mapping to test!",
+                label=f"Select a {menu_TEI_write_mapping} to test!",
                 options=list(self.mappingdict.keys()),
                 key="tnw_tnw_test",
             )
@@ -528,12 +531,12 @@ class TEINERPredWriteMap:
             small_file_selector(
                 label="Choose a TEI-File",
                 key="tnw_test_TEI_file",
-                help="Choose a TEI file for testing the chosen TEI NER Prediction Writer Mapping",
+                help=f"Choose a TEI file for testing the chosen {menu_TEI_write_mapping}",
             )
             if st.button(
-                "Test TEI NER Prediction Writer Mapping",
+                f"Test {menu_TEI_write_mapping}",
                 key="tnw_Button_Test",
-                help="Test TEI NER Prediction Writer Mapping on the chosen Mapping and TEI-File.",
+                help=f"Test {menu_TEI_write_mapping} on the chosen {menu_TEI_reader_config} and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tnw_test_TEI_file):
                     st.session_state.tnw_last_test_dict = {
@@ -649,7 +652,7 @@ class TEINERPredWriteMap:
                         )
 
     def show(self):
-        st.latex("\\text{\Huge{TEI NER Prediction Writer Mapping}}")
+        st.latex("\\text{\Huge{" + menu_TEI_write_mapping + "}}")
         col1, col2 = st.columns(2)
         with col1:
             self.show_tnws()

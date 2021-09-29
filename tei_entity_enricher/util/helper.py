@@ -13,6 +13,16 @@ state_ok = r"\huge\color{green}\checkmark"
 state_failed = r"\huge\color{red}X"
 state_uncertain = r"\huge\color{orange}\bigcirc"
 
+menu_TEI_reader_config = "TEI Reader Config"
+menu_entity_definition = "Entity Definition"
+menu_TEI_read_mapping = "TEI Read Entity Mapping"
+menu_groundtruth_builder = "Groundtruth Builder"
+menu_TEI_write_mapping = "TEI Write Entity Mapping"
+menu_sparql_queries = "SparQL Queries"
+menu_NER_trainer = "NER Trainer"
+menu_NER_prediction = "NER Prediction"
+menu_postprocessing = "Postprocessing"
+
 latex_color_list = [
     "red",
     "green",

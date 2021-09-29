@@ -9,6 +9,9 @@ from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
+    menu_TEI_reader_config,
+    menu_TEI_read_mapping,
+    menu_groundtruth_builder,
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
@@ -352,7 +355,7 @@ class TEINERGroundtruthBuilder:
                 tng_dict[self.tng_attr_lang] = st.session_state.tng_lang
         with col2:
             st.selectbox(
-                label="Select a TEI Reader Config for Building the groundtruth:",
+                label=f"Select a {menu_TEI_reader_config} for Building the groundtruth:",
                 options=list(self.tr.configdict.keys()),
                 key="tng_tr_name",
             )
@@ -360,7 +363,7 @@ class TEINERGroundtruthBuilder:
                 tng_dict[self.tng_attr_tr] = self.tr.configdict[st.session_state.tng_tr_name]
             # self.tei_ner_gb_params.tng_tnm_name =
             st.selectbox(
-                label="Select a TEI Read NER Entity Mapping for Building the groundtruth:",
+                label=f"Select a {menu_TEI_read_mapping} for Building the groundtruth:",
                 options=list(self.tnm.mappingdict.keys()),
                 key="tng_tnm_name",
             )
@@ -375,8 +378,9 @@ class TEINERGroundtruthBuilder:
             st.number_input(
                 "Percentage for the test set",
                 min_value=0,
-                max_value=int(100
-                - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)),
+                max_value=int(
+                    100 - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)
+                ),
                 value=10,
                 key="tng_test_percentage",
             )
@@ -434,7 +438,7 @@ class TEINERGroundtruthBuilder:
                     del st.session_state["tng_sel_display_name"]
                 del st.session_state["tng_del_gt_name"]
                 st.session_state.tng_save_message = (
-                    f"TEI NER Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!"
+                    f"Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!"
                 )
 
             if self.tng_save_message is not None:
@@ -449,7 +453,7 @@ class TEINERGroundtruthBuilder:
             st.info("There is no self-defined Groundtruth to delete!")
 
     def build_tng_tablestring(self):
-        tablestring = "Name | TEI Reader Config | TEI Read NER Entity Mapping | Language | Shuffle Type | Partition Ratio | Template \n -----|-------|-------|-------|-------|-------|-------"
+        tablestring = f"Name | {menu_TEI_reader_config} | {menu_TEI_read_mapping} | Language | Shuffle Type | Partition Ratio | Template \n -----|-------|-------|-------|-------|-------|-------"
         for tng in self.tnglist:
             if tng[self.tng_attr_template]:
                 template = "yes"
@@ -499,14 +503,14 @@ class TEINERGroundtruthBuilder:
             )
 
     def show(self):
-        st.latex("\\text{\Huge{TEI NER Groundtruth Builder}}")
-        tng_build_new = st.expander("Build new TEI NER Groundtruth", expanded=False)
+        st.latex("\\text{\Huge{" + menu_groundtruth_builder + "}}")
+        tng_build_new = st.expander("Build new Groundtruth", expanded=False)
         with tng_build_new:
             self.show_build_gt_environment()
-        tng_delete = st.expander("Delete existing TEI NER Groundtruth", expanded=False)
+        tng_delete = st.expander("Delete existing Groundtruth", expanded=False)
         with tng_delete:
             self.show_del_environment()
-        tng_show = st.expander("Show existing TEI NER Groundtruth", expanded=True)
+        tng_show = st.expander("Show existing Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
 
