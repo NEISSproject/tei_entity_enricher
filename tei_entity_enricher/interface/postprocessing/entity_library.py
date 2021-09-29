@@ -302,10 +302,11 @@ class EntityLibrary:
                             if len(_gnd_retrieve_attempt_result) > 0
                             else ""
                         )
+                        _furtherNames_to_add = self.get_further_names_of_wikidata_entity(entity.get("id", ""))
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": entity.get("label", f"No name delivered, search pattern was: {input_tuple[0]}"),
-                                "furtherNames": [],
+                                "furtherNames": _furtherNames_to_add,
                                 "type": input_tuple[1],
                                 "description": entity.get("description", "No description delivered"),
                                 "wikidata_id": entity.get("id", ""),
@@ -462,6 +463,30 @@ class EntityLibrary:
         return result["results"]["bindings"]
         # if there is no result, the returned value is an empty list
         # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
+
+    def get_further_names_of_wikidata_entity(self, wikidata_id: str = None) -> List[str]:
+        """method to get further names of a wikidata entity, returns a list for a furtherName value of an entity library entity dict"""
+        if wikidata_id == "":
+            return []
+        alt_labels_query = """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX wd: <http://www.wikidata.org/entity/>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+            SELECT ?label WHERE {
+                VALUES ?p { rdfs:label skos:altLabel } 
+                wd:%s ?p ?label .
+            }
+        """
+        endpoint_url = "https://query.wikidata.org/sparql"
+        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
+        sparql.setQuery(alt_labels_query % wikidata_id)
+        sparql.setReturnFormat(JSON)
+        query_result = sparql.query().convert()
+        if len(query_result["results"]["bindings"]) == 0:
+            return []
+        return list(set([item["label"]["value"] for item in query_result["results"]["bindings"]]))
 
     def reset(self):
         self.data_file = None
