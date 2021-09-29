@@ -375,8 +375,8 @@ class TEINERGroundtruthBuilder:
             st.number_input(
                 "Percentage for the test set",
                 min_value=0,
-                max_value=100
-                - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10),
+                max_value=int(100
+                - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)),
                 value=10,
                 key="tng_test_percentage",
             )
@@ -384,7 +384,7 @@ class TEINERGroundtruthBuilder:
             st.number_input(
                 "Percentage for the validation set",
                 min_value=0,
-                max_value=100 - st.session_state.tng_test_percentage,
+                max_value=int(100 - st.session_state.tng_test_percentage),
                 value=10,
                 key="tng_dev_percentage",
             )

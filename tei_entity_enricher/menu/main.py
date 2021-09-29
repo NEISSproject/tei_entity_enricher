@@ -95,6 +95,38 @@ class Main:
             st.sidebar.radio(label="Submenu",options=conf_pages,key='mm_submenu_radio'+str(options.index(st.session_state.mm_main_selbox)))
             st.session_state.main_menu_page=st.session_state['mm_submenu_radio'+str(options.index(st.session_state.mm_main_selbox))]
 
+    def show_main_menu_new4(self,pages,args):
+        st.sidebar.markdown("#### Main Menu")
+        if "main_menu_page" not in st.session_state:
+            if args.start_state in pages.keys():
+                st.session_state.main_menu_page=args.start_state
+            else:
+                st.session_state.main_menu_page=list(pages.keys())[0]
+            st.session_state["mm_main_page0"]=True
+        def change_main_page(changed_page_number,pages):
+            st.session_state.main_menu_page=list(pages.keys())[changed_page_number]
+            for i in range(len(list(pages.keys()))):
+                if i!=changed_page_number:
+                    st.session_state["mm_main_page"+str(i)]=False
+        st.sidebar.checkbox(label='Configurations',key='mm_main_page0',on_change=change_main_page, args=(0,pages,))
+        if st.session_state.mm_main_page0:
+            col1,col2=st.sidebar.columns([0.1,0.9])
+            conf_pages=pages.copy()
+            del conf_pages["NER Trainer"]
+            del conf_pages["NER Prediction"]
+            del conf_pages["NER Postprocessing"]
+            col2.radio(label="",options=conf_pages,key='mm_submenu_radio0')
+            st.session_state.main_menu_page=st.session_state.mm_submenu_radio0
+        st.sidebar.checkbox(label='Training and Prediction',key='mm_main_page1',on_change=change_main_page, args=(1,pages,))
+        if st.session_state.mm_main_page1:
+            col1,col2=st.sidebar.columns([0.1,0.9])
+            conf_pages={"NER Trainer":pages["NER Trainer"],"NER Prediction":pages["NER Prediction"]}
+            col2.radio(label="",options=conf_pages,key='mm_submenu_radio1')
+            st.session_state.main_menu_page=st.session_state.mm_submenu_radio1
+        st.sidebar.checkbox(label='Postprocessing',key='mm_main_page2',on_change=change_main_page, args=(2,pages,))
+        if st.session_state.mm_main_page2:
+            st.session_state.main_menu_page="NER Postprocessing"
+
     def show(self, args):
         st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         pages = {
@@ -102,7 +134,7 @@ class Main:
             "NER Task Entity Definition": self.ner_task_def,
             "TEI Read NER Entity Mapping": self.tei_ner_map,
             "TEI NER Groundtruth Builder": self.gt_builder,
-            "TEI NER Prediction Writer Mapping": self.tei_ner_writer,
+            "TEI Prediction Writer Mapping": self.tei_ner_writer,
             "NER Trainer": self.ner_trainer,
             "NER Prediction": self.ner_prediction,
             "SparQL Queries": self.sd_sparql,
@@ -117,7 +149,7 @@ class Main:
         # Include NEISS Logo
         logo_frame.image(neiss_logo)
 
-        self.show_main_menu_new3(pages, args)
+        self.show_main_menu_new4(pages, args)
 
         st.sidebar.markdown("### Funded by")
         # Include EU Logos
