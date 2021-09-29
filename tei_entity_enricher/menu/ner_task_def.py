@@ -7,11 +7,13 @@ from tei_entity_enricher.util.helper import (
     makedir_if_necessary,
     menu_entity_definition,
     menu_TEI_read_mapping,
+    menu_TEI_write_mapping,
 )
 from tei_entity_enricher.util.components import (
     editable_single_column_table,
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
+import tei_entity_enricher.menu.tei_ner_writer_map as tei_w_map
 import tei_entity_enricher.menu.sd_sparql as sparql
 
 withoutSparQLQuery = "without default SparQL Query"
@@ -53,6 +55,7 @@ class NERTaskDef:
 
         if show_menu:
             self.tnm = tei_map.TEINERMap(show_menu=False)
+            self.tnw = tei_w_map.TEINERPredWriteMap(show_menu=False)
             self.sds = sparql.SparQLDef(show_menu=False)
             self.show()
 
@@ -118,6 +121,12 @@ class NERTaskDef:
                 st.error(
                     f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
                 )
+        for mapping in self.tnw.mappingslist:
+            if mapping[self.tnw.tnw_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                )
         return val
 
     def validate_definition_for_delete(self, definition):
@@ -127,6 +136,12 @@ class NERTaskDef:
                 val = False
                 st.error(
                     f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                )
+        for mapping in self.tnw.mappingslist:
+            if mapping[self.tnw.tnw_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
+                val = False
+                st.error(
+                    f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
                 )
         return val
 
