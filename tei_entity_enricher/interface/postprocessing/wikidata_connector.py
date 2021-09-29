@@ -244,7 +244,7 @@ class WikidataConnector:
                         print(
                             f"spell filtering in {string_tuple}-query results: {math.floor(progressbar * 10 ** 2) / 10 ** 2}"
                         ) if self.show_printmessages == True else None
-                        if search_list_element["label"] == string_tuple[0]:
+                        if search_list_element["match"]["text"].lower() == string_tuple[0].lower():
                             precise_spelling.append(search_list_element)
                     filereader_result["search"] = precise_spelling
             if filter_for_correct_type == True:
