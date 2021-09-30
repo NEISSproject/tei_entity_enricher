@@ -260,7 +260,11 @@ class TEIManPP:
                         # workaround: new column definition because of unique row height
                         scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
                         scol1.markdown(replace_empty_string(suggestion["name"]))
-                        scol2.markdown(replace_empty_string(get_listoutput(suggestion["furtherNames"])))
+                        if len(suggestion["furtherNames"])>10:
+                            further_names=suggestion["furtherNames"][:10]+['...']
+                        else:
+                            further_names=suggestion["furtherNames"]
+                        scol2.markdown(replace_empty_string(get_listoutput(further_names)))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
                         scol4.markdown(
                             replace_empty_string(
