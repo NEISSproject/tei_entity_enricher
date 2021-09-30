@@ -57,17 +57,17 @@ class WikidataConnector:
             ) if self.show_printmessages else None
             self.wikidata_sparql_queries: dict = {
                 "person": [
-                    "(wd:Q5)",
+                    ["Q5"],
                     "q5 = human",
                     True,
                 ],
                 "organisation": [
-                    "(wd:Q43229)",
+                    ["Q43229"],
                     "Q43229 = organization",
                     True,
                 ],
                 "place": [
-                    "(wd:Q515, wd:Q27096213)",
+                    ["Q515", "Q27096213"],
                     "Q515 = city, Q27096213 = geographic entity, note: at the moment this category includes the categories 'city', 'ground' and 'water'",
                     True,
                 ],
@@ -239,13 +239,27 @@ class WikidataConnector:
         which determines, if the entity in question is a member of one of specific classes
         (see local 'query_string' variable for details: 'wdt:P31/wdt:P279*'-property means 'is a member of a specific class or
         a member of any subclass (any level beneath) of a specific class' and the FILTER statement
-        (retrieved from self.wikidata_sparql_queries) defines a set of classes,
-        out of which only one class has to match the query statement to let the query return true)
+        (created with local function _build_filter_string() on basis of data from self.wikidata_sparql_queries)
+        defines a set of classes, out of which only one class has to match the query statement to let the query return true)
 
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
         the value of the agent string can be choosen freely
 
-        this method checks only one entity at once and has to be used in an iteration"""
+        this method checks only one entity at once and has to be used in an iteration
+
+        it contains an internal auxiliary function _build_filter_string
+        to create the filter expression for the sparql query"""
+
+        def _build_filter_string(type_string) -> str:
+            filter_string = "("
+            type_checking_entity_list = self.wikidata_sparql_queries.get(type)[0]
+            for index, x in enumerate(type_checking_entity_list):
+                if index != len(type_checking_entity_list) - 1:
+                    filter_string += "wd:" + x + ", "
+                else:
+                    filter_string += "wd:" + x + ")"
+            return filter_string
+
         if type not in list(self.wikidata_sparql_queries.keys()):
             return None
         endpoint_url = "https://query.wikidata.org/sparql"
@@ -262,7 +276,7 @@ class WikidataConnector:
             }
         """ % (
             entity_id,
-            self.wikidata_sparql_queries.get(type)[0],
+            _build_filter_string(type),
         )
         sparql.setQuery(query_string)
         sparql.setReturnFormat(JSON)
