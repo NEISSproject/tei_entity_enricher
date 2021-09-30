@@ -337,10 +337,9 @@ class TEIManPP:
             help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
         ):
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
-                if "tmp_matching_tag_list" in st.session_state and len(st.session_state.tmp_matching_tag_list) > 0:
-                    for index in range(len(st.session_state.tmp_matching_tag_list)):
-                        if "tmp_edit_del_tag"+str(index) in st.session_state:
-                            del st.session_state["tmp_edit_del_tag"+str(index)]
+                for key in st.session_state:
+                    if key.startswith("tmp_edit_del_tag"):
+                        st.session_state[key]=False
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
                 st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
