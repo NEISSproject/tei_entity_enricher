@@ -207,8 +207,6 @@ class TEIManPP:
                 help="Define a search type for which link suggestions should be done!",
                 on_change=change_search_type,
             )
-            input_tuple = tag_entry["pure_tagcontent"], st.session_state.tmp_ls_search_type_sel_box
-            link_identifier.input = [input_tuple]
             col1, col2, col3 = st.columns([0.25, 0.25, 0.5])
             if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
                 simple_search = True
@@ -219,6 +217,13 @@ class TEIManPP:
                 key="tmp_ls_full_search",
                 help="Searches for link suggestions in the currently loaded entity library and additionaly in the web (e.g. from wikidata).",
             )
+            def change_search_string(index):
+                if "link_suggestions" in st.session_state.tmp_matching_tag_list[index]:
+                    del st.session_state.tmp_matching_tag_list[index]["link_suggestions"]
+
+            col2.text_input(label="Link suggestion search string",key="tmp_ls_search_string"+str(index),on_change=change_search_string,args=(index,),help=f'You can insert an alternative search string for link suggestions to the entity {tag_entry["pure_tagcontent"]} here.')
+            input_tuple = st.session_state["tmp_ls_search_string"+str(index)], st.session_state.tmp_ls_search_type_sel_box
+            link_identifier.input = [input_tuple]
             if simple_search or full_search:
                 result = link_identifier.suggest(
                     self.entity_library,
@@ -532,10 +537,13 @@ class TEIManPP:
         return tag_list, sparqllist
 
     def enrich_search_list(self, tr):
+        index=0
         for tag in st.session_state.tmp_matching_tag_list:
             tag["delete"] = False
             if "tagcontent" in tag.keys():
                 tag["pure_tagcontent"] = tei_writer.get_pure_text_of_tree_element(tag["tagcontent"], tr)
+                st.session_state["tmp_ls_search_string"+str(index)]=tag["pure_tagcontent"]
+            index+=1
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True
