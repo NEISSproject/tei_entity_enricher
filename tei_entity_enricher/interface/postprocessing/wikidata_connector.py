@@ -38,9 +38,7 @@ class WikidataConnector:
         self.input: Union[List[Tuple[str, str]], None] = input
         self.check_connectivity: bool = check_connectivity
         self.show_printmessages: bool = show_printmessages
-        self.wikidata_web_api_baseUrl: str = (
-            "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&limit={}"
-        )
+        self.wikidata_web_api_baseUrl: str = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&uselang={}&limit={}"
         self.wikidata_web_api_language: str = wikidata_web_api_language
         self.wikidata_web_api_limit: str = wikidata_web_api_limit
         self.wikidata_sparql_queries_filepath: str = os.path.join(
@@ -59,55 +57,18 @@ class WikidataConnector:
             ) if self.show_printmessages else None
             self.wikidata_sparql_queries: dict = {
                 "person": [
-                    """
-                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                        PREFIX wd: <http://www.wikidata.org/entity/>
-
-                        ASK
-                        {
-                        wd:%s wdt:P31/wdt:P279* ?o .
-                        FILTER (?o IN (wd:Q5))
-                        }
-                    """,
-                    """
-                        q5 = human
-                    """,
+                    "(wd:Q5)",
+                    "q5 = human",
                     True,
                 ],
                 "organisation": [
-                    """
-                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                        PREFIX wd: <http://www.wikidata.org/entity/>
-
-                        ASK
-                        {
-                        wd:%s wdt:P31/wdt:P279* ?o .
-                        FILTER (?o IN (wd:Q43229))
-                        }
-                    """,
-                    """
-                        Q43229 = organization
-                    """,
+                    "(wd:Q43229)",
+                    "Q43229 = organization",
                     True,
                 ],
                 "place": [
-                    """
-                        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-                        PREFIX wd: <http://www.wikidata.org/entity/>
-
-                        ASK
-                        {
-                        wd:%s wdt:P31/wdt:P279* ?o .
-                        FILTER (?o IN (wd:Q515, wd:Q27096213))
-                        }
-                    """,
-                    """
-                        Q515 = city
-                        Q27096213 = geographic entity
-
-                        note: at the moment this category includes the categories 'city', 'ground' and 'water',
-                        which should be differentiated
-                    """,
+                    "(wd:Q515, wd:Q27096213)",
+                    "Q515 = city, Q27096213 = geographic entity, note: at the moment this category includes the categories 'city', 'ground' and 'water'",
                     True,
                 ],
             }
@@ -140,6 +101,7 @@ class WikidataConnector:
                 result = FileReader(
                     filepath=self.wikidata_web_api_baseUrl.format(
                         "Berlin",
+                        self.wikidata_web_api_language,
                         self.wikidata_web_api_language,
                         "1",
                     ),
@@ -220,6 +182,7 @@ class WikidataConnector:
                 filepath=self.wikidata_web_api_baseUrl.format(
                     string_tuple[0],
                     self.wikidata_web_api_language,
+                    self.wikidata_web_api_language,
                     self.wikidata_web_api_limit,
                 ),
                 origin="web",
@@ -266,7 +229,7 @@ class WikidataConnector:
             ]
         return result_dict
 
-    def check_wikidata_entity_type(self, entity_id: str, type: str) -> bool:
+    def check_wikidata_entity_type(self, entity_id: str, type: str) -> Union[bool, None]:
         """used in get_wikidata_search_results() to check, if those wikidata entities delivered
         by self.get_wikidata_search_results() query are of the type, which has been defined inside
         the self.input tuples of WikidataConnector class
@@ -274,18 +237,34 @@ class WikidataConnector:
         this check uses the wikidata semantic web data base by sending queries to the wikidata sparql endpoint;
         get_wikidata_search_results() retrieves wikidata id numbers, which are used here in an ASK-query,
         which determines, if the entity in question is a member of one of specific classes
-        (see 'queries' variable for details: 'wdt:P31/wdt:P279*'-property means 'is a member of a specific class or
-        a member of any subclass (any level beneath) of a specific class' and the FILTER statement defines a set of classes,
+        (see local 'query_string' variable for details: 'wdt:P31/wdt:P279*'-property means 'is a member of a specific class or
+        a member of any subclass (any level beneath) of a specific class' and the FILTER statement
+        (retrieved from self.wikidata_sparql_queries) defines a set of classes,
         out of which only one class has to match the query statement to let the query return true)
 
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
         the value of the agent string can be choosen freely
 
         this method checks only one entity at once and has to be used in an iteration"""
+        if type not in list(self.wikidata_sparql_queries.keys()):
+            return None
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
         sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
-        sparql.setQuery(self.wikidata_sparql_queries.get(type)[0] % entity_id)
+        query_string = """
+            PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+            PREFIX wd: <http://www.wikidata.org/entity/>
+
+            ASK
+            {
+            wd:%s wdt:P31/wdt:P279* ?o .
+            FILTER (?o IN %s)
+            }
+        """ % (
+            entity_id,
+            self.wikidata_sparql_queries.get(type)[0],
+        )
+        sparql.setQuery(query_string)
         sparql.setReturnFormat(JSON)
         result = sparql.query().convert()
         return result["boolean"]

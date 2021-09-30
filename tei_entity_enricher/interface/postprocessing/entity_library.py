@@ -465,7 +465,9 @@ class EntityLibrary:
         # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
 
     def get_further_names_of_wikidata_entity(self, wikidata_id: str = None) -> List[str]:
-        """method to get further names of a wikidata entity, returns a list for a furtherName value of an entity library entity dict"""
+        """method to get further names of a wikidata entity,
+        returns a list for a furtherName value of an entity library entity dict,
+        origin of the information are the properties rdfs:label and skos:altLabel"""
         if wikidata_id == "":
             return []
         alt_labels_query = """
@@ -484,8 +486,10 @@ class EntityLibrary:
         sparql.setQuery(alt_labels_query % wikidata_id)
         sparql.setReturnFormat(JSON)
         query_result = sparql.query().convert()
+        # return empty list, if no result is returned by sparql query
         if len(query_result["results"]["bindings"]) == 0:
             return []
+        # return a list with distinct values: for that the list is transformed to a set and back to new list without value doublets
         return list(set([item["label"]["value"] for item in query_result["results"]["bindings"]]))
 
     def reset(self):
