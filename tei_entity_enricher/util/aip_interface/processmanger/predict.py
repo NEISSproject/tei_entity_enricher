@@ -38,7 +38,7 @@ class PredictProcessManager(ProcessManagerBase):
             "python",
             self._predict_script_path,
             "--export_dir",
-            os.path.join(self._params.model, "export"),
+            self._params.model,
             "--input_json",
             self._params.input_json_file,
             "--out",
