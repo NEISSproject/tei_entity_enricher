@@ -138,15 +138,18 @@ class TEIManPP:
         tag_entry["tagbegin"] = new_tagbegin
         st.session_state.tmp_reload_aggrids = True
 
-    def tei_edit_specific_entity(self, tag_entry, tr):
+    def tei_edit_specific_entity(self, tag_entry, tr, index):
         col1, col2 = st.columns(2)
         with col1:
-            tag_entry["delete"] = st.checkbox(
+            if "tmp_edit_del_tag"+str(index) not in st.session_state:
+                st.session_state["tmp_edit_del_tag"+str(index)]=False
+            st.checkbox(
                 "Remove this tag from the TEI-File",
-                tag_entry["delete"],
-                # key="tmp_edit_del_tag",
+                #tag_entry["delete"],
+                key="tmp_edit_del_tag"+str(index),
                 help="Set this checkbox if you want to remove this tag from the TEI-File.",
             )
+            tag_entry["delete"]=st.session_state["tmp_edit_del_tag"+str(index)]
             if tag_entry["delete"]:
                 st.write("This tag will be removed when saving the current changes.")
             else:
@@ -334,6 +337,10 @@ class TEIManPP:
             help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
         ):
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
+                if "tmp_matching_tag_list" in st.session_state and len(st.session_state.tmp_matching_tag_list) > 0:
+                    for index in range(len(st.session_state.tmp_matching_tag_list)):
+                        if "tmp_edit_del_tag"+str(index) in st.session_state:
+                            del st.session_state["tmp_edit_del_tag"+str(index)]
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
                 st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
@@ -396,8 +403,9 @@ class TEIManPP:
             st.session_state.tmp_matching_tag_list[
                 st.session_state.tmp_current_loop_element - 1
             ] = self.tei_edit_specific_entity(
-                st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1],
-                st.session_state.tmp_tr_from_last_search,
+                tag_entry=st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1],
+                tr=st.session_state.tmp_tr_from_last_search,
+                index=st.session_state.tmp_current_loop_element - 1,
             )
             st.markdown("### Save the changes!")
             if self.validate_manual_changes_before_saving(st.session_state.tmp_matching_tag_list):
