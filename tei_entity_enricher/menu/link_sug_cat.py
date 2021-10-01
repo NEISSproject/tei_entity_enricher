@@ -123,7 +123,7 @@ class LinkSugCat:
                 wikicatlist=cur_query_content[0],
                 key=self.build_wikicatlist_key(mode),
             )
-            st.info("Hint: See https://wikidp.org/ to find suitable Wikidata Categories!")
+            st.info("Hint: See https://www.wikidata.org/ to find suitable Wikidata Categories!")
             if self.build_comment_key(mode) not in st.session_state:
                 st.session_state[self.build_comment_key(mode)] = cur_query_content[1]
             st.text_area(
@@ -148,6 +148,12 @@ class LinkSugCat:
                 st.session_state.lsc_save_message = f"Link Suggestion Category {cur_name} succesfully saved!"
                 if mode != self.lsc_mode_edit:
                     st.session_state["lsc_name_" + mode] = ""
+                for key in st.session_state:
+                    if key.startswith("lsc_wikicatlist_" + mode):
+                        del st.session_state[key]
+                    elif key.startswith("lsc_comment_" + mode):
+                        del st.session_state[key]
+
                 st.session_state.lsc_reload_aggrids = True
 
             if self.validate_for_saving_lsc(cur_query_name, cur_query_content, mode):
