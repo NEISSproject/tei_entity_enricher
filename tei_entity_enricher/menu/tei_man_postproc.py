@@ -4,7 +4,7 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
-import tei_entity_enricher.menu.sd_sparql as sparql
+import tei_entity_enricher.menu.link_sug_cat as sparql
 import tei_entity_enricher.menu.ner_task_def as ner_task
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
@@ -40,7 +40,7 @@ class TEIManPP:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tnm = tnm_map.TEINERMap(show_menu=False)
             self.tnw = tnw_map.TEINERPredWriteMap(show_menu=False)
-            self.sds = sparql.SparQLDef(show_menu=False)
+            self.sds = sparql.LinkSugCat(show_menu=False)
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
 
@@ -191,7 +191,7 @@ class TEIManPP:
             link_identifier = Identifier(input=[input_tuple])
             search_type_list = []
             search_type_list.extend(self.tmp_base_ls_search_type_options)
-            search_type_list.extend(list(self.sds.sparqldict.keys()))
+            search_type_list.extend(list(self.sds.lscdict.keys()))
 
             def change_search_type():
                 st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1][
@@ -483,8 +483,8 @@ class TEIManPP:
     def get_sparql_list_to_entity_list(self, ntd_name, entity_list):
         sparqllist = []
         for entity in entity_list:
-            if entity in self.ntd.defdict[ntd_name][self.ntd.ntd_attr_sparql_map].keys():
-                sparqllist.append(self.ntd.defdict[ntd_name][self.ntd.ntd_attr_sparql_map][entity])
+            if entity in self.ntd.defdict[ntd_name][self.ntd.ntd_attr_lsc_map].keys():
+                sparqllist.append(self.ntd.defdict[ntd_name][self.ntd.ntd_attr_lsc_map][entity])
             else:
                 sparqllist.append(self.tmp_base_ls_search_type_options[0])
         return sparqllist

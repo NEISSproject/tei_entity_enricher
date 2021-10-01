@@ -42,7 +42,7 @@ class WikidataConnector:
         self.wikidata_web_api_language: str = wikidata_web_api_language
         self.wikidata_web_api_limit: str = wikidata_web_api_limit
         self.wikidata_sparql_queries_filepath: str = os.path.join(
-            local_save_path, "config", "postprocessing", "sparql_queries.json"
+            local_save_path, "config", "postprocessing", "link_sugesstion_categories.json"
         )
         try:
             self.wikidata_sparql_queries: Union[dict, None] = FileReader(
@@ -53,7 +53,7 @@ class WikidataConnector:
             ).loadfile_json()
         except FileNotFound:
             print(
-                "WikidataConnector: could not find sparql_queries.json in config dir. creating file with default settings..."
+                "WikidataConnector: could not find link_sugesstion_categories.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
             self.wikidata_sparql_queries: dict = {
                 "person": [
@@ -81,7 +81,7 @@ class WikidataConnector:
                 ).writefile_json()
             except:
                 print(
-                    f"WikidataConnector __init__(): could not create default sparql_queries.json in config folder."
+                    f"WikidataConnector __init__(): could not create default link_sugesstion_categories.json in config folder."
                 ) if self.show_printmessages == True else None
         self.connection_established: bool = False
         if self.check_connectivity == True:

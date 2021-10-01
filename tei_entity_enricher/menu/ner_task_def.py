@@ -14,9 +14,9 @@ from tei_entity_enricher.util.components import (
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_ner_writer_map as tei_w_map
-import tei_entity_enricher.menu.sd_sparql as sparql
+import tei_entity_enricher.menu.link_sug_cat as ls_cat
 
-withoutSparQLQuery = "without default SparQL Query"
+withoutLSC = "without default Link Suggestion Category"
 
 
 class NERTaskDef:
@@ -27,7 +27,7 @@ class NERTaskDef:
         self.ntd_attr_name = "name"
         self.ntd_attr_entitylist = "entitylist"
         self.ntd_attr_template = "template"
-        self.ntd_attr_sparql_map = "sparql"
+        self.ntd_attr_lsc_map = "ls_cat"
         self.ntd_mode_add = "add"
         self.ntd_mode_dupl = "duplicate"
         self.ntd_mode_edit = "edit"
@@ -56,7 +56,7 @@ class NERTaskDef:
         if show_menu:
             self.tnm = tei_map.TEINERMap(show_menu=False)
             self.tnw = tei_w_map.TEINERPredWriteMap(show_menu=False)
-            self.sds = sparql.SparQLDef(show_menu=False)
+            self.lsc = ls_cat.LinkSugCat(show_menu=False)
             self.show()
 
     def check_one_time_attributes(self):
@@ -172,7 +172,7 @@ class NERTaskDef:
                     options = self.editable_def_names
 
                 def change_ntd_sel_def_name():
-                    st.session_state.ntd_init_sparql_map = True
+                    st.session_state.ntd_init_lsc_map = True
 
                 st.selectbox(
                     f"Select a definition to {mode}!",
@@ -195,36 +195,36 @@ class NERTaskDef:
                 key=self.build_entitylist_key(mode),
             )
             if len(ntd_definition_dict[self.ntd_attr_entitylist]) > 0:
-                st.markdown("Define a default SparQL Query for a chosen Entity:")
-                if not self.ntd_attr_sparql_map in ntd_definition_dict.keys():
-                    ntd_definition_dict[self.ntd_attr_sparql_map] = {}
-                if "ntd_sparql_map" not in st.session_state:
-                    st.session_state.ntd_sparql_map = {}
-                if "ntd_init_sparql_map" not in st.session_state or st.session_state.ntd_init_sparql_map:
-                    st.session_state.ntd_sparql_map = ntd_definition_dict[self.ntd_attr_sparql_map]
-                    st.session_state.ntd_init_sparql_map = False
+                st.markdown("Define a default Link Suggestion Category for a chosen Entity:")
+                if not self.ntd_attr_lsc_map in ntd_definition_dict.keys():
+                    ntd_definition_dict[self.ntd_attr_lsc_map] = {}
+                if "ntd_lsc_map" not in st.session_state:
+                    st.session_state.ntd_lsc_map = {}
+                if "ntd_init_lsc_map" not in st.session_state or st.session_state.ntd_init_lsc_map:
+                    st.session_state.ntd_lsc_map = ntd_definition_dict[self.ntd_attr_lsc_map]
+                    st.session_state.ntd_init_lsc_map = False
                 else:
-                    ntd_definition_dict[self.ntd_attr_sparql_map] = st.session_state.ntd_sparql_map
-                sparql_entity = st.selectbox(
+                    ntd_definition_dict[self.ntd_attr_lsc_map] = st.session_state.ntd_lsc_map
+                lsc_entity = st.selectbox(
                     label="Choose an Entity:", options=ntd_definition_dict[self.ntd_attr_entitylist]
                 )
-                sparqloptions = [withoutSparQLQuery]
-                sparqloptions.extend(list(self.sds.sparqldict.keys()))
+                lscoptions = [withoutLSC]
+                lscoptions.extend(list(self.lsc.lscdict.keys()))
                 init_query_index = (
-                    sparqloptions.index(st.session_state.ntd_sparql_map[sparql_entity])
-                    if sparql_entity in st.session_state.ntd_sparql_map.keys()
+                    lscoptions.index(st.session_state.ntd_lsc_map[lsc_entity])
+                    if lsc_entity in st.session_state.ntd_lsc_map.keys()
                     else 0
                 )
-                sparql_query = st.selectbox(
-                    label=f"Choose a default SparQL Query for the Entity {sparql_entity}.",
-                    options=sparqloptions,
+                lsc_query = st.selectbox(
+                    label=f"Choose a default lsc Query for the Entity {lsc_entity}.",
+                    options=lscoptions,
                     index=init_query_index,
                 )
-                st.session_state.ntd_sparql_map[sparql_entity] = sparql_query
-                if st.session_state.ntd_sparql_map[sparql_entity] != withoutSparQLQuery:
-                    ntd_definition_dict[self.ntd_attr_sparql_map][sparql_entity] = sparql_query
-                elif sparql_entity in st.session_state.ntd_sparql_map.keys():
-                    del ntd_definition_dict[self.ntd_attr_sparql_map][sparql_entity]
+                st.session_state.ntd_lsc_map[lsc_entity] = lsc_query
+                if st.session_state.ntd_lsc_map[lsc_entity] != withoutLSC:
+                    ntd_definition_dict[self.ntd_attr_lsc_map][lsc_entity] = lsc_query
+                elif lsc_entity in st.session_state.ntd_lsc_map.keys():
+                    del ntd_definition_dict[self.ntd_attr_lsc_map][lsc_entity]
             # ntd_definition_dict[self.ntd_attr_entitylist] = self.get_editable_entitylist(self.build_entitylist_key(mode))
             def save_ntd(definition, mode):
                 definition[self.ntd_attr_template] = False
@@ -336,7 +336,7 @@ class NERTaskDef:
             }
 
             def change_edit_option():
-                st.session_state.ntd_init_sparql_map = True
+                st.session_state.ntd_init_lsc_map = True
 
             st.radio(
                 label="Edit Options",
@@ -348,29 +348,29 @@ class NERTaskDef:
             options[st.session_state.ntd_edit_option]()
 
     def build_ntd_tablestring(self):
-        tablestring = "Name | Entities | SparQL Mapping | Template \n -----|-------|-------|-------"
+        tablestring = "Name | Entities | Link Suggestion Category | Template \n -----|-------|-------|-------"
         for definition in self.defslist:
             if definition[self.ntd_attr_template]:
                 template = "yes"
             else:
                 template = "no"
-            sparql = ""
+            lsc = ""
             entitystring = ""
             for entity in definition[self.ntd_attr_entitylist]:
                 if entitystring != "":
                     entitystring += " <br> "
-                    sparql += " <br> "
+                    lsc += " <br> "
                 entitystring += entity
                 if (
-                    self.ntd_attr_sparql_map in definition.keys()
-                    and entity in definition[self.ntd_attr_sparql_map].keys()
+                    self.ntd_attr_lsc_map in definition.keys()
+                    and entity in definition[self.ntd_attr_lsc_map].keys()
                 ):
-                    sparql += definition[self.ntd_attr_sparql_map][entity]
+                    lsc += definition[self.ntd_attr_lsc_map][entity]
                 else:
-                    sparql += "-"
+                    lsc += "-"
 
             tablestring += (
-                "\n " + definition[self.ntd_attr_name] + " | " + entitystring + " | " + sparql + " | " + template
+                "\n " + definition[self.ntd_attr_name] + " | " + entitystring + " | " + lsc + " | " + template
             )
         return tablestring
 
