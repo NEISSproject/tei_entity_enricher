@@ -567,9 +567,10 @@ class TEIManPP:
             if "delete" not in tag_entry.keys() or not tag_entry["delete"]:
                 if tag_entry["name"] is None or tag_entry["name"] == "":
                     val = False
-                    st.error(
-                        f"Save is not allowed. See search result {search_result_number}. A Tag Name is not allowed to be empty!"
-                    )
+                    if st.session_state.tmp_save_message is None:
+                        st.error(
+                            f"Save is not allowed. See search result {search_result_number}. A Tag Name is not allowed to be empty!"
+                        )
                 entry_dict = {}
                 if tag_entry["tagbegin"].endswith("/>"):
                     end = -2
@@ -584,14 +585,16 @@ class TEIManPP:
                 for attr in entry_dict.keys():
                     if attr is None or attr == "":
                         val = False
-                        st.error(
-                            f"Save is not allowed. See search result {search_result_number}. You cannot define a value ({entry_dict[attr]}) for an empty attribute name!"
-                        )
+                        if st.session_state.tmp_save_message is None:
+                            st.error(
+                                f"Save is not allowed. See search result {search_result_number}. You cannot define a value ({entry_dict[attr]}) for an empty attribute name!"
+                            )
                     if entry_dict[attr] is None or entry_dict[attr] == "":
                         val = False
-                        st.error(
-                            f"Save is not allowed. See search result {search_result_number}. You cannot define a attribute ({attr}) without a value!"
-                        )
+                        if st.session_state.tmp_save_message is None:
+                            st.error(
+                                f"Save is not allowed. See search result {search_result_number}. You cannot define a attribute ({attr}) without a value!"
+                            )
         return val
 
     def save_manual_changes_to_tei(self, loadpath, savepath, changed_tag_list, tr):

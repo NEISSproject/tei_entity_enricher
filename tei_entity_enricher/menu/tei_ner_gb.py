@@ -103,18 +103,22 @@ class TEINERGroundtruthBuilder:
             or build_config[self.tng_attr_name] == ""
         ):
             val = False
-            st.error("Please define a name for the Groundtruth before building it!")
+            if self.tng_save_message is None:
+                st.error("Please define a name for the Groundtruth before building it!")
         elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))):
             val = False
-            st.error(
-                f"Choose another name. There is already a Groundtruth with name {build_config[self.tng_attr_name]}!"
-            )
+            if self.tng_save_message is None:
+                st.error(
+                    f"Choose another name. There is already a Groundtruth with name {build_config[self.tng_attr_name]}!"
+                )
         if folder_path is None or folder_path == "":
             val = False
-            st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
+            if self.tng_save_message is None:
+                st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
         elif not os.path.isdir(folder_path):
             val = False
-            st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
+            if self.tng_save_message is None:
+                st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
         return val
 
     def build_groundtruth(self, build_config, folder_path):

@@ -83,7 +83,8 @@ class TEINERMap:
             or mapping[self.tnm_attr_name] == ""
         ):
             val = False
-            st.error("Please define a name for the mapping before saving!")
+            if self.tnm_save_message is None:
+                st.error("Please define a name for the mapping before saving!")
         elif (
             os.path.isfile(
                 os.path.join(
@@ -94,7 +95,8 @@ class TEINERMap:
             and mode != self.tnm_mode_edit
         ):
             val = False
-            st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!")
+            if self.tnm_save_message is None:
+                st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnm_attr_name]}!")
         # clear empty mapping entries
         entities_to_del = []
         for entity in mapping[self.tnm_attr_entity_dict].keys():
@@ -104,9 +106,10 @@ class TEINERMap:
                 if assingned_tag_list[index][0] is not None and assingned_tag_list[index][0] != "":
                     if " " in assingned_tag_list[index][0]:
                         val = False
-                        st.error(
-                            f"For the entity {entity} you defined a tag name ({assingned_tag_list[index][0]}) containing a space character. This is not allowed!"
-                        )
+                        if self.tnm_save_message is None:
+                            st.error(
+                                f"For the entity {entity} you defined a tag name ({assingned_tag_list[index][0]}) containing a space character. This is not allowed!"
+                            )
                     for attribute in assingned_tag_list[index][1].keys():
                         if (
                             (attribute is None or attribute == "")
@@ -114,9 +117,10 @@ class TEINERMap:
                             and assingned_tag_list[index][1][attribute] != ""
                         ):
                             val = False
-                            st.error(
-                                f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute value {assingned_tag_list[index][1][attribute]} without a corresponding attribute name. This is not allowed."
-                            )
+                            if self.tnm_save_message is None:
+                                st.error(
+                                    f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute value {assingned_tag_list[index][1][attribute]} without a corresponding attribute name. This is not allowed."
+                                )
                         elif (
                             attribute is not None
                             and attribute != ""
@@ -126,19 +130,22 @@ class TEINERMap:
                             )
                         ):
                             val = False
-                            st.error(
-                                f"For the entity {entity} and tag {mapping[self.tnm_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
-                            )
+                            if self.tnm_save_message is None:
+                                st.error(
+                                    f"For the entity {entity} and tag {mapping[self.tnm_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
+                                )
                         elif " " in attribute:
                             val = False
-                            st.error(
-                                f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute name ({attribute}) containing a space character. This is not allowed!"
-                            )
+                            if self.tnm_save_message is None:
+                                st.error(
+                                    f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined an attribute name ({attribute}) containing a space character. This is not allowed!"
+                                )
                         elif " " in assingned_tag_list[index][1][attribute]:
                             val = False
-                            st.error(
-                                f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined for the attribute {attribute} a value ({assingned_tag_list[index][1][attribute]}) containing a space character. This is not allowed!"
-                            )
+                            if self.tnm_save_message is None:
+                                st.error(
+                                    f"For the entity {entity} and tag {assingned_tag_list[index][0]} you defined for the attribute {attribute} a value ({assingned_tag_list[index][1][attribute]}) containing a space character. This is not allowed!"
+                                )
                     cleared_list.append(assingned_tag_list[index])
             if len(cleared_list) > 0:
                 mapping[self.tnm_attr_entity_dict][entity] = cleared_list
@@ -149,14 +156,16 @@ class TEINERMap:
 
         if len(mapping[self.tnm_attr_entity_dict].keys()) == 0:
             val = False
-            st.error(f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.")
+            if self.tnm_save_message is None:
+                st.error(f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.")
 
         for gt in self.tng.tnglist:
             if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
-                st.error(
-                    f"To edit the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
-                )
+                if self.tnm_save_message is None:
+                    st.error(
+                        f"To edit the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
+                    )
         return val
 
     def validate_mapping_for_delete(self, mapping):
@@ -164,9 +173,10 @@ class TEINERMap:
         for gt in self.tng.tnglist:
             if gt[self.tng.tng_attr_tnm][self.tnm_attr_name] == mapping[self.tnm_attr_name]:
                 val = False
-                st.error(
-                    f"To delete the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
-                )
+                if self.tnm_save_message is None:
+                    st.error(
+                        f"To delete the {menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} is not allowed because it is already used in the Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the mapping to the groundtruth."
+                    )
         return val
 
     def show_editable_attr_value_def(self, attr_value_dict, name):
@@ -284,7 +294,7 @@ class TEINERMap:
                 # if mode != self.tnm_mode_edit:
                 #    del st.session_state["tnm_sel_mapping_name_" + mode]
                 for key in st.session_state:
-                    if key.startswith("tnm_ntd_sel_" + mode) or key.startswith("tnm_ent_" + mode):
+                    if key.startswith("tnm_ntd_sel_"+mode) or key.startswith("tnm_ent_"+mode) or key.startswith("tnm_name_"+mode):
                         del st.session_state[key]
                 st.session_state.tnm_save_message = (
                     f"{menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} succesfully saved!"

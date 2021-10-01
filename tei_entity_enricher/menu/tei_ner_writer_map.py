@@ -84,7 +84,8 @@ class TEINERPredWriteMap:
             or mapping[self.tnw_attr_name] == ""
         ):
             val = False
-            st.error("Please define a name for the mapping before saving!")
+            if self.tnw_save_message is None:
+                st.error("Please define a name for the mapping before saving!")
         elif (
             os.path.isfile(
                 os.path.join(
@@ -95,12 +96,14 @@ class TEINERPredWriteMap:
             and mode != self.tnw_mode_edit
         ):
             val = False
-            st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnw_attr_name]}!")
+            if self.tnw_save_message is None:
+                st.error(f"Choose another name. There is already a mapping with name {mapping[self.tnw_attr_name]}!")
         if len(mapping[self.tnw_attr_fixed_tags]) > 0:
             for fix_tag in mapping[self.tnw_attr_fixed_tags]:
                 if " " in fix_tag:
                     val = False
-                    st.error(f"You defined an fixed tag ({fix_tag}) containing a space character. This is not allowed!")
+                    if self.tnw_save_message is None:
+                        st.error(f"You defined an fixed tag ({fix_tag}) containing a space character. This is not allowed!")
         # clear empty mapping entries
         entities_to_del = []
         for entity in mapping[self.tnw_attr_entity_dict].keys():
@@ -111,9 +114,10 @@ class TEINERPredWriteMap:
             ):
                 if " " in mapping[self.tnw_attr_entity_dict][entity][0]:
                     val = False
-                    st.error(
-                        f"For the entity {entity} you defined the tag name ({mapping[self.tnw_attr_entity_dict][entity][0]}) containing a space character. This is not allowed!"
-                    )
+                    if self.tnw_save_message is None:
+                        st.error(
+                            f"For the entity {entity} you defined the tag name ({mapping[self.tnw_attr_entity_dict][entity][0]}) containing a space character. This is not allowed!"
+                        )
                 for attribute in mapping[self.tnw_attr_entity_dict][entity][1].keys():
                     if (
                         (attribute is None or attribute == "")
@@ -121,9 +125,10 @@ class TEINERPredWriteMap:
                         and mapping[self.tnw_attr_entity_dict][entity][1][attribute] != ""
                     ):
                         val = False
-                        st.error(
-                            f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute value {mapping[self.tnw_attr_entity_dict][entity][1][attribute]} without a corresponding attribute name. This is not allowed."
-                        )
+                        if self.tnw_save_message is None:
+                            st.error(
+                                f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute value {mapping[self.tnw_attr_entity_dict][entity][1][attribute]} without a corresponding attribute name. This is not allowed."
+                            )
                     elif (
                         attribute is not None
                         and attribute != ""
@@ -133,19 +138,22 @@ class TEINERPredWriteMap:
                         )
                     ):
                         val = False
-                        st.error(
-                            f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
-                        )
+                        if self.tnw_save_message is None:
+                            st.error(
+                                f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined the attribute {attribute} without a value for it. This is not allowed."
+                            )
                     elif " " in attribute:
                         val = False
-                        st.error(
-                            f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute name ({attribute}) containing a space character. This is not allowed!"
-                        )
+                        if self.tnw_save_message is None:
+                            st.error(
+                                f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined an attribute name ({attribute}) containing a space character. This is not allowed!"
+                            )
                     elif " " in mapping[self.tnw_attr_entity_dict][entity][1][attribute]:
                         val = False
-                        st.error(
-                            f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined for the attribute {attribute} a value ({mapping[self.tnw_attr_entity_dict][entity][1][attribute]}) containing a space character. This is not allowed!"
-                        )
+                        if self.tnw_save_message is None:
+                            st.error(
+                                f"For the entity {entity} and tag {mapping[self.tnw_attr_entity_dict][entity][0]} you defined for the attribute {attribute} a value ({mapping[self.tnw_attr_entity_dict][entity][1][attribute]}) containing a space character. This is not allowed!"
+                            )
                 del_entity = False
             if del_entity:
                 entities_to_del.append(entity)
@@ -154,7 +162,8 @@ class TEINERPredWriteMap:
 
         if len(mapping[self.tnw_attr_entity_dict].keys()) == 0:
             val = False
-            st.error(f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.")
+            if self.tnw_save_message is None:
+                st.error(f"Please define at least one mapping of an entity to a tag. Otherwise there is nothing to save.")
 
         return val
 
@@ -298,6 +307,7 @@ class TEINERPredWriteMap:
                         key.startswith("tnw_ntd_sel_" + mode)
                         or key.startswith("tnw_ent_" + mode)
                         or key.startswith("tnw_fixed_tags_" + mode)
+                        or key.startswith("tnw_name_" + mode)
                     ):
                         del st.session_state[key]
                 st.session_state.tnw_save_message = (

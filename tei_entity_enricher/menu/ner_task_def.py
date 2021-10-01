@@ -87,7 +87,8 @@ class NERTaskDef:
             or definition[self.ntd_attr_name] == ""
         ):
             val = False
-            st.error(f"Please define a name for the {menu_entity_definition} before saving!")
+            if self.ntd_save_message is None:
+                st.error(f"Please define a name for the {menu_entity_definition} before saving!")
         elif (
             os.path.isfile(
                 os.path.join(
@@ -98,35 +99,41 @@ class NERTaskDef:
             and mode != self.ntd_mode_edit
         ):
             val = False
-            st.error(
-                f"Choose another name. There is already an {menu_entity_definition} with name {definition[self.ntd_attr_name]}!"
-            )
+            if self.ntd_save_message is None:
+                st.error(
+                    f"Choose another name. There is already an {menu_entity_definition} with name {definition[self.ntd_attr_name]}!"
+                )
 
         if self.ntd_attr_entitylist not in definition.keys() or len(definition[self.ntd_attr_entitylist]) == 0:
             val = False
-            st.error(f"Please define at least one entity for the {menu_entity_definition}!")
+            if self.ntd_save_message is None:
+                st.error(f"Please define at least one entity for the {menu_entity_definition}!")
         else:
             if len(definition[self.ntd_attr_entitylist]) != len(set(definition[self.ntd_attr_entitylist])):
                 val = False
-                st.error("There are at least two entities with the same name. This is not allowed!")
+                if self.ntd_save_message is None:
+                    st.error("There are at least two entities with the same name. This is not allowed!")
             for entity in definition[self.ntd_attr_entitylist]:
                 if " " in entity:
                     val = False
-                    st.error(
-                        f"You defined an entity name ({entity}) containing a space character. This is not allowed!"
-                    )
+                    if self.ntd_save_message is None:
+                        st.error(
+                            f"You defined an entity name ({entity}) containing a space character. This is not allowed!"
+                        )
         for mapping in self.tnm.mappingslist:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
-                st.error(
-                    f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
-                )
+                if self.ntd_save_message is None:
+                    st.error(
+                        f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                    )
         for mapping in self.tnw.mappingslist:
             if mapping[self.tnw.tnw_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
-                st.error(
-                    f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
-                )
+                if self.ntd_save_message is None:
+                    st.error(
+                        f"To edit the {menu_entity_definition} {definition[self.ntd_attr_name]} is not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                    )
         return val
 
     def validate_definition_for_delete(self, definition):
@@ -134,15 +141,17 @@ class NERTaskDef:
         for mapping in self.tnm.mappingslist:
             if mapping[self.tnm.tnm_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
-                st.error(
-                    f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
-                )
+                if self.ntd_save_message is None:
+                    st.error(
+                        f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_read_mapping} {mapping[self.tnm.tnm_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                    )
         for mapping in self.tnw.mappingslist:
             if mapping[self.tnw.tnw_attr_ntd][self.ntd_attr_name] == definition[self.ntd_attr_name]:
                 val = False
-                st.error(
-                    f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
-                )
+                if self.ntd_save_message is None:
+                    st.error(
+                        f"Deletion of the {menu_entity_definition} {definition[self.ntd_attr_name]} not allowed because it is already used in the {menu_TEI_write_mapping} {mapping[self.tnw.tnw_attr_name]}. If necessary, first remove the assignment of the {menu_entity_definition} to the mapping."
+                    )
         return val
 
     def show_editable_entitylist(self, entitylist, key):
@@ -260,9 +269,6 @@ class NERTaskDef:
                     if key.startswith("ntd_entitylist_" + mode):
                         del st.session_state[key]
 
-            if self.ntd_save_message is not None:
-                st.success(self.ntd_save_message)
-
             if self.validate_for_saving_definition(ntd_definition_dict, mode):
                 st.button(
                     f"Save {menu_entity_definition}",
@@ -312,8 +318,6 @@ class NERTaskDef:
                 index=0,
                 key="ntd_sel_del_def_name",
             )
-            if self.ntd_save_message is not None:
-                st.success(self.ntd_save_message)
             if self.validate_definition_for_delete(self.defdict[st.session_state.ntd_sel_del_def_name]):
                 st.button(
                     f"Delete Selected {menu_entity_definition}",
@@ -346,6 +350,8 @@ class NERTaskDef:
                 on_change=change_edit_option,
             )
             options[st.session_state.ntd_edit_option]()
+            if self.ntd_save_message is not None:
+                st.success(self.ntd_save_message)
 
     def build_ntd_tablestring(self):
         tablestring = "Name | Entities | Link Suggestion Category | Template \n -----|-------|-------|-------"

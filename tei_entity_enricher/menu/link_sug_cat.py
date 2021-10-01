@@ -57,10 +57,16 @@ class LinkSugCat:
         val = True
         if name is None or name == "":
             val = False
-            st.error("Please define a name for the Link Suggestion Category before saving!")
+            if self.lsc_save_message is None:
+                st.error("Please define a name for the Link Suggestion Category before saving!")
         elif name in self.lscdict.keys() and mode != self.lsc_mode_edit:
             val = False
-            st.error(f"Choose another name. There is already a Link Suggestion Category with name {name}!")
+            if self.lsc_save_message is None:
+                st.error(f"Choose another name. There is already a Link Suggestion Category with name {name}!")
+        if len(content[0]) == 0:
+            val = False
+            if self.lsc_save_message is None:
+                st.error(f"Please define at least one Wikidata Category for the Link Suggestion Category!")
         return val
 
     def validate_definition_for_delete(self, name, content):
@@ -70,9 +76,10 @@ class LinkSugCat:
                 for entity in definition[self.ntd.ntd_attr_lsc_map].keys():
                     if definition[self.ntd.ntd_attr_lsc_map][entity] == name:
                         val = False
-                        st.error(
-                            f"Deletion of the Link Suggestion Category {name} is not allowed, because it is already used in the {menu_entity_definition} {definition[self.ntd.ntd_attr_name]}. If necessary first remove the assignment of the Link Suggestion Category from the {menu_entity_definition}."
-                        )
+                        if self.lsc_save_message is None:
+                            st.error(
+                                f"Deletion of the Link Suggestion Category {name} is not allowed, because it is already used in the {menu_entity_definition} {definition[self.ntd.ntd_attr_name]}. If necessary first remove the assignment of the Link Suggestion Category from the {menu_entity_definition}."
+                            )
         return val
 
     def build_wikicatlist_key(self, mode):

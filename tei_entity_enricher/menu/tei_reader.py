@@ -78,7 +78,8 @@ class TEIReader:
             or config[self.tr_config_attr_name] == ""
         ):
             val = False
-            st.error(f"Please define a name for the {menu_TEI_reader_config} before saving!")
+            if self.tr_save_message is None:
+                st.error(f"Please define a name for the {menu_TEI_reader_config} before saving!")
         elif (
             os.path.isfile(
                 os.path.join(
@@ -89,26 +90,30 @@ class TEIReader:
             and mode != self.tr_config_mode_edit
         ):
             val = False
-            st.error(
-                f"Choose another name. There is already a {menu_TEI_reader_config} with name {config[self.tr_config_attr_name]}!"
-            )
+            if self.tr_save_message is None:
+                st.error(
+                    f"Choose another name. There is already a {menu_TEI_reader_config} with name {config[self.tr_config_attr_name]}!"
+                )
         if len(config[self.tr_config_attr_excl_tags]) > 0:
             for excl_tag in config[self.tr_config_attr_excl_tags]:
                 if " " in excl_tag:
                     val = False
-                    st.error(
-                        f"You defined an exclude tag ({excl_tag}) containing a space character. This is not allowed!"
-                    )
+                    if self.tr_save_message is None:
+                        st.error(
+                            f"You defined an exclude tag ({excl_tag}) containing a space character. This is not allowed!"
+                        )
         if config[self.tr_config_attr_use_notes] and len(config[self.tr_config_attr_note_tags]) < 1:
             val = False
-            st.error(
-                "You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes."
-            )
+            if self.tr_save_message is None:
+                st.error(
+                    "You setted the checkbox that notes should be tagged but you did not define which tags contain notes! Please define at least one tag that contain notes."
+                )
         elif config[self.tr_config_attr_use_notes]:
             for note_tag in config[self.tr_config_attr_note_tags]:
                 if " " in note_tag:
                     val = False
-                    st.error(f"You defined an note tag ({note_tag}) containing a space character. This is not allowed!")
+                    if self.tr_save_message is None:
+                        st.error(f"You defined an note tag ({note_tag}) containing a space character. This is not allowed!")
         if (
             config[self.tr_config_attr_use_notes]
             and len(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])) > 0
@@ -118,13 +123,15 @@ class TEIReader:
                 warntext = f"Tags can either be excluded or marked as note tags. Please define for the tags {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether they should be excluded or considered as notes."
             else:
                 warntext = f"Tags can either be excluded or marked as note tags. Please define for the tag {get_listoutput(list(set(config[self.tr_config_attr_note_tags]).intersection(config[self.tr_config_attr_excl_tags])))} whether it should be excluded or considered as a note."
-            st.error(warntext)
+            if self.tr_save_message is None:
+                st.error(warntext)
         for gt in self.tng.tnglist:
             if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
-                st.error(
-                    f"To edit the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
-                )
+                if self.tr_save_message is None:
+                    st.error(
+                        f"To edit the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
+                    )
         return val
 
     def show_editable_exclude_tags(self, excl_list, key):
@@ -259,9 +266,10 @@ class TEIReader:
         for gt in self.tng.tnglist:
             if gt[self.tng.tng_attr_tr][self.tr_config_attr_name] == config[self.tr_config_attr_name]:
                 val = False
-                st.error(
-                    f"To delete the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
-                )
+                if self.tr_save_message is None:
+                    st.error(
+                        f"To delete the {menu_TEI_reader_config} {config[self.tr_config_attr_name]} is not allowed because it is already used in the TEI NER Groundtruth {gt[self.tng.tng_attr_name]}. If necessary, first remove the assignment of the config to the groundtruth."
+                    )
         return val
 
     def teireaderdel(self):
@@ -306,7 +314,6 @@ class TEIReader:
         with tr_config_definer:
             if self.tr_save_message is not None:
                 st.success(self.tr_save_message)
-                self.tr_save_message = None
             options = {
                 f"Add {menu_TEI_reader_config}": self.tei_reader_add,
                 f"Duplicate {menu_TEI_reader_config}": self.tei_reader_dupl,
@@ -319,6 +326,8 @@ class TEIReader:
                 key="tr_edit_option",
             )
             options[st.session_state.tr_edit_option]()
+            if self.tr_save_message is not None:
+                st.success(self.tr_save_message)
 
     def show_test_environment(self):
         tr_test_expander = st.expander(f"Test {menu_TEI_reader_config}", expanded=False)
