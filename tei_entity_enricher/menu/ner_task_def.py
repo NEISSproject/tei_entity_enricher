@@ -361,10 +361,7 @@ class NERTaskDef:
                     entitystring += " <br> "
                     lsc += " <br> "
                 entitystring += entity
-                if (
-                    self.ntd_attr_lsc_map in definition.keys()
-                    and entity in definition[self.ntd_attr_lsc_map].keys()
-                ):
+                if self.ntd_attr_lsc_map in definition.keys() and entity in definition[self.ntd_attr_lsc_map].keys():
                     lsc += definition[self.ntd_attr_lsc_map][entity]
                 else:
                     lsc += "-"

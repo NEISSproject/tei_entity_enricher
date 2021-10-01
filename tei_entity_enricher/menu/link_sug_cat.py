@@ -38,9 +38,7 @@ class LinkSugCat:
 
         with open(self.lsc_path) as f:
             self.lscdict = json.load(f)
-        self.editable_lsc_names = [
-            lsc_name for lsc_name in self.lscdict if not self.lscdict[lsc_name][2]
-        ]
+        self.editable_lsc_names = [lsc_name for lsc_name in self.lscdict if not self.lscdict[lsc_name][2]]
 
     def check_one_time_attributes(self):
         if "lsc_save_message" in st.session_state and st.session_state.lsc_save_message is not None:
@@ -86,9 +84,7 @@ class LinkSugCat:
 
     def build_comment_key(self, mode):
         return (
-            "lsc_comment_"
-            + mode
-            + ("" if mode == self.lsc_mode_add else st.session_state["lsc_sel_cat_name_" + mode])
+            "lsc_comment_" + mode + ("" if mode == self.lsc_mode_add else st.session_state["lsc_sel_cat_name_" + mode])
         )
 
     def show_editable_wikicatlist(self, wikicatlist, key):
@@ -129,9 +125,13 @@ class LinkSugCat:
             )
             st.info("Hint: See https://wikidp.org/ to find suitable Wikidata Categories!")
             if self.build_comment_key(mode) not in st.session_state:
-                st.session_state[self.build_comment_key(mode)]=cur_query_content[1]
-            st.text_area(label="Comment",key=self.build_comment_key(mode),help="You can insert a comment here to describe the Link Suggestion Category in more detail.")
-            cur_query_content[1]=st.session_state[self.build_comment_key(mode)]
+                st.session_state[self.build_comment_key(mode)] = cur_query_content[1]
+            st.text_area(
+                label="Comment",
+                key=self.build_comment_key(mode),
+                help="You can insert a comment here to describe the Link Suggestion Category in more detail.",
+            )
+            cur_query_content[1] = st.session_state[self.build_comment_key(mode)]
 
             def save_lsc(cur_name, cur_content, mode):
                 new_lscdict = {}
@@ -231,7 +231,16 @@ class LinkSugCat:
                 template = "no"
             else:
                 template = "yes"
-            tablestring += "\n " + lscname + " | " + get_listoutput(self.lscdict[lscname][0]) + " | " + self.lscdict[lscname][1] + " | " + template
+            tablestring += (
+                "\n "
+                + lscname
+                + " | "
+                + get_listoutput(self.lscdict[lscname][0])
+                + " | "
+                + self.lscdict[lscname][1].replace("\n", " ")
+                + " | "
+                + template
+            )
         return tablestring
 
     def show_lsc(self):
