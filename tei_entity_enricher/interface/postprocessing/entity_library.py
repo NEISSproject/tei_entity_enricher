@@ -40,7 +40,7 @@ class EntityLibrary:
         self.data_file: Union[str, None] = self.default_data_file if self.use_default_data_file == True else data_file
         self.show_printmessages: bool = show_printmessages
         self.data: Union[list, None] = None
-        if (self.data_file is not None) and (self.load_library() == True):
+        if (self.data_file is not None) and (self.load_library(create_new_file=True) == True):
             print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
@@ -65,9 +65,9 @@ class EntityLibrary:
                     FileWriter(
                         data=[
                             {
-                                "name": "",
+                                "name": "Berlin",
                                 "furtherNames": [],
-                                "type": "",
+                                "type": "place",
                                 "description": "",
                                 "wikidata_id": "",
                                 "gnd_id": "",
