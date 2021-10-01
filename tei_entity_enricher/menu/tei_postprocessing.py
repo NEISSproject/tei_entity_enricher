@@ -45,9 +45,13 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     if ca_el_structure_result == False:
         return "Editor content does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
     wcon = WikidataConnector(check_connectivity=False, show_printmessages=False)
-    for e in fr_result:
+    for index, e in enumerate(fr_result):
+        if e["name"].strip() == "":
+            return f"An entity (number: {index + 1}) in editor content is missing a valid 'name' value"
         if e["type"] not in list(wcon.wikidata_sparql_queries.keys()):
-            return f"An entity ({e['name']}) in editor content is missing a valid 'type' value"
+            return (
+                f"An entity (number: {index + 1}, name: {e['name']}) in editor content is missing a valid 'type' value"
+            )
     # redundancy check
     ca_el_redundancy_result = True
     for entity in ca.data:
