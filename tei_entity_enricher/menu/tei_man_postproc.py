@@ -141,15 +141,15 @@ class TEIManPP:
     def tei_edit_specific_entity(self, tag_entry, tr, index):
         col1, col2 = st.columns(2)
         with col1:
-            if "tmp_edit_del_tag"+str(index) not in st.session_state:
-                st.session_state["tmp_edit_del_tag"+str(index)]=False
+            if "tmp_edit_del_tag" + str(index) not in st.session_state:
+                st.session_state["tmp_edit_del_tag" + str(index)] = False
             st.checkbox(
                 "Remove this tag from the TEI-File",
-                #tag_entry["delete"],
-                key="tmp_edit_del_tag"+str(index),
+                # tag_entry["delete"],
+                key="tmp_edit_del_tag" + str(index),
                 help="Set this checkbox if you want to remove this tag from the TEI-File.",
             )
-            tag_entry["delete"]=st.session_state["tmp_edit_del_tag"+str(index)]
+            tag_entry["delete"] = st.session_state["tmp_edit_del_tag" + str(index)]
             if tag_entry["delete"]:
                 st.write("This tag will be removed when saving the current changes.")
             else:
@@ -217,12 +217,22 @@ class TEIManPP:
                 key="tmp_ls_full_search",
                 help="Searches for link suggestions in the currently loaded entity library and additionaly in the web (e.g. from wikidata).",
             )
+
             def change_search_string(index):
                 if "link_suggestions" in st.session_state.tmp_matching_tag_list[index]:
                     del st.session_state.tmp_matching_tag_list[index]["link_suggestions"]
 
-            col2.text_input(label="Link suggestion search string",key="tmp_ls_search_string"+str(index),on_change=change_search_string,args=(index,),help=f'You can insert an alternative search string for link suggestions to the entity {tag_entry["pure_tagcontent"]} here.')
-            input_tuple = st.session_state["tmp_ls_search_string"+str(index)], st.session_state.tmp_ls_search_type_sel_box
+            col2.text_input(
+                label="Link suggestion search string",
+                key="tmp_ls_search_string" + str(index),
+                on_change=change_search_string,
+                args=(index,),
+                help=f'You can insert an alternative search string for link suggestions to the entity {tag_entry["pure_tagcontent"]} here.',
+            )
+            input_tuple = (
+                st.session_state["tmp_ls_search_string" + str(index)],
+                st.session_state.tmp_ls_search_type_sel_box,
+            )
             link_identifier.input = [input_tuple]
             if simple_search or full_search:
                 result = link_identifier.suggest(
@@ -260,10 +270,10 @@ class TEIManPP:
                         # workaround: new column definition because of unique row height
                         scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
                         scol1.markdown(replace_empty_string(suggestion["name"]))
-                        if len(suggestion["furtherNames"])>10:
-                            further_names=suggestion["furtherNames"][:10]+['...']
+                        if len(suggestion["furtherNames"]) > 10:
+                            further_names = suggestion["furtherNames"][:10] + ["..."]
                         else:
-                            further_names=suggestion["furtherNames"]
+                            further_names = suggestion["furtherNames"]
                         scol2.markdown(replace_empty_string(get_listoutput(further_names)))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
                         scol4.markdown(
@@ -348,7 +358,7 @@ class TEIManPP:
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
                 for key in st.session_state:
                     if key.startswith("tmp_edit_del_tag"):
-                        st.session_state[key]=False
+                        st.session_state[key] = False
                 tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
                 st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
                 st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
@@ -541,13 +551,13 @@ class TEIManPP:
         return tag_list, sparqllist
 
     def enrich_search_list(self, tr):
-        index=0
+        index = 0
         for tag in st.session_state.tmp_matching_tag_list:
             tag["delete"] = False
             if "tagcontent" in tag.keys():
                 tag["pure_tagcontent"] = tei_writer.get_pure_text_of_tree_element(tag["tagcontent"], tr)
-                st.session_state["tmp_ls_search_string"+str(index)]=tag["pure_tagcontent"]
-            index+=1
+                st.session_state["tmp_ls_search_string" + str(index)] = tag["pure_tagcontent"]
+            index += 1
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True

@@ -6,9 +6,10 @@ from tei_entity_enricher.util.helper import (
     makedir_if_necessary,
     menu_entity_definition,
     menu_link_sug_cat,
+    get_listoutput,
 )
 from tei_entity_enricher.interface.postprocessing.wikidata_connector import WikidataConnector
-from streamlit_ace import st_ace
+from tei_entity_enricher.util.components import editable_single_column_table
 
 import tei_entity_enricher.menu.ner_task_def as ner_task
 
@@ -19,8 +20,7 @@ class LinkSugCat:
         self.lsc_mode_add = "add"
         self.lsc_mode_dupl = "duplicate"
         self.lsc_mode_edit = "edit"
-        if "lsc_ace_key_counter" not in st.session_state:
-            st.session_state.lsc_ace_key_counter = 0
+
         self.check_one_time_attributes()
 
         makedir_if_necessary(self.lsc_Folder)
@@ -38,9 +38,7 @@ class LinkSugCat:
 
         with open(self.lsc_path) as f:
             self.lscdict = json.load(f)
-        self.editable_lsc_names = [
-            lsc_name for lsc_name in self.lscdict if not self.lscdict[lsc_name][2]
-        ]
+        self.editable_lsc_names = [lsc_name for lsc_name in self.lscdict if not self.lscdict[lsc_name][2]]
 
     def check_one_time_attributes(self):
         if "lsc_save_message" in st.session_state and st.session_state.lsc_save_message is not None:
@@ -48,6 +46,12 @@ class LinkSugCat:
             st.session_state.lsc_save_message = None
         else:
             self.lsc_save_message = None
+
+        if "lsc_reload_aggrids" in st.session_state and st.session_state.lsc_reload_aggrids == True:
+            self.lsc_reload_aggrids = True
+            st.session_state.lsc_reload_aggrids = False
+        else:
+            self.lsc_reload_aggrids = False
 
     def validate_for_saving_lsc(self, name, content, mode):
         val = True
@@ -71,8 +75,23 @@ class LinkSugCat:
                         )
         return val
 
-    def reload_ace_components(self):
-        st.session_state.lsc_ace_key_counter += 1
+    def build_wikicatlist_key(self, mode):
+        return (
+            "lsc_wikicatlist_"
+            + mode
+            + ("" if mode == self.lsc_mode_add else st.session_state["lsc_sel_cat_name_" + mode])
+        )
+
+    def build_comment_key(self, mode):
+        return (
+            "lsc_comment_" + mode + ("" if mode == self.lsc_mode_add else st.session_state["lsc_sel_cat_name_" + mode])
+        )
+
+    def show_editable_wikicatlist(self, wikicatlist, key):
+        st.markdown(f"Define a list of feasible Wikidata Categories for the Link Suggestion Category.")
+        return editable_single_column_table(
+            entry_list=wikicatlist, key=key, head="Wikidata Categories", reload=self.lsc_reload_aggrids
+        )
 
     def show_editable_lsc_content(self, mode):
         if mode == self.lsc_mode_edit and len(self.editable_lsc_names) < 1:
@@ -90,36 +109,29 @@ class LinkSugCat:
                     options,
                     index=0,
                     key="lsc_sel_cat_name_" + mode,
-                    on_change=self.reload_ace_components,
                 )
                 cur_query_content = self.lscdict[st.session_state["lsc_sel_cat_name_" + mode]].copy()
                 cur_query_name = st.session_state["lsc_sel_cat_name_" + mode]
                 if mode == self.lsc_mode_dupl:
                     cur_query_name = ""
             if mode == self.lsc_mode_add:
-                cur_query_content = ["", ""]
+                cur_query_content = [[], ""]
             if mode in [self.lsc_mode_dupl, self.lsc_mode_add]:
                 st.text_input(label="New Link Suggestion Category Name:", key="lsc_name_" + mode)
                 cur_query_name = st.session_state["lsc_name_" + mode]
-            st.markdown("Define the Link Suggestion Category:")
-            query_content = st_ace(
-                value=cur_query_content[0],
-                height=200,
-                language="sparql",
-                readonly=False,
-                key="lsc_ace_query_key" + str(st.session_state.lsc_ace_key_counter),
+            cur_query_content[0] = self.show_editable_wikicatlist(
+                wikicatlist=cur_query_content[0],
+                key=self.build_wikicatlist_key(mode),
             )
-            if query_content != cur_query_content[0]:
-                cur_query_content[0] = query_content
-            st.markdown("Comment:")
-            comment_content = st_ace(
-                value=cur_query_content[1],
-                height=200,
-                readonly=False,
-                key="lsc_ace_comment_key" + str(st.session_state.lsc_ace_key_counter),
+            st.info("Hint: See https://wikidp.org/ to find suitable Wikidata Categories!")
+            if self.build_comment_key(mode) not in st.session_state:
+                st.session_state[self.build_comment_key(mode)] = cur_query_content[1]
+            st.text_area(
+                label="Comment",
+                key=self.build_comment_key(mode),
+                help="You can insert a comment here to describe the Link Suggestion Category in more detail.",
             )
-            if comment_content != cur_query_content[1]:
-                cur_query_content[1] = comment_content
+            cur_query_content[1] = st.session_state[self.build_comment_key(mode)]
 
             def save_lsc(cur_name, cur_content, mode):
                 new_lscdict = {}
@@ -136,8 +148,7 @@ class LinkSugCat:
                 st.session_state.lsc_save_message = f"Link Suggestion Category {cur_name} succesfully saved!"
                 if mode != self.lsc_mode_edit:
                     st.session_state["lsc_name_" + mode] = ""
-                # del st.session_state["lsc_show_query_name"]
-                st.session_state.lsc_ace_key_counter += 1
+                st.session_state.lsc_reload_aggrids = True
 
             if self.validate_for_saving_lsc(cur_query_name, cur_query_content, mode):
                 st.button(
@@ -170,11 +181,10 @@ class LinkSugCat:
 
             st.session_state.lsc_save_message = f"Link Suggestion Category {lsc_name} succesfully deleted!"
             del st.session_state["lsc_sel_del_ql_name"]
-            del st.session_state["lsc_show_query_name"]
             for mode in [self.lsc_mode_dupl, self.lsc_mode_edit]:
                 if "lsc_sel_cat_name_" + mode in st.session_state:
                     del st.session_state["lsc_sel_cat_name_" + mode]
-            st.session_state.lsc_ace_key_counter += 1
+            st.session_state.ntd_reload_aggrids = True
 
         if len(self.editable_lsc_names) > 0:
             st.selectbox(
@@ -209,39 +219,35 @@ class LinkSugCat:
                 options=tuple(options.keys()),
                 index=0,
                 key="lsc_edit_option",
-                on_change=self.reload_ace_components,
             )
             options[st.session_state.lsc_edit_option]()
             if self.lsc_save_message is not None:
                 st.success(self.lsc_save_message)
 
     def build_lsc_tablestring(self):
-        tablestring = "Name |Template \n -----|-------"
+        tablestring = "Name |Wikidata Categories| Comment |Template \n -----|-------|-------|-------"
         for lscname in self.lscdict.keys():
             if lscname in self.editable_lsc_names:
                 template = "no"
             else:
                 template = "yes"
-            tablestring += "\n " + lscname + " | " + template
+            tablestring += (
+                "\n "
+                + lscname
+                + " | "
+                + get_listoutput(self.lscdict[lscname][0])
+                + " | "
+                + self.lscdict[lscname][1].replace("\n", " ")
+                + " | "
+                + template
+            )
         return tablestring
 
     def show_lsc(self):
         lsc_show = st.expander("Existing Link Suggestion Category Definitions", expanded=True)
         with lsc_show:
-            col1, col2 = st.columns([0.3, 0.7])
-            with col1:
-                st.markdown(self.build_lsc_tablestring())
-                st.markdown(" ")  # only for layouting reasons (placeholder)
-            with col2:
-                st.selectbox(
-                    label="Choose a Link Suggestion Category for showing its details:",
-                    options=list(self.lscdict.keys()),
-                    key="lsc_show_query_name",
-                )
-                st.subheader(f"Query to {st.session_state.lsc_show_query_name}:")
-                st.text(self.lscdict[st.session_state.lsc_show_query_name][0])
-                st.subheader(f"Comment to {st.session_state.lsc_show_query_name}:")
-                st.text(self.lscdict[st.session_state.lsc_show_query_name][1])
+            st.markdown(self.build_lsc_tablestring())
+            st.markdown(" ")  # only for layouting reasons (placeholder)
 
     def show(self):
         st.latex("\\text{\Huge{" + menu_link_sug_cat + "}}")
