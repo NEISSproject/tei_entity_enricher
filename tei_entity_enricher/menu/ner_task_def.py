@@ -58,6 +58,14 @@ class NERTaskDef:
             self.tnw = tei_w_map.TEINERPredWriteMap(show_menu=False)
             self.lsc = ls_cat.LinkSugCat(show_menu=False)
             self.show()
+            self.check_rerun_messages()
+
+
+    def check_rerun_messages(self):
+        if "ntd_rerun_save_message" in st.session_state and st.session_state.ntd_rerun_save_message is not None:
+            st.session_state.ntd_save_message=st.session_state.ntd_rerun_save_message
+            st.session_state.ntd_rerun_save_message = None
+            st.experimental_rerun()
 
     def check_one_time_attributes(self):
         if "ntd_save_message" in st.session_state and st.session_state.ntd_save_message is not None:
@@ -302,7 +310,7 @@ class NERTaskDef:
                     definition[self.ntd_attr_name].replace(" ", "_") + ".txt",
                 )
             )
-            st.session_state.ntd_save_message = (
+            st.session_state.ntd_rerun_save_message = (
                 f"{menu_entity_definition} {definition[self.ntd_attr_name]} succesfully deleted!"
             )
             st.session_state.ntd_reload_aggrids = True

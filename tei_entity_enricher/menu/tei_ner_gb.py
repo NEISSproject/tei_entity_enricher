@@ -53,6 +53,14 @@ class TEINERGroundtruthBuilder:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
+            self.check_rerun_messages()
+
+
+    def check_rerun_messages(self):
+        if "tng_rerun_save_message" in st.session_state and st.session_state.tng_rerun_save_message is not None:
+            st.session_state.tng_save_message=st.session_state.tng_rerun_save_message
+            st.session_state.tng_rerun_save_message = None
+            st.experimental_rerun()
 
     def check_one_time_attributes(self):
         if "tng_save_message" in st.session_state and st.session_state.tng_save_message is not None:
@@ -441,7 +449,7 @@ class TEINERGroundtruthBuilder:
                 if "tng_sel_display_name" in st.session_state:
                     del st.session_state["tng_sel_display_name"]
                 del st.session_state["tng_del_gt_name"]
-                st.session_state.tng_save_message = (
+                st.session_state.tng_rerun_save_message = (
                     f"Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!"
                 )
 

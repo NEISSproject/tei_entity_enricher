@@ -56,6 +56,13 @@ class TEIReader:
         if show_menu:
             self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
             self.show()
+            self.check_rerun_messages()
+
+    def check_rerun_messages(self):
+        if "tr_rerun_save_message" in st.session_state and st.session_state.tr_rerun_save_message is not None:
+            st.session_state.tr_save_message=st.session_state.tr_rerun_save_message
+            st.session_state.tr_rerun_save_message = None
+            st.experimental_rerun()
 
     def check_one_time_attributes(self):
         if "tr_save_message" in st.session_state and st.session_state.tr_save_message is not None:
@@ -280,7 +287,7 @@ class TEIReader:
                     config[self.tr_config_attr_name].replace(" ", "_") + ".json",
                 )
             )
-            st.session_state.tr_save_message = (
+            st.session_state.tr_rerun_save_message = (
                 f"{menu_TEI_reader_config} {config[self.tr_config_attr_name]} succesfully deleted!"
             )
             st.session_state.tr_reload_aggrids = True

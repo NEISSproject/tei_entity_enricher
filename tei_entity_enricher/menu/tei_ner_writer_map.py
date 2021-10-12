@@ -62,6 +62,13 @@ class TEINERPredWriteMap:
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.show()
+            self.check_rerun_messages()
+
+    def check_rerun_messages(self):
+        if "tnw_rerun_save_message" in st.session_state and st.session_state.tnw_rerun_save_message is not None:
+            st.session_state.tnw_save_message=st.session_state.tnw_rerun_save_message
+            st.session_state.tnw_rerun_save_message = None
+            st.experimental_rerun()
 
     def check_one_time_attributes(self):
         if "tnw_save_message" in st.session_state and st.session_state.tnw_save_message is not None:
@@ -359,7 +366,7 @@ class TEINERPredWriteMap:
                     mapping[self.tnw_attr_name].replace(" ", "_") + ".json",
                 )
             )
-            st.session_state.tnw_save_message = (
+            st.session_state.tnw_rerun_save_message = (
                 f"{menu_TEI_write_mapping} {mapping[self.tnw_attr_name]} succesfully deleted!"
             )
             st.session_state.tnw_reload_aggrids = True

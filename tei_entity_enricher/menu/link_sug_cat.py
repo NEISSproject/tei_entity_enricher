@@ -29,6 +29,7 @@ class LinkSugCat:
         if show_menu:
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
+            self.check_rerun_messages()
 
     def init_lsc_list(self):
         self.lsc_path = os.path.join(self.lsc_Folder, "link_sugesstion_categories.json")
@@ -39,6 +40,12 @@ class LinkSugCat:
         with open(self.lsc_path) as f:
             self.lscdict = json.load(f)
         self.editable_lsc_names = [lsc_name for lsc_name in self.lscdict if not self.lscdict[lsc_name][2]]
+
+    def check_rerun_messages(self):
+        if "lsc_rerun_save_message" in st.session_state and st.session_state.lsc_rerun_save_message is not None:
+            st.session_state.lsc_save_message=st.session_state.lsc_rerun_save_message
+            st.session_state.lsc_rerun_save_message = None
+            st.experimental_rerun()
 
     def check_one_time_attributes(self):
         if "lsc_save_message" in st.session_state and st.session_state.lsc_save_message is not None:
@@ -192,12 +199,13 @@ class LinkSugCat:
             with open(self.lsc_path, "w+") as f:
                 json.dump(new_lscdict, f, indent=4)
 
-            st.session_state.lsc_save_message = f"Link Suggestion Category {lsc_name} succesfully deleted!"
+            st.session_state.lsc_rerun_save_message = f"Link Suggestion Category {lsc_name} succesfully deleted!"
             del st.session_state["lsc_sel_del_ql_name"]
             for mode in [self.lsc_mode_dupl, self.lsc_mode_edit]:
                 if "lsc_sel_cat_name_" + mode in st.session_state:
                     del st.session_state["lsc_sel_cat_name_" + mode]
             st.session_state.ntd_reload_aggrids = True
+            del st.session_state["ntd_lsc_map"]
 
         if len(self.editable_lsc_names) > 0:
             st.selectbox(
