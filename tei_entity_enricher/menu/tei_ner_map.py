@@ -298,16 +298,20 @@ class TEINERMap:
                     "w+",
                 ) as f:
                     json.dump(mapping, f)
+                if mode != self.tnm_mode_edit:
+                    st.session_state["tnm_name_" + mode] = ""
                 # if mode != self.tnm_mode_edit:
                 #    del st.session_state["tnm_sel_mapping_name_" + mode]
                 for key in st.session_state:
                     if key.startswith("tnm_ntd_sel_"+mode) or key.startswith("tnm_ent_"+mode) or key.startswith("tnm_name_"+mode):
                         del st.session_state[key]
-                st.session_state.tnm_save_message = (
+                st.session_state.tnm_rerun_save_message = (
                     f"{menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} succesfully saved!"
                 )
                 st.session_state.tnm_reload_aggrids = True
                 del st.session_state["tnm_entity_dict"]
+                if self.build_tnm_sel_edit_entity_key(mode) in st.session_state:
+                    del st.session_state[self.build_tnm_sel_edit_entity_key(mode)]
 
             if self.tnm_save_message is not None:
                 st.success(self.tnm_save_message)

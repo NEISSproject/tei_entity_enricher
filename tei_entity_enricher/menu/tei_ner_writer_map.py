@@ -309,6 +309,8 @@ class TEINERPredWriteMap:
                     "w+",
                 ) as f:
                     json.dump(mapping, f)
+                if mode != self.tnw_mode_edit:
+                    st.session_state["tnw_name_" + mode] = ""
                 for key in st.session_state:
                     if (
                         key.startswith("tnw_ntd_sel_" + mode)
@@ -317,7 +319,7 @@ class TEINERPredWriteMap:
                         or key.startswith("tnw_name_" + mode)
                     ):
                         del st.session_state[key]
-                st.session_state.tnw_save_message = (
+                st.session_state.tnw_rerun_save_message = (
                     f"{menu_TEI_write_mapping} {mapping[self.tnw_attr_name]} succesfully saved!"
                 )
                 st.session_state.tnw_reload_aggrids = True
