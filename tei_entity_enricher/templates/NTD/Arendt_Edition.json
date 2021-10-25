@@ -1,1 +1,1 @@
-{"entitylist": ["person", "place", "ethnicity", "event", "organization", "language"], "name": "Arendt Edition", "template": true}
+{"entitylist": ["person", "place", "ethnicity", "event", "organization", "language"], "name": "Arendt Edition", "template": true, "ls_cat": {"person": "person", "place": "place", "organization": "organisation"}}

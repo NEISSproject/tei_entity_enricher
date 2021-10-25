@@ -1,1 +1,1 @@
-{"entitylist": ["PER", "PERderiv", "PERpart", "LOC", "LOCderiv", "LOCpart", "ORG", "ORGderiv", "ORGpart", "OTH", "OTHderiv", "OTHpart"], "name": "GermEval14", "template": true}
+{"entitylist": ["PER", "PERderiv", "PERpart", "LOC", "LOCderiv", "LOCpart", "ORG", "ORGderiv", "ORGpart", "OTH", "OTHderiv", "OTHpart"], "name": "GermEval14", "template": true, "ls_cat": {"PER": "person", "LOC": "place", "ORG": "organisation"}}

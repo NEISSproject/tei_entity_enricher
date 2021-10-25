@@ -17,71 +17,16 @@ from tei_entity_enricher.util.helper import (
     transform_arbitrary_text_to_markdown,
     local_save_path,
     makedir_if_necessary,
+    print_st_message,
+    menu_postprocessing,
 )
 
 logger = logging.getLogger(__name__)
-
-# auxiliary cache definition
-class PostprocessingAuxiliaryCache:
-    """class to save different states over streamlit reruns
-    el_filepath : str
-        filepath to entity library, which is loaded or should be loaded
-    last_editor_state : str
-        ace editor state of the last run, used to be able to compare old and current ace editor state
-    button_add_missing_ids : bool
-        saves was-pressed state over more than one rerun
-    button_add_missing_ids_proceed : bool
-        saves was-pressed state over more than one rerun
-    button_export_el : bool
-        saves was-pressed state over more than one rerun
-    add_missing_ids_query_result : dict
-        saves temporarily wikidata query result in add-missing-ids process
-    counter : int
-        used to change ace editor key value between two reruns, if self.is_count_up_rerun is True
-    is_count_up_rerun : bool
-        used to control, if counter is raised in a rerun (ace editor can be updated by internal processes) or not (ace editor can be changed manually)
-    """
-
-    def __init__(self) -> None:
-        self.el_filepath: str = None
-        self.last_editor_state: str = None
-        self.button_add_missing_ids: bool = False
-        self.button_add_missing_ids_proceed: bool = False
-        self.button_export_el: bool = False
-        self.add_missing_ids_query_result: dict = {}
-        self.counter: int = 0
-        self.is_count_up_rerun: bool = False
-
-    def reset_buttons(self) -> None:
-        self.button_add_missing_ids: bool = False
-        self.button_add_missing_ids_proceed: bool = False
-        self.button_export_el: bool = False
-
-    def reset_filepath(self) -> None:
-        self.el_filepath = None
-
-    def reset_editor_state(self) -> None:
-        self.last_editor_state: str = None
-
-    def reset_add_missing_ids_query_result(self) -> None:
-        self.add_missing_ids_query_result: dict = {}
-
-    def reset_is_count_up_rerun(self) -> None:
-        self.is_count_up_rerun: bool = False
-
-    def set_el_filepath(self, path) -> None:
-        self.el_filepath: str = path
-
 
 # put/load entity library and auxiliary cache class instances in/from cache
 @st.cache(allow_output_mutation=True)
 def get_entity_library():
     return EntityLibrary(show_printmessages=False)
-
-
-@st.cache(allow_output_mutation=True)
-def get_pp_auxiliary_cache():
-    return PostprocessingAuxiliaryCache()
 
 
 # auxiliary functions
@@ -100,9 +45,13 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     if ca_el_structure_result == False:
         return "Editor content does not fulfill the structure requirements for EntityLibrary. See documentation for requirement list."
     wcon = WikidataConnector(check_connectivity=False, show_printmessages=False)
-    for e in fr_result:
+    for index, e in enumerate(fr_result):
+        if e["name"].strip() == "":
+            return f"An entity (number: {index + 1}) in editor content is missing a valid 'name' value"
         if e["type"] not in list(wcon.wikidata_sparql_queries.keys()):
-            return f"An entity ({e['name']}) in editor content is missing a valid 'type' value"
+            return (
+                f"An entity (number: {index + 1}, name: {e['name']}) in editor content is missing a valid 'type' value"
+            )
     # redundancy check
     ca_el_redundancy_result = True
     for entity in ca.data:
@@ -144,32 +93,54 @@ def fix_editor_content(content):
 
 
 class TEINERPostprocessing:
-    def __init__(self,show_menu: bool = True):
+    def __init__(self, show_menu: bool = True):
         """consists of the entity library control panel and the manual postprocessing panel"""
+        if "pp_ace_key_counter" not in st.session_state:
+            st.session_state.pp_ace_key_counter = 0
+        self.check_one_time_attributes()
         if show_menu:
             self.init_vars()
             self.show()
 
     def init_vars(self):
         self.pp_el_library_object: EntityLibrary = get_entity_library()
-        self.pp_aux_cache: PostprocessingAuxiliaryCache = get_pp_auxiliary_cache()
-        self.pp_aux_cache.set_el_filepath(
-            self.pp_el_library_object.default_data_file
-        ) if self.pp_aux_cache.el_filepath is None else None
+
+    def check_one_time_attributes(self):
+        if "pp_el_init_message" in st.session_state and st.session_state.pp_el_init_message is not None:
+            self.pp_el_init_message = st.session_state.pp_el_init_message
+            del st.session_state["pp_el_init_message"]
+        else:
+            self.pp_el_init_message = None
+        if "pp_el_misc_message" in st.session_state and st.session_state.pp_el_misc_message is not None:
+            self.pp_el_misc_message = st.session_state.pp_el_misc_message
+            del st.session_state["pp_el_misc_message"]
+        else:
+            self.pp_el_misc_message = None
+        if (
+            "pp_el_add_from_file_message_list" in st.session_state
+            and st.session_state.pp_el_add_from_file_message_list is not None
+        ):
+            self.pp_el_add_from_file_message_list = st.session_state.pp_el_add_from_file_message_list
+            del st.session_state["pp_el_add_from_file_message_list"]
+        else:
+            self.pp_el_add_from_file_message_list = None
 
     def filepath_subcontainer(self):
-        self.el_filepath_container = st.beta_container()
+
+        self.el_filepath_container = st.container()
         with self.el_filepath_container:
-            self.el_filepath_field_col, self.el_filepath_state_col = st.beta_columns([10, 1])
-            self.el_filepath_field = self.el_filepath_field_col.text_input(
+            self.el_filepath_field_col, self.el_filepath_state_col = st.columns([10, 1])
+            self.el_filepath_field_col.text_input(
                 label="Filepath to load from",
-                value=self.pp_aux_cache.el_filepath,
+                value=os.path.join(local_save_path, "config", "postprocessing", "entity_library.json"),
                 help="Enter the filepath to a json file, from which the entity library is loaded.",
+                key="pp_el_filepath",
             )
-            self.el_create_filepath_if_not_found_checkbox = st.checkbox(
+            st.checkbox(
                 label="Create default file if not found?",
                 value=False,
                 help="If selected, a default library file will be created in the given filepath.",
+                key="pp_el_create_filepath_if_not_found",
             )
             (
                 self.el_col_init_button,
@@ -177,195 +148,165 @@ class TEINERPostprocessing:
                 self.el_col_save_button,
                 self.el_col_export_button,
                 self.el_col_add_missing_ids_button,
-            ) = st.beta_columns(5)
+            ) = st.columns(5)
             with self.el_col_init_button:
-                self.el_init_button_placeholder = st.empty()
+                st.button(
+                    label="Initialize",
+                    key="pp_init",
+                    help="Initialize the library from filepath.",
+                    on_click=self.init_button_trigger,
+                )
             with self.el_col_quit_button:
-                self.el_quit_button_placeholder = st.empty()
+                st.button(
+                    label="Unload",
+                    key="pp_quit",
+                    help="Unload the current library (unsaved changes will be lost).",
+                    on_click=self.quit_button_trigger,
+                )
             with self.el_col_save_button:
-                self.el_save_button_placeholder = st.empty()
+                st.button(
+                    label="Save",
+                    key="pp_save",
+                    help="Save the current library state to filepath.",
+                    on_click=self.save_button_trigger,
+                )
             with self.el_col_export_button:
-                self.el_export_button_placeholder = st.empty()
+                st.button(
+                    label="Export",
+                    key="pp_export",
+                    help="Export the current library state to another filepath.",
+                    on_click=self.export_button_trigger,
+                )
             with self.el_col_add_missing_ids_button:
-                self.el_add_missing_ids_button_placeholder = st.empty()
-            self.el_init_button = self.el_init_button_placeholder.button(
-                label="Initialize", key="init", help="Initialize the library from filepath."
-            )
-            self.el_quit_button = self.el_quit_button_placeholder.button(
-                label="Unload", help="Unload the current library (unsaved changes will be lost)."
-            )
-            self.el_save_button = self.el_save_button_placeholder.button(
-                label="Save", help="Save the current library state to filepath."
-            )
-            self.el_export_button = self.el_export_button_placeholder.button(
-                label="Export", help="Export the current library state to another filepath."
-            )
-            self.el_add_missing_ids_button = self.el_add_missing_ids_button_placeholder.button(
-                label="Add missing IDs",
-                help="If an ID is missing in any entity, it will be retrieved on basis of the given information. If no id is given at all, an item of a list of suggestions delivered by wikidata query can be chosen.",
-            )
+                st.button(
+                    label="Add missing IDs",
+                    key="pp_ami",
+                    help="If an ID is missing in any entity, it will be retrieved on basis of the given information. If no id is given at all, an item of a list of suggestions delivered by wikidata query can be chosen.",
+                    on_click=self.add_missing_ids_button_trigger,
+                )
+
             self.el_export_filepath_placeholder = st.empty()
             self.el_add_missing_ids_menu_placeholder = st.empty()
             self.el_init_message_placeholder = st.empty()
+            if self.pp_el_init_message is not None:
+                print_st_message(self.pp_el_init_message[0], self.pp_el_init_message[1])
+            if self.pp_el_misc_message is not None:
+                print_st_message(self.pp_el_misc_message[0], self.pp_el_misc_message[1])
             self.el_misc_message_placeholder = st.empty()
             self.el_file_view_placeholder = st.empty()
             self.el_file_view_message_placeholder = st.empty()
+            if self.pp_el_add_from_file_message_list is not None:
+                for message in self.pp_el_add_from_file_message_list:
+                    print_st_message(message[0], message[1])
 
-    def add_entities_from_file_subcontainer_and_processes(self):
-        self.el_add_entities_from_file_subcontainer = st.beta_container()
-        with self.el_add_entities_from_file_subcontainer:
-            self.el_add_entities_from_file_loader_placeholder = st.empty()
-            self.el_add_entities_from_file_button_placeholder = st.empty()
-            self.el_add_entities_from_file_success_message_placeholder = st.empty()
-            # processes triggered if an entity library is loaded (and it has a string value in data_file)
-            if self.pp_el_library_object.data_file is not None:
-                self.el_add_entities_from_file_loader_file_list = self.el_add_entities_from_file_loader_placeholder.file_uploader(
-                    label="Add entities from file",
-                    type=["json", "csv"],
-                    accept_multiple_files=True,
-                    key=None,
-                    help="Use json or csv files to add entities to the loaded library. Importing multiple files at once is possible, see the documentation for file structure requirements.",
+    def init_button_trigger(self):
+        st.session_state.pp_last_pressed_button = "init"
+        with self.el_filepath_container:
+            if self.pp_el_library_object.data_file is None:
+                self.pp_el_library_object.data_file = st.session_state.pp_el_filepath
+                load_attempt_result = self.pp_el_library_object.load_library(
+                    st.session_state.pp_el_create_filepath_if_not_found
                 )
-                if len(self.el_add_entities_from_file_loader_file_list) > 0:
-                    self.el_add_entities_from_file_button_value = (
-                        self.el_add_entities_from_file_button_placeholder.button(
-                            label="Start adding process", key=None, help=None
-                        )
+                if load_attempt_result == True:
+                    logger.info(
+                        f"Entity library loading process from file {st.session_state.pp_el_filepath} succeeded."
                     )
-                    # processes triggered by add entities button
-                    if self.el_add_entities_from_file_button_value == True:
-                        result_messages = []
-                        for uploaded_file in self.el_add_entities_from_file_loader_file_list:
-                            el_add_entities_from_file_single_file_result = (
-                                self.pp_el_library_object.add_entities_from_file(file=uploaded_file)
-                            )
-                            logger.info(
-                                f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}."
-                            )
-                            if type(el_add_entities_from_file_single_file_result) == str:
-                                result_messages.append(
-                                    f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result}"
-                                )
-                            else:
-                                result_messages.append(
-                                    f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result[0]} entity/ies successfully added to entity library. {el_add_entities_from_file_single_file_result[1]} entity/ies ignored due to redundance issues."
-                                )
-                            with self.el_add_entities_from_file_success_message_placeholder.beta_container():
-                                for message in result_messages:
-                                    if "success" in message:
-                                        st.success(message)
-                                    else:
-                                        st.info(message)
-                        self.pp_aux_cache.last_editor_state = json.dumps(self.pp_el_library_object.data, indent=4)
-                        self.pp_aux_cache.is_count_up_rerun = True
-                        st.button(label="Finish process")
+                elif type(load_attempt_result) == str:
+                    load_attempt_result = transform_arbitrary_text_to_markdown(load_attempt_result)
+                    logger.warning(f"Entity library loading process failed: {load_attempt_result}")
+                    self.el_filepath_state_col.latex(state_failed)
+                    # self.el_init_message_placeholder.error(load_attempt_result)
+                    st.session_state.pp_el_init_message = ["error", load_attempt_result]
+                    self.pp_el_library_object.data_file = None
 
-    def submenu_control(self):
-        if (
-            self.el_quit_button == True
-            or self.el_save_button == True
-            or self.el_export_button == True
-            or self.el_add_missing_ids_button == True
-        ):
-            self.pp_aux_cache.reset_buttons()
-
-    def init_button_processes(self):
+    def quit_button_trigger(self):
+        st.session_state.pp_last_pressed_button = "quit"
         with self.el_filepath_container:
-            if self.el_init_button == True:
-                if self.pp_el_library_object.data_file is None:
-                    self.pp_el_library_object.data_file = self.el_filepath_field
-                    load_attempt_result = self.pp_el_library_object.load_library(
-                        self.el_create_filepath_if_not_found_checkbox
-                    )
-                    if load_attempt_result == True:
-                        logger.info(f"Entity library loading process from file {self.el_filepath_field} succeeded.")
-                        self.pp_aux_cache.el_filepath = self.el_filepath_field
-                    elif type(load_attempt_result) == str:
-                        load_attempt_result = transform_arbitrary_text_to_markdown(load_attempt_result)
-                        logger.warning(f"Entity library loading process failed: {load_attempt_result}")
-                        self.el_filepath_state_col.latex(state_failed)
-                        self.el_init_message_placeholder.error(load_attempt_result)
-                        self.pp_el_library_object.data_file = None
+            if self.pp_el_library_object.data_file is not None:
+                self.pp_el_library_object.reset()
+                if "pp_ace_el_editor_content" in st.session_state:
+                    del st.session_state["pp_ace_el_editor_content"]
 
-    def save_button_processes(self):
+    def save_button_trigger(self):
+        st.session_state.pp_last_pressed_button = "save"
         with self.el_filepath_container:
-            if self.el_save_button == True:
-                if self.pp_el_library_object.data_file is not None:
-                    save_attempt_result = self.pp_el_library_object.save_library()
-                    if save_attempt_result == True:
-                        self.el_misc_message_placeholder.success(
-                            "The current state of the entity library was successfully saved."
-                        )
-                    else:
-                        self.el_misc_message_placeholder.error("Could not save current state of entity library.")
-                    self.pp_aux_cache.reset_buttons()
-                    self.pp_aux_cache.reset_add_missing_ids_query_result()
+            if self.pp_el_library_object.data_file is not None:
+                save_attempt_result = self.pp_el_library_object.save_library()
+                if save_attempt_result == True:
+                    st.session_state.pp_el_misc_message = [
+                        "success",
+                        "The current state of the entity library was successfully saved.",
+                    ]
+                else:
+                    st.session_state.pp_el_misc_message = ["error", "Could not save current state of entity library."]
+
+    def export_button_trigger(self):
+        st.session_state.pp_last_pressed_button = "export"
 
     def export_button_processes(self):
+        def proceed_button_trigger():
+            fw = FileWriter(data=self.pp_el_library_object.data, filepath=st.session_state.pp_export_filepath)
+            if_file_exists = "replace" if st.session_state.pp_export_overwrite == True else "cancel"
+            if st.session_state.pp_export_create_folder == True:
+                makedir_if_necessary(os.path.dirname(st.session_state.pp_export_filepath))
+            try:
+                fw_return_value = fw.writefile_json(do_if_file_exists=if_file_exists)
+            except FileNotFoundError:
+                fw_return_value = "folder_not_found"
+            if fw_return_value == True:
+                st.session_state.pp_el_misc_message = ["success", "Entity Library successfully exported."]
+            elif fw_return_value == False:
+                st.session_state.pp_el_misc_message = ["error", "Entity Library export failed: File already exists."]
+            elif fw_return_value == "folder_not_found":
+                st.session_state.pp_el_misc_message = ["error", "Entity Library export failed: Folder does not exist."]
+
         with self.el_filepath_container:
-            if self.el_export_button == True or self.pp_aux_cache.button_export_el == True:
+            if "pp_last_pressed_button" in st.session_state and st.session_state.pp_last_pressed_button == "export":
                 if self.pp_el_library_object.data_file is not None:
-                    self.pp_aux_cache.button_export_el = True
-                    el_export_filepath_field_container = self.el_export_filepath_placeholder.beta_container()
-                    el_export_filepath_field = el_export_filepath_field_container.text_input(
+                    el_export_filepath_field_container = self.el_export_filepath_placeholder.container()
+                    el_export_filepath_field_container.text_input(
                         label="Filepath to export to",
                         value=os.path.join(local_save_path, "config", "postprocessing", "export.json"),
                         help="Enter the filepath to a json file, to which the entity library should be exported.",
+                        key="pp_export_filepath",
                     )
-                    el_export_create_folder_checkbox = el_export_filepath_field_container.checkbox(
+                    el_export_filepath_field_container.checkbox(
                         label="Create folder if not found?",
                         value=True,
                         help="If selected, possibly not existant folders will be created according to the entered filepath value.",
+                        key="pp_export_create_folder",
                     )
-                    el_export_overwrite_checkbox = el_export_filepath_field_container.checkbox(
+                    el_export_filepath_field_container.checkbox(
                         label="Overwrite possibly existing file?",
                         value=False,
                         help="If selected, the file will be overwritten, if one already exists in filepath.",
+                        key="pp_export_overwrite",
                     )
-                    proceed_button = el_export_filepath_field_container.button(
-                        label="Proceed", help="Start export process."
+                    el_export_filepath_field_container.button(
+                        label="Proceed",
+                        help="Start export process.",
+                        on_click=proceed_button_trigger,
                     )
-                    if proceed_button == True:
-                        fw = FileWriter(data=self.pp_el_library_object.data, filepath=el_export_filepath_field)
-                        if_file_exists = "replace" if el_export_overwrite_checkbox == True else "cancel"
-                        if el_export_create_folder_checkbox == True:
-                            makedir_if_necessary(os.path.dirname(el_export_filepath_field))
-                        try:
-                            fw_return_value = fw.writefile_json(do_if_file_exists=if_file_exists)
-                        except FileNotFoundError:
-                            fw_return_value = "folder_not_found"
-                        if fw_return_value == True:
-                            self.el_misc_message_placeholder.success("Entity Library successfully exported.")
-                        elif fw_return_value == False:
-                            self.el_misc_message_placeholder.info("Entity Library export failed: File already exists.")
-                        elif fw_return_value == "folder_not_found":
-                            self.el_misc_message_placeholder.info(
-                                "Entity Library export failed: Folder does not exist."
-                            )
 
-    def quit_button_processes(self):
-        with self.el_filepath_container:
-            if self.el_quit_button == True:
-                if self.pp_el_library_object.data_file is not None:
-                    self.pp_el_library_object.reset()
-                    self.pp_aux_cache.reset_filepath()
-                    self.pp_aux_cache.reset_editor_state()
-                    self.pp_aux_cache.reset_buttons()
-                    self.pp_aux_cache.reset_add_missing_ids_query_result()
+    def add_missing_ids_button_trigger(self):
+        st.session_state.pp_last_pressed_button = "ami"
 
     def add_missing_ids_button_processes(self):
         with self.el_filepath_container:
-            if self.el_add_missing_ids_button == True or self.pp_aux_cache.button_add_missing_ids == True:
+            if "pp_last_pressed_button" in st.session_state and st.session_state.pp_last_pressed_button in [
+                "ami",
+                "ami_proceed",
+            ]:
                 if self.pp_el_library_object.data_file is not None:
-                    self.pp_aux_cache.button_add_missing_ids = True
-                    with self.el_add_missing_ids_menu_placeholder.beta_container():
+                    with self.el_add_missing_ids_menu_placeholder.container():
                         progress_bar = st.progress(0)
-                        checkbox_state = st.checkbox(
+                        st.checkbox(
                             label="Try to identify entities without any ids",
                             value=False,
                             help="When activated, for every entity in entity library, which has no id data at all, a list of matching entities in wikidata database will be suggested.",
+                            key="pp_identify_ent_wo_ids",
                         )
-                        if checkbox_state == True:
+                        if st.session_state.pp_identify_ent_wo_ids:
                             wikidata_search_amount = st.number_input(
                                 label="max number of query results",
                                 min_value=1,
@@ -373,24 +314,31 @@ class TEINERPostprocessing:
                                 value=5,
                                 step=1,
                                 help="Choose the maximum number of results the wikidata query can deliver.",
+                                key="pp_wikidata_search_amount",
                             )
                         else:
                             wikidata_search_amount = 5
-                        proceed_button = st.button(
-                            label="Query",
-                            help="Start process, in which ids will be suggested for the entities in entity library.",
-                        )
-                        if proceed_button == True or self.pp_aux_cache.button_add_missing_ids_proceed == True:
-                            self.pp_aux_cache.button_add_missing_ids_proceed = True
+                        if (
+                            st.button(
+                                label="Query",
+                                help="Start process, in which ids will be suggested for the entities in entity library.",
+                            )
+                            or st.session_state.pp_last_pressed_button == "ami_proceed"
+                        ):
+                            st.session_state.pp_last_pressed_button = "ami_proceed"
                             cases_to_ignore = []
                             identified_cases = []
                             cases_to_choose = []
                             selectbox_result = []
-                            if len(self.pp_aux_cache.add_missing_ids_query_result) > 0:
+                            # self.pp_aux_cache.add_missing_ids_query_result
+                            if (
+                                "add_missing_ids_query_result" in st.session_state
+                                and len(st.session_state.add_missing_ids_query_result) > 0
+                            ):
                                 # load wikidata query results from cache, if they exist
-                                cases_to_ignore = self.pp_aux_cache.add_missing_ids_query_result["cases_to_ignore"]
-                                identified_cases = self.pp_aux_cache.add_missing_ids_query_result["identified_cases"]
-                                cases_to_choose = self.pp_aux_cache.add_missing_ids_query_result["cases_to_choose"]
+                                cases_to_ignore = st.session_state.add_missing_ids_query_result["cases_to_ignore"]
+                                identified_cases = st.session_state.add_missing_ids_query_result["identified_cases"]
+                                cases_to_choose = st.session_state.add_missing_ids_query_result["cases_to_choose"]
                                 progress_bar.progress(100)
                             else:
                                 # wikidata query
@@ -398,12 +346,10 @@ class TEINERPostprocessing:
                                 progress_amount = floor((100 / library_data_length) * 10 ** 2) / 10 ** 2
                                 progress_amount_list = list(frange_positve(0, 100, progress_amount))
                                 for index, entity in enumerate(self.pp_el_library_object.data):
-                                    _temp_result_entity_identification = (
-                                        self.pp_el_library_object.return_identification_suggestions_for_entity(
-                                            input_entity=entity,
-                                            try_to_identify_entities_without_id_values=checkbox_state,
-                                            wikidata_query_match_limit=str(wikidata_search_amount),
-                                        )
+                                    _temp_result_entity_identification = self.pp_el_library_object.return_identification_suggestions_for_entity(
+                                        input_entity=entity,
+                                        try_to_identify_entities_without_id_values=st.session_state.pp_identify_ent_wo_ids,
+                                        wikidata_query_match_limit=str(wikidata_search_amount),
                                     )
                                     current_progress_state = progress_amount_list[index]
                                     progress_val = trunc(current_progress_state + progress_amount)
@@ -420,13 +366,14 @@ class TEINERPostprocessing:
                                             cases_to_choose.append((_temp_result_entity_identification, index))
                                     elif _len_temp_result > 1:
                                         cases_to_choose.append((_temp_result_entity_identification, index))
-                                self.pp_aux_cache.add_missing_ids_query_result["cases_to_ignore"] = cases_to_ignore
-                                self.pp_aux_cache.add_missing_ids_query_result["identified_cases"] = identified_cases
-                                self.pp_aux_cache.add_missing_ids_query_result["cases_to_choose"] = cases_to_choose
-                            with self.el_misc_message_placeholder.beta_container():
+                                st.session_state.add_missing_ids_query_result = {}
+                                st.session_state.add_missing_ids_query_result["cases_to_ignore"] = cases_to_ignore
+                                st.session_state.add_missing_ids_query_result["identified_cases"] = identified_cases
+                                st.session_state.add_missing_ids_query_result["cases_to_choose"] = cases_to_choose
+                            with self.el_misc_message_placeholder.container():
                                 # display query results in gui
                                 for case in identified_cases:
-                                    col1, col2, col3 = st.beta_columns(3)
+                                    col1, col2, col3 = st.columns(3)
                                     with col1:
                                         st.write(case[0][0][0]["name"])
                                     with col2:
@@ -436,18 +383,17 @@ class TEINERPostprocessing:
                                 for index, case in enumerate(cases_to_choose):
                                     description_list = [i["description"] for i in case[0][0]]
                                     description_list.append("-- Select none --")
-                                    col1, col2, col3 = st.beta_columns(3)
+                                    col1, col2, col3 = st.columns(3)
                                     with col1:
                                         st.write(case[0][0][0]["name"])
                                     with col2:
-                                        selectbox_result.append(
-                                            st.selectbox(
-                                                label="Select an entity...",
-                                                options=description_list,
-                                                help="Select the right entity, which should be added to entity library.",
-                                                key=f"{index}",
-                                            )
+                                        st.selectbox(
+                                            label="Select an entity...",
+                                            options=description_list,
+                                            help="Select the right entity, which should be added to entity library.",
+                                            key=f"pp_ami_res_{index}",
                                         )
+                                        selectbox_result.append(st.session_state[f"pp_ami_res_{index}"])
                                     with col3:
                                         current_selection_index = description_list.index(selectbox_result[index])
                                         if current_selection_index != len(description_list) - 1:
@@ -457,12 +403,10 @@ class TEINERPostprocessing:
                                         else:
                                             st.write("-")
                                 if len(identified_cases) > 0 or len(cases_to_choose) > 0:
-                                    # show save button, if new information can be added to entity library
-                                    save_add_missing_ids_suggestions_to_loaded_el_button = st.button(
-                                        label="Save to currently loaded entity library",
-                                        help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
-                                    )
-                                    if save_add_missing_ids_suggestions_to_loaded_el_button:
+
+                                    def save_add_missing_ids_suggestions_to_loaded_el(
+                                        identified_cases, cases_to_choose
+                                    ):
                                         for case in identified_cases:
                                             entity_to_update = self.pp_el_library_object.data[case[1]]
                                             entity_to_update.update(case[0][0][0])
@@ -474,15 +418,25 @@ class TEINERPostprocessing:
                                                 # ignore '-- Select none --' selections
                                                 entity_to_update = self.pp_el_library_object.data[case[1]]
                                                 entity_to_update.update(case[0][0][current_selection_index])
-                                        # reset cache vars and start count-up rerun
-                                        self.pp_aux_cache.reset_editor_state()
-                                        self.pp_aux_cache.reset_buttons()
-                                        self.pp_aux_cache.reset_add_missing_ids_query_result()
-                                        self.pp_aux_cache.is_count_up_rerun = True
-                                        st.experimental_rerun()
+                                        del st.session_state["pp_last_pressed_button"]
+                                        if "pp_ace_el_editor_content" in st.session_state:
+                                            del st.session_state["pp_ace_el_editor_content"]
+                                        st.session_state.pp_ace_key_counter += 1
+                                        st.session_state.add_missing_ids_query_result = {}
+
+                                    # show save button, if new information can be added to entity library
+                                    st.button(
+                                        label="Save to currently loaded entity library",
+                                        help="Save found and selected IDs to currently loaded entity library. This changes are not saved to the origin file of the entity library. If you want to do so, click 'Save' in entity library submenu after finishing the add missing ids process.",
+                                        on_click=save_add_missing_ids_suggestions_to_loaded_el,
+                                        args=(
+                                            identified_cases,
+                                            cases_to_choose,
+                                        ),
+                                    )
                                 else:
                                     st.info("No new data could be retrieved by wikidata query.")
-                                    self.pp_aux_cache.reset_add_missing_ids_query_result()
+                                    st.session_state.add_missing_ids_query_result = {}
 
     def if_entity_library_is_loaded_processes(self):
         with self.el_filepath_container:
@@ -490,58 +444,104 @@ class TEINERPostprocessing:
                 self.el_filepath_state_col.latex(state_ok)
                 self.el_init_message_placeholder.success("Entity library is activated.")
                 editor_init_content = (
-                    json.dumps(self.pp_el_library_object.data, indent=4)
-                    if self.pp_aux_cache.last_editor_state is None
-                    else self.pp_aux_cache.last_editor_state
+                    st.session_state.pp_ace_el_editor_content
+                    if "pp_ace_el_editor_content" in st.session_state
+                    else json.dumps(self.pp_el_library_object.data, indent=4)
                 )
-                if self.pp_aux_cache.is_count_up_rerun == True:
-                    self.pp_aux_cache.counter += 1
-                    self.pp_aux_cache.reset_is_count_up_rerun()
-                with self.el_file_view_placeholder:
-                    editor_content = st_ace(
-                        value=editor_init_content,
-                        height=500,
-                        language="json",
-                        readonly=False,
-                        key=str(self.pp_aux_cache.counter),
-                    )
-                    editor_content = fix_editor_content(editor_content)
-                    logger.info(editor_content)
-                if self.pp_aux_cache.last_editor_state is None:
-                    self.pp_aux_cache.last_editor_state = editor_content
-                if (editor_content) and (editor_content != self.pp_aux_cache.last_editor_state):
+                editor_content = st_ace(
+                    placeholder=self.el_file_view_placeholder,
+                    value=editor_init_content,
+                    height=500,
+                    language="json",
+                    readonly=False,
+                    key="pp_ace_internal_key" + str(st.session_state.pp_ace_key_counter),
+                )
+                editor_content = fix_editor_content(editor_content)
+                logger.info(editor_content)
+                if "pp_ace_el_editor_content" not in st.session_state:
+                    st.session_state.pp_ace_el_editor_content = editor_content
+                if (editor_content) and (editor_content != st.session_state.pp_ace_el_editor_content):
                     el_editor_content_check_result = el_editor_content_check(editor_content)
                     if type(el_editor_content_check_result) == str:
                         with self.el_file_view_message_placeholder:
-                            with st.beta_container():
+                            with st.container():
                                 st.info(f"Error: {el_editor_content_check_result}")
                     else:
                         self.pp_el_library_object.data = json.loads(editor_content)
-                        self.pp_aux_cache.last_editor_state = editor_content
+                        st.session_state.pp_ace_el_editor_content = editor_content
                         with self.el_file_view_message_placeholder:
-                            with st.beta_container():
+                            with st.container():
                                 st.success(
                                     "Currently loaded entity library was successfully updated. To save this changes to file use save or export button."
                                 )
 
+    def add_entities_from_file_subcontainer_and_processes(self):
+        self.el_add_entities_from_file_subcontainer = st.container()
+        with self.el_add_entities_from_file_subcontainer:
+            self.el_add_entities_from_file_loader_placeholder = st.empty()
+            self.el_add_entities_from_file_button_placeholder = st.empty()
+            self.el_add_entities_from_file_success_message_placeholder = st.empty()
+            # processes triggered if an entity library is loaded (and it has a string value in data_file)
+            if self.pp_el_library_object.data_file is not None:
+                self.el_add_entities_from_file_loader_file_list = self.el_add_entities_from_file_loader_placeholder.file_uploader(
+                    label="Add entities from file",
+                    type=["json", "csv"],
+                    accept_multiple_files=True,
+                    key=None,
+                    help="Use json or csv files to add entities to the loaded library. Importing multiple files at once is possible, see the documentation for file structure requirements.",
+                )
+                if len(self.el_add_entities_from_file_loader_file_list) > 0:
+
+                    def adding_process(el_add_entities_from_file_loader_file_list):
+                        result_messages = []
+                        for uploaded_file in el_add_entities_from_file_loader_file_list:
+                            el_add_entities_from_file_single_file_result = (
+                                self.pp_el_library_object.add_entities_from_file(file=uploaded_file)
+                            )
+                            logger.info(
+                                f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}."
+                            )
+                            if type(el_add_entities_from_file_single_file_result) == str:
+                                result_messages.append(
+                                    f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result}"
+                                )
+                            else:
+                                result_messages.append(
+                                    f"{uploaded_file.name}: {el_add_entities_from_file_single_file_result[0]} entity/ies successfully added to entity library. {el_add_entities_from_file_single_file_result[1]} entity/ies ignored due to redundance issues."
+                                )
+                            with self.el_add_entities_from_file_success_message_placeholder.container():
+                                st.session_state.pp_el_add_from_file_message_list = []
+                                for message in result_messages:
+                                    if "success" in message:
+                                        st.session_state.pp_el_add_from_file_message_list.append(["success", message])
+                                    else:
+                                        st.session_state.pp_el_add_from_file_message_list.append(["info", message])
+                        if "pp_ace_el_editor_content" in st.session_state:
+                            st.session_state["pp_ace_el_editor_content"] = json.dumps(
+                                self.pp_el_library_object.data, indent=4
+                            )
+                        st.session_state.pp_ace_key_counter += 1
+
+                    self.el_add_entities_from_file_button_value = (
+                        self.el_add_entities_from_file_button_placeholder.button(
+                            label="Start adding process",
+                            key=None,
+                            help=None,
+                            on_click=adding_process,
+                            args=(self.el_add_entities_from_file_loader_file_list,),
+                        )
+                    )
+
     def show(self):
-        st.latex("\\text{\Huge{NER Postprocessing}}")
+        st.latex("\\text{\Huge{" + menu_postprocessing + "}}")
         ## 1. Entity Library
         st.subheader("Entity Library")
-        el_container = st.beta_expander(label="Entity Library", expanded=True)
+        el_container = st.expander(label="Entity Library", expanded=True)
         with el_container:
             # basic layout: filepath subcontainer
             self.filepath_subcontainer()
-            # menu control: reset of button states in cache (not button states read from button widgets)
-            self.submenu_control()
-            # processes triggered by init button
-            self.init_button_processes()
-            # processes triggered by save button
-            self.save_button_processes()
             # processes triggered by export button
             self.export_button_processes()
-            # processes triggered by quit button
-            self.quit_button_processes()
             # processes triggered by add ids button
             self.add_missing_ids_button_processes()
             # processes triggered if an entity library is loaded (and it has a string value in data_file)
@@ -550,4 +550,4 @@ class TEINERPostprocessing:
             self.add_entities_from_file_subcontainer_and_processes()
 
         ## 2. Manual TEI Postprocessing
-        tmp.TEIManPP(entity_library=self.pp_el_library_object, aux_cache=self.pp_aux_cache)
+        tmp.TEIManPP(entity_library=self.pp_el_library_object)

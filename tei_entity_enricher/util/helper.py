@@ -13,6 +13,16 @@ state_ok = r"\huge\color{green}\checkmark"
 state_failed = r"\huge\color{red}X"
 state_uncertain = r"\huge\color{orange}\bigcirc"
 
+menu_TEI_reader_config = "TEI Reader Config"
+menu_entity_definition = "Entity Definition"
+menu_TEI_read_mapping = "TEI Read Entity Mapping"
+menu_groundtruth_builder = "Groundtruth Builder"
+menu_TEI_write_mapping = "TEI Write Entity Mapping"
+menu_link_sug_cat = "Link Suggestion Categories"
+menu_NER_trainer = "NER Trainer"
+menu_NER_prediction = "NER Prediction"
+menu_postprocessing = "Postprocessing"
+
 latex_color_list = [
     "red",
     "green",
@@ -93,7 +103,7 @@ def file_lists_entry_widget(list_param: list, name: str, help=None) -> list:
     lists_str = clean_list_str(str(list_param))
     logger.debug(f"cleaned str: {lists_str}")
 
-    lists_field, lists_state = st.beta_columns([10, 1])
+    lists_field, lists_state = st.columns([10, 1])
     lists_field = lists_field.text_input(name, value=lists_str, help=help)
 
     if lists_field:
@@ -131,7 +141,7 @@ def numbers_lists_entry_widget(
     lists_str = clean_list_str(str(list_param))
     logger.debug(f"cleaned str: {lists_str}")
 
-    lists_field, lists_state = st.beta_columns([10, 1])
+    lists_field, lists_state = st.columns([10, 1])
     lists_field = lists_field.text_input(name, value=lists_str, help=help)
     if lists_field:
         lists_field = clean_list_str(lists_field)
@@ -174,7 +184,7 @@ def replace_empty_string(input_string, replace_string="-"):
 
 
 def text_entry_with_check(string: str, name: str, check_fn: callable, help=None):
-    string_field, string_state = st.beta_columns([10, 1])
+    string_field, string_state = st.columns([10, 1])
     string_field = string_field.text_input(name, value=string, help=help)
     if check_fn(string_field):
         logger.info(f"Check {name}: ok: {string_field}")
@@ -206,7 +216,7 @@ def model_dir_entry_widget(
     ask_make_dir=False,
     help=None,
 ) -> str:
-    string_field, string_state = st.beta_columns([10, 1])
+    string_field, string_state = st.columns([10, 1])
     string_field = string_field.text_input(name, value=string_param, help=help)
     ok = True
     if string_field:
@@ -245,6 +255,19 @@ def model_dir_entry_widget(
 
 def transform_arbitrary_text_to_latex(text):
     return text.replace("\n", "\n\n")
+
+
+def print_st_message(type, message):
+    if type == "info":
+        st.info(message)
+    elif type == "success":
+        st.success(message)
+    elif type == "warning":
+        st.warning(message)
+    elif type == "error":
+        st.error(message)
+    else:
+        st.error(f'Type "{type}" for Message "{message}" not known.')
 
 
 @st.cache(allow_output_mutation=True)

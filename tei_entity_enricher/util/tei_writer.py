@@ -391,6 +391,7 @@ class TEI_Writer:
         return merged_tags
 
     def _get_new_tagged_string(self, tag, string_to_tag, with_begin=True, with_end=True):
+        new_tagged_string=string_to_tag
         if tag in self._write_entity_dict.keys():
             new_tagged_string = "<" + self._write_entity_dict[tag][0]
             attr_string = " "
@@ -676,29 +677,32 @@ class TEI_Writer:
                     if len(tag_config[1][attr]) > 0 and cur_attr_dict[attr] != tag_config[1][attr]:
                         cur_tag_config_matches = False
             if cur_tag_config_matches:
+                self.cur_matching_index=tag_list.index(tag_config)
                 return True
         return False
 
     def get_text_tree(self):
         return self._text_tree
 
-    def get_list_of_tags_matching_tag_list(self, tag_list):
+    def get_list_of_tags_matching_tag_list(self, tag_list,sparqllist):
         matching_tag_list = []
-        self._loop_contentlist(matching_tag_list, self._text_tree, tag_list)
+        self._loop_contentlist(matching_tag_list, self._text_tree, tag_list, sparqllist)
         return matching_tag_list
 
-    def _loop_contentlist(self, matching_tag_list, contentlist, tag_list):
+    def _loop_contentlist(self, matching_tag_list, contentlist, tag_list, sparqllist):
         for contentindex in range(len(contentlist)):
             if isinstance(contentlist[contentindex], list):
                 contentlist[contentindex] = self._loop_contentlist(
-                    matching_tag_list, contentlist[contentindex], tag_list
+                    matching_tag_list, contentlist[contentindex], tag_list, sparqllist
                 )
             elif isinstance(contentlist[contentindex], dict):
                 if self._is_tag_matching_tag_list(contentlist[contentindex], tag_list):
-                    matching_tag_list.append(contentlist[contentindex])
+                    tag=contentlist[contentindex].copy()
+                    tag["default_sparql_query"]=sparqllist[self.cur_matching_index]
+                    matching_tag_list.append(tag)
                 if "tagcontent" in contentlist[contentindex].keys():
                     contentlist[contentindex]["tagcontent"] = self._loop_contentlist(
-                        matching_tag_list, contentlist[contentindex]["tagcontent"], tag_list
+                        matching_tag_list, contentlist[contentindex]["tagcontent"], tag_list, sparqllist
                     )
         return contentlist
 
@@ -807,11 +811,13 @@ def get_pure_note_text_of_tree_element(cur_element, tr, id_to_mark=None, is_note
         text = ""
         if "tagcontent" in cur_element.keys() and cur_element["name"] not in tr["exclude_tags"]:
             if cur_element["name"] in tr["note_tags"]:
-                note_text,marked=get_pure_note_text_of_tree_element(cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=True, is_marked=is_marked)
+                note_text, marked = get_pure_note_text_of_tree_element(
+                    cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=True, is_marked=is_marked
+                )
                 if marked and not is_marked:
-                    return note_text,marked
+                    return note_text, marked
                 else:
-                    return "",is_marked
+                    return "", is_marked
             if id_to_mark is not None and "tag_id" in cur_element.keys() and cur_element["tag_id"] == id_to_mark:
                 new_text, _ = get_pure_note_text_of_tree_element(
                     cur_element["tagcontent"], tr, id_to_mark=id_to_mark, is_note=is_note, is_marked=is_marked
@@ -842,13 +848,16 @@ def get_pure_note_text_of_tree_element(cur_element, tr, id_to_mark=None, is_note
 
 def build_tag_list_from_entity_dict(entity_dict, mode="tnw"):
     tag_list = []
+    entity_list = []
     for entity in entity_dict:
         if mode == "tnw":
             tag_list.append(entity_dict[entity])
+            entity_list.append(entity)
         elif mode == "tnm":
             for tag_entry in entity_dict[entity]:
                 tag_list.append(tag_entry)
-    return tag_list
+                entity_list.append(entity)
+    return tag_list, entity_list
 
 
 def run_test(directory, tr):

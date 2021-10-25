@@ -40,7 +40,7 @@ class EntityLibrary:
         self.data_file: Union[str, None] = self.default_data_file if self.use_default_data_file == True else data_file
         self.show_printmessages: bool = show_printmessages
         self.data: Union[list, None] = None
-        if (self.data_file is not None) and (self.load_library() == True):
+        if (self.data_file is not None) and (self.load_library(create_new_file=True) == True):
             print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
@@ -65,9 +65,9 @@ class EntityLibrary:
                     FileWriter(
                         data=[
                             {
-                                "name": "",
+                                "name": "Berlin",
                                 "furtherNames": [],
-                                "type": "",
+                                "type": "place",
                                 "description": "",
                                 "wikidata_id": "",
                                 "gnd_id": "",
@@ -302,10 +302,11 @@ class EntityLibrary:
                             if len(_gnd_retrieve_attempt_result) > 0
                             else ""
                         )
+                        _furtherNames_to_add = self.get_further_names_of_wikidata_entity(entity.get("id", ""))
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": entity.get("label", f"No name delivered, search pattern was: {input_tuple[0]}"),
-                                "furtherNames": [],
+                                "furtherNames": _furtherNames_to_add,
                                 "type": input_tuple[1],
                                 "description": entity.get("description", "No description delivered"),
                                 "wikidata_id": entity.get("id", ""),
@@ -462,6 +463,34 @@ class EntityLibrary:
         return result["results"]["bindings"]
         # if there is no result, the returned value is an empty list
         # if there is a result, it can be retrieved by returnvalue[0]["o"]["value"]
+
+    def get_further_names_of_wikidata_entity(self, wikidata_id: str = None) -> List[str]:
+        """method to get further names of a wikidata entity,
+        returns a list for a furtherName value of an entity library entity dict,
+        origin of the information are the properties rdfs:label and skos:altLabel"""
+        if wikidata_id == "":
+            return []
+        alt_labels_query = """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX wd: <http://www.wikidata.org/entity/>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+            SELECT ?label WHERE {
+                VALUES ?p { rdfs:label skos:altLabel } 
+                wd:%s ?p ?label .
+            }
+        """
+        endpoint_url = "https://query.wikidata.org/sparql"
+        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
+        sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
+        sparql.setQuery(alt_labels_query % wikidata_id)
+        sparql.setReturnFormat(JSON)
+        query_result = sparql.query().convert()
+        # return empty list, if no result is returned by sparql query
+        if len(query_result["results"]["bindings"]) == 0:
+            return []
+        # return a list with distinct values: for that the list is transformed to a set and back to new list without value doublets
+        return list(set([item["label"]["value"] for item in query_result["results"]["bindings"]]))
 
     def reset(self):
         self.data_file = None

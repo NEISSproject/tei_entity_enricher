@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+
 class MenuBase(object):
     def __init__(self, show_menu: bool = True, name: str = ""):
         self.name: str = name

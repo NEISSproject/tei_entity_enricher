@@ -7,22 +7,28 @@ from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tei_ner_writer_map
+from tei_entity_enricher.util.aip_interface.prediction_params import NERPredictionParams, get_params
+from tei_entity_enricher.util.aip_interface.processmanger.predict import (
+    predict_option_tei,
+    predict_option_json,
+    predict_option_single_tei,
+    predict_option_tei_folder,
+    get_predict_process_manager,
+)
 from tei_entity_enricher.util.components import (
     small_file_selector,
     small_dir_selector,
-    selectbox_widget,
     file_selector,
 )
-from tei_entity_enricher.util.helper import module_path, state_ok, local_save_path
-from tei_entity_enricher.util.spacy_lm import lang_dict
-from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
-from tei_entity_enricher.util.processmanger.predict import (
-    get_predict_process_manager,
-    predict_option_json,
-    predict_option_tei,
-    predict_option_single_tei,
-    predict_option_tei_folder,
+from tei_entity_enricher.util.helper import (
+    module_path,
+    state_ok,
+    menu_TEI_reader_config,
+    menu_TEI_write_mapping,
+    menu_NER_prediction,
 )
+from tei_entity_enricher.util.spacy_lm import lang_dict
+
 import streamlit as st
 
 logger = logging.getLogger(__name__)
@@ -43,6 +49,9 @@ class NERPrediction(MenuBase):
             predict_option_tei_folder: self.select_tei_folder,
         }
 
+        if "predict_lang" not in st.session_state:
+            st.session_state.predict_lang = "German"
+
         self._check_list = []
 
         if self.show_menu:
@@ -55,7 +64,7 @@ class NERPrediction(MenuBase):
             self.show()
 
     @property
-    def ner_prediction_params(self) -> NERPredictionParams:
+    def _params(self) -> NERPredictionParams:
         return get_params()
 
     def check(self, **kwargs):
@@ -63,6 +72,7 @@ class NERPrediction(MenuBase):
         return True
 
     def show(self, **kwargs):
+        st.latex("\\text{\Huge{" + menu_NER_prediction + "}}")
         self.select_model_dir()
 
         self.select_output_dir()
@@ -81,121 +91,88 @@ class NERPrediction(MenuBase):
         st.latex(state_ok)
 
     def select_model_dir(self):
-        self.ner_prediction_params.ner_model_dir, ner_model_dir_state = small_dir_selector(
-            label="Folder with NER model",
-            value=self.ner_prediction_params.ner_model_dir if self.ner_prediction_params.ner_model_dir else self._wd,
-            key="ner_prediction_ner_model_dir",
-            help="Choose a directory with a trained NER model",
-            return_state=True,
-        )
-        if ner_model_dir_state != state_ok:
-            self._check_list.append("NER model")
+        label = "ner model"
+        target_dir = os.path.join(self._wd, "ner_trainer", "models_ner")
+        if self._params.scan_models(target_dir) != 0:
+            self._params.possible_models = {f"no {label} found": None}
+            self._check_list.append(f"no {label} found")
+        self._params.choose_model_widget(label)
 
     def select_output_dir(self):
         prediction_out_dir, prediction_out_dir_state = small_dir_selector(
             label="Folder for prediction output",
-            value=self.ner_prediction_params.prediction_out_dir
-            if self.ner_prediction_params.prediction_out_dir
-            else self._wd_ner_prediction,
+            value=self._wd_ner_prediction,
             key="ner_prediction_output_dir",
             help="Choose a directory with a trained NER model",
             return_state=True,
+            ask_make=True,
         )
         if not prediction_out_dir_state:
             self._check_list.append("prediction output directory")
         else:
-            self.ner_prediction_params.prediction_out_dir = prediction_out_dir
+            self._params.prediction_out_dir = st.session_state.ner_prediction_output_dir
 
     def select_input_data(self):
-        old_predict_option = self.ner_prediction_params.predict_conf_option
-        self.ner_prediction_params.predict_conf_option = st.radio(
+        st.radio(
             "Prediction options",
             tuple(self.predict_conf_options.keys()),
-            tuple(self.predict_conf_options.keys()).index(self.ner_prediction_params.predict_conf_option)
-            if self.ner_prediction_params.predict_conf_option is not None
-            and self.ner_prediction_params.predict_conf_option != ""
-            else 0,
-            key="np_predict_option",
+            key="predict_conf_option",
             help="Choose an option to define what kind of Files you want to predict.",
         )
-        if old_predict_option != self.ner_prediction_params.predict_conf_option:
-            st.experimental_rerun()
-        self.predict_conf_options[self.ner_prediction_params.predict_conf_option]()
+        self.predict_conf_options[st.session_state.predict_conf_option]()
 
     def select_json_input_data(self):
         init = str(
-            self.ner_prediction_params.input_json_file
-            if self.ner_prediction_params.input_json_file
+            self._params.input_json_file
+            if self._params.input_json_file
             else os.path.join(self._wd_ner_prediction, "pred_input_example2.json")
         )
 
-        target = f"Select input json-file: {self.ner_prediction_params.input_json_file}"
-        with st.beta_expander(target, expanded=False):
+        target = f"Select input json-file: {self._params.input_json_file}"
+        with st.expander(target, expanded=False):
             input_file = file_selector(folder_path=self._wd_ner_prediction, parent=target, init_file=init)
 
-            if st.button("select"):
-                if input_file == "":
-                    self._check_list.append("input json-file")
-                elif input_file:
-                    self.ner_prediction_params.input_json_file = input_file
-                    st.experimental_rerun()
+        def select():
+            if input_file == "":
+                self._check_list.append("input json-file")
+            elif input_file:
+                self._params.input_json_file = input_file
+
+        st.button("select", on_click=select)
 
     def select_tei_input_data(self):
-        np_tei_input_expander = st.beta_expander("Select a TEI Prediction Configuration", expanded=False)
+        np_tei_input_expander = st.expander("Select a TEI Prediction Configuration", expanded=False)
         with np_tei_input_expander:
-            tr_name = selectbox_widget(
-                "Select a TEI Reader Config which should be used for the prediction!",
-                list(self.tr.configdict.keys()),
-                index=list(self.tr.configdict.keys()).index(
-                    self.ner_prediction_params.predict_tei_reader[self.tr.tr_config_attr_name]
-                )
-                if self.ner_prediction_params.predict_tei_reader is not None
-                else 0,
+            st.selectbox(
+                label=f"Select a {menu_TEI_reader_config} which should be used for the prediction!",
+                options=list(self.tr.configdict.keys()),
                 key="np_tei_pred_tr_name",
             )
-            self.ner_prediction_params.predict_tei_reader = self.tr.configdict[tr_name]
-            tnw_name = selectbox_widget(
-                "Select a TEI Prediction Writer Mapping which should be used for the prediction!",
-                list(self.tnw.mappingdict.keys()),
-                index=list(self.tnw.mappingdict.keys()).index(
-                    self.ner_prediction_params.predict_tei_write_map[self.tnw.tnw_attr_name]
-                )
-                if self.ner_prediction_params.predict_tei_write_map is not None
-                else 0,
+            self._params.predict_tei_reader = self.tr.configdict[st.session_state.np_tei_pred_tr_name]
+            st.selectbox(
+                label=f"Select a {menu_TEI_write_mapping} which should be used for the prediction!",
+                options=list(self.tnw.mappingdict.keys()),
                 key="np_tei_pred_tnw_name",
             )
-            self.ner_prediction_params.predict_tei_write_map = self.tnw.mappingdict[tnw_name]
-            self.ner_prediction_params.predict_lang = selectbox_widget(
-                "Select a language for the TEI-Files:",
-                list(lang_dict.keys()),
-                index=list(lang_dict.keys()).index(self.ner_prediction_params.predict_lang),
-                key="np_lang",
+            self._params.predict_tei_write_map = self.tnw.mappingdict[st.session_state.np_tei_pred_tnw_name]
+            st.selectbox(
+                label="Select a language for the TEI-Files:",
+                options=list(lang_dict.keys()),
+                key="predict_lang",
                 help="For Predicting entities the text of the TEI-Files has to be splitted into parts of sentences. For this sentence split you need to choose a language.",
             )
-            old_predict_tei_option = self.ner_prediction_params.predict_conf_tei_option
-            self.ner_prediction_params.predict_conf_tei_option = st.radio(
-                "Input options",
-                tuple(self.predict_conf_tei_input_options.keys()),
-                tuple(self.predict_conf_tei_input_options.keys()).index(
-                    self.ner_prediction_params.predict_conf_tei_option
-                )
-                if self.ner_prediction_params.predict_conf_tei_option is not None
-                and self.ner_prediction_params.predict_conf_tei_option != ""
-                else 0,
-                key="np_predict_tei_option",
+            st.radio(
+                label="Input options",
+                options=tuple(self.predict_conf_tei_input_options.keys()),
+                key="predict_conf_tei_option",
                 help="Choose an option to define if you want to predict a single TEI-File or all TEI-Files of a Folder.",
             )
-            if old_predict_tei_option != self.ner_prediction_params.predict_conf_tei_option:
-                st.experimental_rerun()
-            self.predict_conf_tei_input_options[self.ner_prediction_params.predict_conf_tei_option]()
+            self.predict_conf_tei_input_options[st.session_state.predict_conf_tei_option]()
 
     def select_tei_file(self):
-        self.ner_prediction_params.input_tei_file, prediction_tei_file_state = small_file_selector(
+        input_tei_file, prediction_tei_file_state = small_file_selector(
             label="TEI-File to predict",
-            value=self.ner_prediction_params.input_tei_file
-            if self.ner_prediction_params.input_tei_file != ""
-            else local_save_path,
-            key="ner_prediction_tei_file",
+            key="input_tei_file",
             help="Choose a TEI-File whose text should be enriched with entities",
             return_state=True,
         )
@@ -203,12 +180,9 @@ class NERPrediction(MenuBase):
             self._check_list.append("TEI-File to predict")
 
     def select_tei_folder(self):
-        self.ner_prediction_params.input_tei_folder, prediction_tei_dir_state = small_dir_selector(
+        input_tei_folder, prediction_tei_dir_state = small_dir_selector(
             label="Folder containing the TEI-Files to predict",
-            value=self.ner_prediction_params.input_tei_folder
-            if self.ner_prediction_params.input_tei_folder != ""
-            else local_save_path,
-            key="ner_prediction_tei_dir",
+            key="input_tei_folder",
             help="Choose a directory containing TEI-Files whose text should be enriched with entities",
             return_state=True,
         )

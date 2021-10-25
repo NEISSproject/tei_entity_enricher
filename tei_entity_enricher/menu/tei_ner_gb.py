@@ -9,40 +9,16 @@ from tei_entity_enricher.util.helper import (
     module_path,
     local_save_path,
     makedir_if_necessary,
+    menu_TEI_reader_config,
+    menu_TEI_read_mapping,
+    menu_groundtruth_builder,
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.ner_task_def as ner_task
 import tei_entity_enricher.util.tei_parser as tp
 from tei_entity_enricher.util.spacy_lm import lang_dict, get_spacy_lm
-from tei_entity_enricher.util.components import (
-    small_dir_selector,
-    text_input_widget,
-    selectbox_widget,
-    radio_widget,
-    number_input_widget,
-)
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
-
-@dataclass
-@dataclass_json
-class TEINERGBParams:
-    tng_name: str = None
-    tng_lang: str = None
-    tng_tr_name: str = None
-    tng_tnm_name: str = None
-    tng_test_percentage: int = None
-    tng_dev_percentage: int = None
-    tng_shuffle_options: str = None
-    tng_teifile_folder: str = None
-    tng_del_gt_name: str = None
-    tng_selected_display_tng_name: str = None
-
-
-@st.cache(allow_output_mutation=True)
-def get_params() -> TEINERGBParams:
-    return TEINERGBParams()
+from tei_entity_enricher.util.components import small_dir_selector
 
 
 class TEINERGroundtruthBuilder:
@@ -60,6 +36,7 @@ class TEINERGroundtruthBuilder:
         self.tng_gt_type_train = "train"
         self.tng_gt_type_dev = "dev"
         self.tng_gt_type_test = "test"
+        self.check_one_time_attributes()
 
         self.shuffle_options_dict = {
             "Shuffle by TEI File": True,
@@ -76,10 +53,21 @@ class TEINERGroundtruthBuilder:
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.ntd = ner_task.NERTaskDef(show_menu=False)
             self.show()
+            self.check_rerun_messages()
 
-    @property
-    def tei_ner_gb_params(self) -> TEINERGBParams:
-        return get_params()
+
+    def check_rerun_messages(self):
+        if "tng_rerun_save_message" in st.session_state and st.session_state.tng_rerun_save_message is not None:
+            st.session_state.tng_save_message=st.session_state.tng_rerun_save_message
+            st.session_state.tng_rerun_save_message = None
+            st.experimental_rerun()
+
+    def check_one_time_attributes(self):
+        if "tng_save_message" in st.session_state and st.session_state.tng_save_message is not None:
+            self.tng_save_message = st.session_state.tng_save_message
+            st.session_state.tng_save_message = None
+        else:
+            self.tng_save_message = None
 
     def refresh_tng_list(self):
         self.tnglist = []
@@ -123,18 +111,22 @@ class TEINERGroundtruthBuilder:
             or build_config[self.tng_attr_name] == ""
         ):
             val = False
-            st.error("Please define a name for the Groundtruth before building it!")
+            if self.tng_save_message is None:
+                st.error("Please define a name for the Groundtruth before building it!")
         elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))):
             val = False
-            st.error(
-                f"Choose another name. There is already a Groundtruth with name {build_config[self.tng_attr_name]}!"
-            )
+            if self.tng_save_message is None:
+                st.error(
+                    f"Choose another name. There is already a Groundtruth with name {build_config[self.tng_attr_name]}!"
+                )
         if folder_path is None or folder_path == "":
             val = False
-            st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
+            if self.tng_save_message is None:
+                st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
         elif not os.path.isdir(folder_path):
             val = False
-            st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
+            if self.tng_save_message is None:
+                st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
         return val
 
     def build_groundtruth(self, build_config, folder_path):
@@ -361,126 +353,119 @@ class TEINERGroundtruthBuilder:
 
     def show_build_gt_environment(self):
         tng_dict = {}
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
-            self.tei_ner_gb_params.tng_name = text_input_widget(
-                "Define a name for the groundtruth:", self.tei_ner_gb_params.tng_name or ""
-            )
-            if self.tei_ner_gb_params.tng_name:
-                tng_dict[self.tng_attr_name] = self.tei_ner_gb_params.tng_name
-            self.tei_ner_gb_params.tng_lang = selectbox_widget(
-                "Select a language for the groundtruth (relevant for the split into sentences):",
-                list(lang_dict.keys()),
-                list(lang_dict.keys()).index(self.tei_ner_gb_params.tng_lang) if self.tei_ner_gb_params.tng_lang else 0,
+            st.text_input("Define a name for the groundtruth:", key="tng_name")
+            if "tng_name" in st.session_state:
+                tng_dict[self.tng_attr_name] = st.session_state.tng_name
+            st.selectbox(
+                label="Select a language for the groundtruth (relevant for the split into sentences):",
+                options=list(lang_dict.keys()),
                 key="tng_lang",
             )
-            if self.tei_ner_gb_params.tng_lang:
-                tng_dict[self.tng_attr_lang] = self.tei_ner_gb_params.tng_lang
+            if "tng_lang" in st.session_state:
+                tng_dict[self.tng_attr_lang] = st.session_state.tng_lang
         with col2:
-            self.tei_ner_gb_params.tng_tr_name = selectbox_widget(
-                "Select a TEI Reader Config for Building the groundtruth:",
-                list(self.tr.configdict.keys()),
-                list(self.tr.configdict.keys()).index(self.tei_ner_gb_params.tng_tr_name)
-                if self.tei_ner_gb_params.tng_tr_name
-                else 0,
-                key="tng_tr",
+            st.selectbox(
+                label=f"Select a {menu_TEI_reader_config} for Building the groundtruth:",
+                options=list(self.tr.configdict.keys()),
+                key="tng_tr_name",
             )
-            if self.tei_ner_gb_params.tng_tr_name:
-                tng_dict[self.tng_attr_tr] = self.tr.configdict[self.tei_ner_gb_params.tng_tr_name]
-            self.tei_ner_gb_params.tng_tnm_name = selectbox_widget(
-                "Select a TEI Read NER Entity Mapping for Building the groundtruth:",
-                list(self.tnm.mappingdict.keys()),
-                list(self.tnm.mappingdict.keys()).index(self.tei_ner_gb_params.tng_tnm_name)
-                if self.tei_ner_gb_params.tng_tnm_name
-                else 0,
-                key="tng_tnm",
+            if "tng_tr_name" in st.session_state:
+                tng_dict[self.tng_attr_tr] = self.tr.configdict[st.session_state.tng_tr_name]
+            # self.tei_ner_gb_params.tng_tnm_name =
+            st.selectbox(
+                label=f"Select a {menu_TEI_read_mapping} for Building the groundtruth:",
+                options=list(self.tnm.mappingdict.keys()),
+                key="tng_tnm_name",
             )
-            if self.tei_ner_gb_params.tng_tnm_name:
-                tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[self.tei_ner_gb_params.tng_tnm_name]
+            if "tng_tnm_name" in st.session_state:
+                tng_dict[self.tng_attr_tnm] = self.tnm.mappingdict[st.session_state.tng_tnm_name]
 
-        col3, col4 = st.beta_columns(2)
-        col5, col6, col7 = st.beta_columns([0.25, 0.25, 0.5])
+        col3, col4 = st.columns(2)
+        col5, col6, col7 = st.columns([0.25, 0.25, 0.5])
         with col3:
             st.markdown("Define a ratio for the partition into train- development- and testset.")
         with col5:
-            self.tei_ner_gb_params.tng_test_percentage = number_input_widget(
+            st.number_input(
                 "Percentage for the test set",
                 min_value=0,
-                max_value=100
-                - (self.tei_ner_gb_params.tng_dev_percentage if self.tei_ner_gb_params.tng_dev_percentage else 10),
-                value=self.tei_ner_gb_params.tng_test_percentage if self.tei_ner_gb_params.tng_test_percentage else 10,
+                max_value=int(
+                    100 - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)
+                ),
+                value=10,
+                key="tng_test_percentage",
             )
         with col6:
-            self.tei_ner_gb_params.tng_dev_percentage = number_input_widget(
+            st.number_input(
                 "Percentage for the validation set",
                 min_value=0,
-                max_value=100
-                - (self.tei_ner_gb_params.tng_test_percentage if self.tei_ner_gb_params.tng_test_percentage else 10),
-                value=self.tei_ner_gb_params.tng_dev_percentage if self.tei_ner_gb_params.tng_dev_percentage else 10,
+                max_value=int(100 - st.session_state.tng_test_percentage),
+                value=10,
+                key="tng_dev_percentage",
             )
         with col7:
-            self.tei_ner_gb_params.tng_shuffle_options = radio_widget(
-                "Shuffle Options",
-                tuple(self.shuffle_options_dict.keys()),
-                tuple(self.shuffle_options_dict.keys()).index(self.tei_ner_gb_params.tng_shuffle_options)
-                if self.tei_ner_gb_params.tng_shuffle_options
-                else 0,
+            st.radio(
+                label="Shuffle Options", options=tuple(self.shuffle_options_dict.keys()), key="tng_shuffle_options"
             )
-            tng_dict[self.tng_attr_shuffle_type] = self.tei_ner_gb_params.tng_shuffle_options
-        col8, col9 = st.beta_columns(2)
+            tng_dict[self.tng_attr_shuffle_type] = st.session_state.tng_shuffle_options
+        col8, col9 = st.columns(2)
         with col8:
             st.write(
                 "With this configuration you have ",
-                100 - self.tei_ner_gb_params.tng_dev_percentage - self.tei_ner_gb_params.tng_test_percentage,
+                100 - st.session_state.tng_dev_percentage - st.session_state.tng_test_percentage,
                 "% of the data for the train set, ",
-                self.tei_ner_gb_params.tng_dev_percentage,
+                st.session_state.tng_dev_percentage,
                 "% for the development set and",
-                self.tei_ner_gb_params.tng_test_percentage,
+                st.session_state.tng_test_percentage,
                 "% for the test set.",
             )
-        self.tei_ner_gb_params.tng_teifile_folder = small_dir_selector(
+        small_dir_selector(
             label="Choose a Folder containing only TEI Files to build the groundtruth from:",
-            value=self.tei_ner_gb_params.tng_teifile_folder
-            if self.tei_ner_gb_params.tng_teifile_folder
-            else local_save_path,
-            key="tng_tei_file_folder",
+            key="tng_teifile_folder",
         )
         tng_dict[self.tng_attr_ratio] = {
-            self.tng_gt_type_train: 100
-            - self.tei_ner_gb_params.tng_dev_percentage
-            - self.tei_ner_gb_params.tng_test_percentage,
-            self.tng_gt_type_dev: self.tei_ner_gb_params.tng_dev_percentage,
-            self.tng_gt_type_test: self.tei_ner_gb_params.tng_test_percentage,
+            self.tng_gt_type_train: 100 - st.session_state.tng_dev_percentage - st.session_state.tng_test_percentage,
+            self.tng_gt_type_dev: st.session_state.tng_dev_percentage,
+            self.tng_gt_type_test: st.session_state.tng_test_percentage,
         }
         if st.button("Build Groundtruth"):
-            if self.validate_build_configuration(tng_dict, self.tei_ner_gb_params.tng_teifile_folder):
-                self.build_groundtruth(tng_dict, self.tei_ner_gb_params.tng_teifile_folder)
+            if self.validate_build_configuration(tng_dict, st.session_state.tng_teifile_folder):
+                self.build_groundtruth(tng_dict, st.session_state.tng_teifile_folder)
 
-    def delete_groundtruth(self, groundtruth):
+    def validate_gt_for_delete(self, groundtruth):
         val = True
-        if val:
-            shutil.rmtree(os.path.join(self.tng_Folder, groundtruth[self.tng_attr_name].replace(" ", "_")))
-            if self.tei_ner_gb_params.tng_selected_display_tng_name == groundtruth[self.tng_attr_name]:
-                self.tei_ner_gb_params.tng_selected_display_tng_name = None
-            self.tei_ner_gb_params.tng_del_gt_name = None
-            st.experimental_rerun()
+        return val
 
     def show_del_environment(self):
         if len(self.editable_tng_names) > 0:
-            self.tei_ner_gb_params.tng_del_gt_name = selectbox_widget(
-                "Select a groundtruth to delete!",
-                self.editable_tng_names,
-                index=self.editable_tng_names.index(self.tei_ner_gb_params.tng_del_gt_name)
-                if self.tei_ner_gb_params.tng_del_gt_name
-                else 0,
+            # self.tei_ner_gb_params.tng_del_gt_name =
+            st.selectbox(
+                label="Select a groundtruth to delete!", options=self.editable_tng_names, key="tng_del_gt_name"
             )
-            if st.button("Delete Selected Groundtruth"):
-                self.delete_groundtruth(self.tngdict[self.tei_ner_gb_params.tng_del_gt_name])
+
+            def delete_gt(groundtruth):
+                shutil.rmtree(os.path.join(self.tng_Folder, groundtruth[self.tng_attr_name].replace(" ", "_")))
+                if "tng_sel_display_name" in st.session_state:
+                    del st.session_state["tng_sel_display_name"]
+                del st.session_state["tng_del_gt_name"]
+                st.session_state.tng_rerun_save_message = (
+                    f"Groundtruth {groundtruth[self.tng_attr_name]} was succesfully deleted!"
+                )
+
+            if self.tng_save_message is not None:
+                st.success(self.tng_save_message)
+            if self.validate_gt_for_delete(self.tngdict[st.session_state["tng_del_gt_name"]]):
+                st.button(
+                    "Delete Selected Groundtruth",
+                    on_click=delete_gt,
+                    args=(self.tngdict[st.session_state["tng_del_gt_name"]],),
+                )
         else:
             st.info("There is no self-defined Groundtruth to delete!")
 
     def build_tng_tablestring(self):
-        tablestring = "Name | TEI Reader Config | TEI Read NER Entity Mapping | Language | Shuffle Type | Partition Ratio | Template \n -----|-------|-------|-------|-------|-------|-------"
+        tablestring = f"Name | {menu_TEI_reader_config} | {menu_TEI_read_mapping} | Language | Shuffle Type | Partition Ratio | Template \n -----|-------|-------|-------|-------|-------|-------"
         for tng in self.tnglist:
             if tng[self.tng_attr_template]:
                 template = "yes"
@@ -512,16 +497,14 @@ class TEINERGroundtruthBuilder:
     def show_existing_tng(self):
         st.markdown(self.build_tng_tablestring())
         st.markdown(" ")  # only for layouting reasons (placeholder)
-        self.tei_ner_gb_params.tng_selected_display_tng_name = selectbox_widget(
-            f"Choose a groundtruth for displaying its statistics:",
-            list(self.tngdict.keys()),
-            list(self.tngdict.keys()).index(self.tei_ner_gb_params.tng_selected_display_tng_name)
-            if self.tei_ner_gb_params.tng_selected_display_tng_name
-            else 0,
-            key="tng_stats",
+        # self.tei_ner_gb_params.tng_selected_display_tng_name = \
+        st.selectbox(
+            label=f"Choose a groundtruth for displaying its statistics:",
+            options=list(self.tngdict.keys()),
+            key="tng_sel_display_name",
         )
-        if self.tei_ner_gb_params.tng_selected_display_tng_name:
-            cur_sel_tng = self.tngdict[self.tei_ner_gb_params.tng_selected_display_tng_name]
+        if "tng_sel_display_name" in st.session_state:
+            cur_sel_tng = self.tngdict[st.session_state.tng_sel_display_name]
             if cur_sel_tng[self.tng_attr_template]:
                 cur_folder = self.template_tng_Folder
             else:
@@ -532,14 +515,14 @@ class TEINERGroundtruthBuilder:
             )
 
     def show(self):
-        st.latex("\\text{\Huge{TEI NER Groundtruth Builder}}")
-        tng_build_new = st.beta_expander("Build new TEI NER Groundtruth", expanded=False)
+        st.latex("\\text{\Huge{" + menu_groundtruth_builder + "}}")
+        tng_build_new = st.expander("Build new Groundtruth", expanded=False)
         with tng_build_new:
             self.show_build_gt_environment()
-        tng_delete = st.beta_expander("Delete existing TEI NER Groundtruth", expanded=False)
+        tng_delete = st.expander("Delete existing Groundtruth", expanded=False)
         with tng_delete:
             self.show_del_environment()
-        tng_show = st.beta_expander("Show existing TEI NER Groundtruth", expanded=True)
+        tng_show = st.expander("Show existing Groundtruth", expanded=True)
         with tng_show:
             self.show_existing_tng()
 

@@ -200,10 +200,11 @@ class Identifier:
                                 if len(_gnd_retrieve_attempt_result) > 0
                                 else ""
                             )
+                            _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
                             entity_list_in_query_wikidata_result.append(
                                 {
                                     "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
-                                    "furtherNames": [],
+                                    "furtherNames": _furtherNames_to_add,
                                     "type": key[1],
                                     "description": subkey.get("description", "No description delivered"),
                                     "wikidata_id": subkey.get("id", ""),
@@ -247,10 +248,11 @@ class Identifier:
                                 if len(_gnd_retrieve_attempt_result) > 0
                                 else ""
                             )
+                            _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
                             entity_list_in_query_wikidata_result.append(
                                 {
                                     "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
-                                    "furtherNames": [],
+                                    "furtherNames": _furtherNames_to_add,
                                     "type": key[1],
                                     "description": subkey.get("description", "No description delivered"),
                                     "wikidata_id": subkey.get("id", ""),
@@ -275,10 +277,11 @@ class Identifier:
                             if len(_gnd_retrieve_attempt_result) > 0
                             else ""
                         )
+                        _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
-                                "furtherNames": [],
+                                "furtherNames": _furtherNames_to_add,
                                 "type": key[1],
                                 "description": subkey.get("description", "No description delivered"),
                                 "wikidata_id": subkey.get("id", ""),

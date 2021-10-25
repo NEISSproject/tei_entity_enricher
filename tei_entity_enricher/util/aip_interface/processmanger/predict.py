@@ -3,12 +3,11 @@ import os
 import sys
 import json
 import math
-from typing import Optional
 
 import streamlit as st
 
-from tei_entity_enricher.util.processmanger.base import ProcessManagerBase
-from tei_entity_enricher.util.processmanger.ner_prediction_params import NERPredictionParams, get_params
+from tei_entity_enricher.util.aip_interface.prediction_params import NERPredictionParams, get_params
+from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 from tei_entity_enricher.util.spacy_lm import get_spacy_lm
 from tei_entity_enricher.util.tei_writer import TEI_Writer
 import tei_entity_enricher.util.tei_parser as tp
@@ -39,7 +38,7 @@ class PredictProcessManager(ProcessManagerBase):
             "python",
             self._predict_script_path,
             "--export_dir",
-            self._params.ner_model_dir,
+            self._params.model,
             "--input_json",
             self._params.input_json_file,
             "--out",
@@ -47,24 +46,26 @@ class PredictProcessManager(ProcessManagerBase):
         ]
 
     def do_before_start_process(self):
-        if self._params.predict_conf_option == predict_option_tei:
+        if not (os.path.isdir(self._params.model)):
+            return "Invalid ner model path!"
+        if st.session_state.predict_conf_option == predict_option_tei:
             message_placeholder = st.empty()
             progress_bar_placeholder = st.empty()
             progress_bar = progress_bar_placeholder.progress(0)
             self.message("Preprocessing TEI-Files.", st_element=message_placeholder)
             tei_filelist = []
-            if self._params.predict_conf_tei_option == predict_option_single_tei:
-                tei_filelist.append(self._params.input_tei_file)
-            elif self._params.predict_conf_tei_option == predict_option_tei_folder:
+            if st.session_state.predict_conf_tei_option == predict_option_single_tei:
+                tei_filelist.append(st.session_state.input_tei_file)
+            elif st.session_state.predict_conf_tei_option == predict_option_tei_folder:
                 tei_filelist = [
-                    os.path.join(self._params.input_tei_folder, filepath)
-                    for filepath in os.listdir(self._params.input_tei_folder)
+                    os.path.join(st.session_state.input_tei_folder, filepath)
+                    for filepath in os.listdir(st.session_state.input_tei_folder)
                     if filepath.endswith(".xml")
                 ]
             if len(tei_filelist) < 1:
                 message_placeholder.empty()
                 return "With the given Configuration no TEI-Files where found!"
-            nlp = get_spacy_lm(self._params.predict_lang)
+            nlp = get_spacy_lm(st.session_state.predict_lang)
             all_data = []
             file_name_dict = {}
             for fileindex in range(len(tei_filelist)):
@@ -94,7 +95,7 @@ class PredictProcessManager(ProcessManagerBase):
         return None
 
     def do_after_finish_process(self):
-        if self._params.predict_conf_option == predict_option_tei:
+        if st.session_state.predict_conf_option == predict_option_tei:
             if not os.path.isfile(os.path.join(self._params.prediction_out_dir, "data_to_predict.pred.json")):
                 return "Could not find prediction results to write into TEI-Files"
             message_placeholder = st.empty()

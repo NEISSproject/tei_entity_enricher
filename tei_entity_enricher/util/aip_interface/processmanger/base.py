@@ -11,6 +11,7 @@ import streamlit as st
 import logging
 
 from streamlit_ace import st_ace
+from streamlit_autorefresh import st_autorefresh
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +128,11 @@ class ProcessManagerBase:
         else:
             self.message(f"process is empty", level="info", st_element=st_element)
 
+    def is_process_running(self):
+        if self.process is not None and self.process.poll() is None:
+            return True
+        return False
+
     def clear_process(self):
         if self.process.poll() is not None:
             self._log_content = ""
@@ -134,7 +140,6 @@ class ProcessManagerBase:
             self.process = None
         else:
             self.message("Stop process before clearing it.", "warning")
-        return 0
 
     def has_process(self):
         return True if self.process is not None else False
@@ -167,30 +172,29 @@ class ProcessManagerBase:
         out.close()
 
     def st_manager(self):
-        with st.beta_container():
+        with st.container():
             st.text(self.name)
-            # if st.button("Set trainer params"):
-            #     train_process_manager.set_params(self.state.nt_trainer_params_json)
-            #     logger.info("trainer params set!")
-            b1, b2, b3, b4, process_status = st.beta_columns([2, 2, 2, 2, 6])
-            if b1.button("Start"):
-                self.start()
-            if b2.button("Stop"):
-                self.stop()
-            if b3.button("Clear"):
-                if self.clear_process() == 0:
-                    st.experimental_rerun()
-            if b4.button("refresh"):
-                logger.info("refresh streamlit")
+            b1, b2, b3, b4, b5, process_status = st.columns([2, 2, 2, 2, 4, 6])
+            b1.button("Start", on_click=self.start)
+            b2.button("Stop", on_click=self.stop)
+            b3.button("Clear", on_click=self.clear_process)
+            b4.button("refresh")
+            b5.checkbox(
+                "Auto Refresh",
+                key="auto_refresh_checkbox",
+                value=False,
+            )
+            if st.session_state["auto_refresh_checkbox"] and self.is_process_running():
+                count = st_autorefresh(interval=5000, limit=None, key="auto_refresh_instance")
             self.process_state(st_element=process_status)
 
             if self.has_process():
-                with st.beta_expander("Progress", expanded=True):
+                with st.expander("Progress", expanded=True):
                     progress_str = self.read_progress()
                     logger.info(progress_str)
                     st.text(progress_str)
             if self.has_process():
-                with st.beta_expander("Log-file", expanded=True):
+                with st.expander("Log-file", expanded=True):
                     log_str = self.log_content()
                     st_ace(
                         log_str,
