@@ -1,7 +1,13 @@
-streamlit
+streamlit == 0.88.0
+streamlit-ace
 streamlit-aggrid
+streamlit-autorefresh
 Pillow
 bs4
+lxml
 requests
 pandas
 pytest
+spacy
+SPARQLWrapper
+black==21.6b0

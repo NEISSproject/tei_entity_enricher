@@ -1,124 +1,162 @@
+import logging
+
 import streamlit as st
-from tei_entity_enricher.util.SessionState import _get_state
-from PIL import Image
-import os
+from tei_entity_enricher.menu.ner_prediction import NERPrediction
+
+from tei_entity_enricher.menu.ner_trainer import NERTrainer
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
-from tei_entity_enricher.util.helper import module_path
+import tei_entity_enricher.menu.tei_ner_gb as tng
+import tei_entity_enricher.menu.tei_ner_writer_map as tnw
+import tei_entity_enricher.menu.tei_postprocessing as pp
+import tei_entity_enricher.menu.link_sug_cat as lsc
+from tei_entity_enricher.util.helper import (
+    load_images,
+    menu_TEI_reader_config,
+    menu_entity_definition,
+    menu_postprocessing,
+    menu_TEI_read_mapping,
+    menu_groundtruth_builder,
+    menu_TEI_write_mapping,
+    menu_NER_trainer,
+    menu_NER_prediction,
+    menu_link_sug_cat,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class Main:
-    def __init__(self):
-        self.show()
+    def __init__(self, args):
+        self.show(args)
 
-    def show(self):
-        st.set_page_config(layout='wide')  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
-        state = _get_state()
+    def show_main_menu_old(self, pages, args):
+        # Define sidebar as radiobuttons
+        st.sidebar.radio(
+            label="Main Menu", options=tuple(pages.keys()), index=int(args.start_state), key="main_menu_page"
+        )
+
+    def show_main_menu(self, pages, args):
+        st.sidebar.markdown("#### Main Menu")
+        if "main_menu_page" not in st.session_state:
+            if args.start_state in pages.keys():
+                st.session_state.main_menu_page = args.start_state
+            else:
+                st.session_state.main_menu_page = list(pages.keys())[0]
+            if st.session_state.main_menu_page in [menu_NER_trainer, menu_NER_prediction]:
+                st.session_state["mm_main_page1"] = True
+            elif st.session_state.main_menu_page == menu_postprocessing:
+                st.session_state["mm_main_page2"] = True
+            else:
+                st.session_state["mm_main_page0"] = True
+
+        def change_main_page(changed_page_number, pages):
+            st.session_state.main_menu_page = list(pages.keys())[changed_page_number]
+            for i in range(len(list(pages.keys()))):
+                if i != changed_page_number:
+                    st.session_state["mm_main_page" + str(i)] = False
+
+        st.sidebar.checkbox(
+            label="Configurations",
+            key="mm_main_page0",
+            on_change=change_main_page,
+            args=(
+                0,
+                pages,
+            ),
+        )
+        if st.session_state.mm_main_page0:
+            col1, col2 = st.sidebar.columns([0.1, 0.9])
+            conf_pages = pages.copy()
+            del conf_pages[menu_NER_trainer]
+            del conf_pages[menu_NER_prediction]
+            del conf_pages[menu_postprocessing]
+            col2.radio(label="", options=conf_pages, key="mm_submenu_radio0")
+            st.session_state.main_menu_page = st.session_state.mm_submenu_radio0
+        st.sidebar.checkbox(
+            label="Training and Prediction",
+            key="mm_main_page1",
+            on_change=change_main_page,
+            args=(
+                1,
+                pages,
+            ),
+        )
+        if st.session_state.mm_main_page1:
+            col1, col2 = st.sidebar.columns([0.1, 0.9])
+            conf_pages = {menu_NER_trainer: pages[menu_NER_trainer], menu_NER_prediction: pages[menu_NER_prediction]}
+            col2.radio(label="", options=conf_pages, key="mm_submenu_radio1")
+            st.session_state.main_menu_page = st.session_state.mm_submenu_radio1
+        st.sidebar.checkbox(
+            label=menu_postprocessing,
+            key="mm_main_page2",
+            on_change=change_main_page,
+            args=(
+                2,
+                pages,
+            ),
+        )
+        if st.session_state.mm_main_page2:
+            st.session_state.main_menu_page = menu_postprocessing
+
+    def show(self, args):
+        st.set_page_config(layout="wide")  # Hiermit kann man die ganze Breite des Bildschirms ausschöpfen
         pages = {
-            "TEI Reader Config": self.tei_reader,
-            "NER Task Entity Definition": self.ner_task_def,
-            "TEI NER Entity Mapping": self.tei_ner_map,
-            "TEI NER Groundtruth Builder": self.gt_builder,
-            "TEI NER Writer Config": self.tei_ner_writer,
-            "NER Trainer": self.ner_trainer,
-            "NER Prediction": self.ner_prediction,
+            menu_TEI_reader_config: self.tei_reader,
+            menu_entity_definition: self.ner_task_def,
+            menu_TEI_read_mapping: self.tei_ner_map,
+            menu_groundtruth_builder: self.gt_builder,
+            menu_TEI_write_mapping: self.tei_ner_writer,
+            menu_NER_trainer: self.ner_trainer,
+            menu_NER_prediction: self.ner_prediction,
+            menu_link_sug_cat: self.sd_sparql,
+            menu_postprocessing: self.ner_postprocessing,
         }
-        st.sidebar.latex('\\text{\Huge{N-TEE}}')
-        st.sidebar.latex('\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}')
+        logo_frame, heading_frame = st.sidebar.columns([1, 2])
+        heading_frame.latex("\\text{\Huge{N-TEE}}")
+        st.sidebar.latex("\\text{\large{\\textbf{N}EISS - \\textbf{T}EI \\textbf{E}ntity \\textbf{E}nricher}}")
+
+        neiss_logo, eu_fonds, eu_esf, mv_bm = load_images()
 
         # Include NEISS Logo
-        neiss_logo = Image.open(os.path.join(module_path, 'images', 'neiss_logo_nn_pentagon01b2.png'))
-        st.sidebar.image(neiss_logo)
+        logo_frame.image(neiss_logo)
 
-        # Define sidebar as radiobuttons
-        state.page = st.sidebar.radio("Main Menu", tuple(pages.keys()),
-                                      tuple(pages.keys()).index(state.page) if state.page else 0)
+        self.show_main_menu(pages, args)
 
-        # Display the selected page with the session state
-        pages[state.page](state)
+        st.sidebar.markdown("### Funded by")
+        # Include EU Logos
+        st.sidebar.image(eu_fonds)
+        colesf, colbm = st.sidebar.columns(2)
+        colesf.image(eu_esf)
+        colbm.image(mv_bm)
 
-        # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
-        state.sync()
+        # Display the selected page
+        pages[st.session_state.main_menu_page]()
 
-    def tei_reader(self, state):
-        tr.TEIReader(state)
+    def tei_reader(self):
+        tr.TEIReader()
 
-    def ner_task_def(self, state):
-        ntd.NERTaskDef(state)
+    def ner_task_def(self):
+        ntd.NERTaskDef()
 
-    def tei_ner_map(self, state):
-        tnm.TEINERMap(state)
+    def tei_ner_map(self):
+        tnm.TEINERMap()
 
-    def gt_builder(self, state):
-        st.latex('\\text{\Huge{TEI NER Groundtruth Builder}}')
-        st.write("Input state:", state.input)
+    def gt_builder(self):
+        tng.TEINERGroundtruthBuilder()
 
-        if st.button("Clear state"):
-            state.input = None
-            st.experimental_rerun()
+    def tei_ner_writer(self):
+        tnw.TEINERPredWriteMap()
 
-    def tei_ner_writer(self, state):
-        st.latex('\\text{\Huge{TEI NER Writer Config}}')
-        if st.button("Set Input to Konrad"):
-            state.input = "Konrad"
+    def ner_trainer(self):
+        NERTrainer()
 
-    def ner_trainer(self, state):
-        st.latex('\\text{\Huge{NER Trainer}}')
-        state.input = st.text_input("Set input value.", state.input or "")
-        st.write("Page state:", state.page)
-        if st.button("Jump to Pred"):
-            state.page = "NER Prediction"
-            st.experimental_rerun()
+    def ner_prediction(self):
+        NERPrediction()
 
-    def ner_prediction(self, state):
-        st.latex('\\text{\Huge{NER Prediction}}')
-        state.folderPath = st.text_input('Enter folder path:')
-        if state.folderPath:
-            fileslist = os.listdir(state.folderPath)
-        else:
-            fileslist = []  # Hack to clear list if the user clears the cache and reloads the page
-            st.info("Select a folder.")
+    def sd_sparql(self):
+        lsc.LinkSugCat()
 
-        # And within an expander
-        my_expander = st.beta_expander("Selected Files", expanded=True)
-        with my_expander:
-            st.table(fileslist)
-
-# def page_dashboard(state):
-#    st.title(":chart_with_upwards_trend: Dashboard page")
-#    display_state_values(state)
-
-
-# def page_settings(state):
-#    st.title(":wrench: Settings")
-#    display_state_values(state)
-
-#    st.write("---")
-#    options = ["Hello", "World", "Goodbye"]
-#    state.input = st.text_input("Set input value.", state.input or "")
-#    state.slider = st.slider("Set slider value.", 1, 10, state.slider)
-#    state.radio = st.radio("Set radio value.", options, options.index(state.radio) if state.radio else 0)
-#    state.checkbox = st.checkbox("Set checkbox value.", state.checkbox)
-#    state.selectbox = st.selectbox("Select value.", options, options.index(state.selectbox) if state.selectbox else 0)
-#    state.multiselect = st.multiselect("Select value(s).", options, state.multiselect)
-
-#    # Dynamic state assignments
-#    for i in range(3):
-#        key = f"State value {i}"
-#        state[key] = st.slider(f"Set value {i}", 1, 10, state[key])
-
-
-# def display_state_values(state):
-#    st.write("Input state:", state.input)
-#    st.write("Slider state:", state.slider)
-#    st.write("Radio state:", state.radio)
-#    st.write("Checkbox state:", state.checkbox)
-#    st.write("Selectbox state:", state.selectbox)
-#    st.write("Multiselect state:", state.multiselect)
-
-#    for i in range(3):
-#        st.write(f"Value {i}:", state[f"State value {i}"])
-
-#    if st.button("Clear state"):
-#        state.clear()
+    def ner_postprocessing(self):
+        pp.TEINERPostprocessing()

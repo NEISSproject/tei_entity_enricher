@@ -1,0 +1,243 @@
+{
+  "epochs": 20,
+  "current_epoch": 0,
+  "samples_per_epoch": 5000,
+  "scale_epoch_size": 1,
+  "train_accum_steps": 1,
+  "progress_bar_mode": 1,
+  "progbar_delta_time": 5,
+  "tf_cpp_min_log_level": 2,
+  "force_eager": false,
+  "skip_model_load_test": true,
+  "val_every_n": 1,
+  "lav_every_n": 0,
+  "lav_min_epoch": 0,
+  "output_dir": "models_ner/bert_default",
+  "write_checkpoints": true,
+  "export_best": true,
+  "export_final": true,
+  "no_train_scope": null,
+  "ema_decay": 0.99,
+  "random_seed": null,
+  "profile": false,
+  "device": {
+    "gpus": null,
+    "gpu_auto_tune": false,
+    "gpu_memory": null,
+    "soft_device_placement": true,
+    "dist_strategy": "default",
+    "__cls__": "tfaip.device.device_config:DeviceConfigParams"
+  },
+  "optimizer": {
+    "clip_norm": null,
+    "clip_value": null,
+    "global_clip_norm": null,
+    "beta_1": 0.9,
+    "beta_2": 0.999,
+    "epsilon": 1e-07,
+    "weight_decay": 0.0,
+    "__cls__": "tfaip.trainer.optimizer.optimizers:AdamOptimizer"
+  },
+  "learning_rate": {
+    "lr": 5e-05,
+    "step_function": true,
+    "offset_epochs": 0,
+    "steps_per_epoch": 312,
+    "epochs": 20,
+    "learning_circle": 3,
+    "lr_decay_rate": 0.99,
+    "__cls__": "tfaip.trainer.scheduler.exponential_decay_params:ExponentialDecayParams"
+  },
+  "scenario": {
+    "debug_graph_construction": false,
+    "debug_graph_n_examples": 1,
+    "print_eval_limit": 0,
+    "tensorboard_logger_history_size": 5,
+    "export_serve": true,
+    "model": {
+      "model": "NERwithMiniBERT",
+      "num_layers": 6,
+      "d_model": 512,
+      "num_heads": 8,
+      "dff": 2048,
+      "pos_enc_max_abs": 20000,
+      "pos_enc_max_rel": 16,
+      "rel_pos_enc": true,
+      "rate": 0.1,
+      "bert_graph": "BERT",
+      "pretrained_bert": "models_pretrained/bertmlmrelwwm_v2/export/additional/encoder_only",
+      "tags_fn_": "",
+      "target_vocab_size": 29990,
+      "oov_id_": 24,
+      "use_hf_model_": false,
+      "use_hf_electra_model_": false,
+      "pretrained_hf_model_": "",
+      "whole_word_attention_": false,
+      "one_side_attention_window": 5,
+      "hidden_activation": "relu",
+      "use_crf": false,
+      "use_ner_loss": false,
+      "use_entity_loss": false,
+      "use_entity_loss_max": 2.0,
+      "dropout_last": 0.0,
+      "bet_tagging_": false,
+      "loss_se_weight": 1.0,
+      "loss_se_boost": 5.0,
+      "loss_se_mode": "l2",
+      "feasible_pred_ids": false,
+      "crf_with_ner_rule": true,
+      "wordwise_output_": true,
+      "wwo_mode_": "first",
+      "__cls__": "tfaip_scenario.nlp.ner.model:ModelParams"
+    },
+    "data": {
+      "pre_proc": {
+        "run_parallel": false,
+        "num_threads": -1,
+        "max_tasks_per_process": 250,
+        "processors": [
+          {
+            "modes": [
+              "prediction",
+              "targets",
+              "training",
+              "evaluation"
+            ],
+            "__cls__": "tfaip_scenario.nlp.data.processors.ner_task:DataProcessorNERTaskParams"
+          }
+        ],
+        "__cls__": "tfaip.data.pipeline.processor.params:SequentialProcessorPipelineParams"
+      },
+      "post_proc": {
+        "run_parallel": true,
+        "num_threads": -1,
+        "max_tasks_per_process": 250,
+        "processors": [],
+        "__cls__": "tfaip.data.pipeline.processor.params:SequentialProcessorPipelineParams"
+      },
+      "resource_base_path": "",
+      "tokenizer": "templates/tokenizer/tokenizer_de.subwords",
+      "add_types": [],
+      "magnitude": 3,
+      "noise": "uniform",
+      "fixate_edges": true,
+      "map_edges": false,
+      "buffer": 50,
+      "random_seed": null,
+      "shuffle_filenames": true,
+      "shuffle_text_data": true,
+      "whole_word_masking": false,
+      "use_hf_model": false,
+      "use_hf_electra_model": false,
+      "pretrained_hf_model": "",
+      "cls_token_id_": 29987,
+      "sep_token_id_": 29988,
+      "pad_token_id_": 0,
+      "tok_vocab_size_": 29987,
+      "whole_word_attention": false,
+      "paifile_input": false,
+      "tags": "templates/tags/germeval_wp.txt",
+      "tokenizer_range": "sentence_v3",
+      "bet_tagging": false,
+      "wordwise_output": true,
+      "wwo_mode": "first",
+      "__cls__": "tfaip_scenario.nlp.data.ner_params:NERDataParams"
+    },
+    "evaluator": {
+      "tags_fn": "templates/tags/germeval_wp.txt",
+      "__cls__": "tfaip_scenario.nlp.util.ner_eval:NEREvaluatorParams"
+    },
+    "export_net_config": true,
+    "net_config_filename": "net_config.json",
+    "default_serve_dir": "serve",
+    "additional_serve_dir": "additional",
+    "trainer_params_filename": "trainer_params.json",
+    "scenario_params_filename": "scenario_params.json",
+    "scenario_base_path": "../tf2_neiss_nlp/tfaip_scenario/nlp/ner/scenario.py",
+    "scenario_id": "tfaip_scenario.nlp.ner.scenario:Scenario",
+    "id": "bert_default_tfaip_scenario.nlp.ner.scenario:Scenario_2021-05-05",
+    "tfaip_commit_hash": "3a80c3217c2498d4098dbcb0c8795fbcbad4a1f1",
+    "tfaip_version": "1.2.2",
+    "__cls__": "tfaip_scenario.nlp.ner.scenario:ScenarioParams"
+  },
+  "warmstart": {
+    "model": null,
+    "allow_partial": false,
+    "trim_graph_name": true,
+    "rename": [],
+    "add_suffix": "",
+    "rename_targets": [],
+    "exclude": null,
+    "include": null,
+    "auto_remove_numbers_for": [
+      "lstm_cell"
+    ],
+    "__cls__": "tfaip.trainer.warmstart.warmstart_params:WarmStartParams"
+  },
+  "early_stopping": {
+    "best_model_output_dir": "models_ner/bert_default",
+    "best_model_name": "best",
+    "frequency": 1,
+    "n_to_go": -1,
+    "lower_threshold": -1e+100,
+    "upper_threshold": 1e+100,
+    "mode": "min",
+    "current": 1e+100,
+    "monitor": "val_loss",
+    "n": 1,
+    "__cls__": "tfaip.trainer.callbacks.earlystopping.params:EarlyStoppingParams"
+  },
+  "gen": {
+    "setup": {
+      "train": {
+        "batch_size": 16,
+        "limit": -1,
+        "prefetch": 32,
+        "num_processes": 4,
+        "batch_drop_remainder": false,
+        "shuffle_buffer_size": -1,
+        "mode": "training",
+        "bucket_boundaries": [],
+        "bucket_batch_sizes": null,
+        "__cls__": "tfaip.data.databaseparams:DataPipelineParams"
+      },
+      "val": {
+        "batch_size": 16,
+        "limit": -1,
+        "prefetch": 32,
+        "num_processes": 4,
+        "batch_drop_remainder": false,
+        "shuffle_buffer_size": -1,
+        "mode": "evaluation",
+        "bucket_boundaries": [],
+        "bucket_batch_sizes": null,
+        "__cls__": "tfaip.data.databaseparams:DataPipelineParams"
+      },
+      "__cls__": "tfaip.trainer.params:TrainerPipelines"
+    },
+    "train": {
+      "lists": [
+        "templates/lists/conll_small_val.lst"
+      ],
+      "list_ratios": [
+        1.0
+      ],
+      "__cls__": "tfaip.scenario.listfile.params:ListsFileGeneratorParams"
+    },
+    "val": {
+      "lists": [
+        "templates/lists/conll_small_val.lst"
+      ],
+      "list_ratios": [
+        1.0
+      ],
+      "__cls__": "tfaip.scenario.listfile.params:ListsFileGeneratorParams"
+    },
+    "__cls__": "tfaip.scenario.listfile.params:ListFileTrainerPipelineParams"
+  },
+  "saved_checkpoint_sub_dir": ".",
+  "checkpoint_sub_dir": "",
+  "checkpoint_save_freq": "epoch",
+  "__cls__": "tfaip.trainer.params:TrainerParams",
+  "config_path": "trainer_params.json"
+}
