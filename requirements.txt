@@ -10,4 +10,4 @@ pandas
 pytest
 spacy
 SPARQLWrapper
-black
+black==21.6b0
