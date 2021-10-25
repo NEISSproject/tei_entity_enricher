@@ -391,6 +391,7 @@ class TEI_Writer:
         return merged_tags
 
     def _get_new_tagged_string(self, tag, string_to_tag, with_begin=True, with_end=True):
+        new_tagged_string=string_to_tag
         if tag in self._write_entity_dict.keys():
             new_tagged_string = "<" + self._write_entity_dict[tag][0]
             attr_string = " "
