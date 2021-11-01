@@ -117,12 +117,16 @@ class TEIFile:
                         tagged_text_list_to_add,
                         statistics_to_add,
                     ) = self._get_text_from_contentlist(pagecontent.contents, is_already_note)
-                    text_list = text_list + text_list_to_add
-                    tagged_text_list = tagged_text_list + tagged_text_list_to_add
+                    #text_list = text_list + text_list_to_add
+                    text_list.extend(text_list_to_add)
+                    #tagged_text_list = tagged_text_list + tagged_text_list_to_add
+                    tagged_text_list.extend(tagged_text_list_to_add)
                     statistics = self._merge_statistics(statistics, statistics_to_add)
                     if pagecontent.name == "address":
-                        text_list = text_list + [" <linebreak>\n"]
-                        tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                        #text_list = text_list + [" <linebreak>\n"]
+                        text_list.append(" <linebreak>\n")
+                        #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                        tagged_text_list.append(" <linebreak>\n")
                 elif pagecontent.name is None:
                     text_list.append(pagecontent)
                     tagged_text_list.append(pagecontent)
@@ -132,11 +136,15 @@ class TEIFile:
                         tagged_text_list_to_add,
                         statistics_to_add,
                     ) = self._get_text_from_contentlist(pagecontent.contents, is_already_note)
-                    text_list = text_list + text_list_to_add
+                    #text_list = text_list + text_list_to_add
+                    text_list.extend(text_list_to_add)
                     statistics = self._add_content_to_statistics(entity, statistics, text_list_to_add)
-                    tagged_text_list = (
-                        tagged_text_list + [" <" + entity + "> "] + tagged_text_list_to_add + [" </" + entity + "> "]
-                    )
+                    #tagged_text_list = (
+                    #    tagged_text_list + [" <" + entity + "> "] + tagged_text_list_to_add + [" </" + entity + "> "]
+                    #)
+                    tagged_text_list.append(" <" + entity + "> ")
+                    tagged_text_list.extend(tagged_text_list_to_add)
+                    tagged_text_list.append(" </" + entity + "> ")
                     statistics = self._merge_statistics(statistics, statistics_to_add)
             elif pagecontent.name in self._note_tags:
                 (
@@ -145,8 +153,12 @@ class TEIFile:
                     note_statistics_to_add,
                 ) = self._get_text_from_contentlist(pagecontent.contents, True)
                 # print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
-                self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                #self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
+                self._note_list.extend(note_list_to_add)
+                self._note_list.append(" <linebreak>\n")
+                #self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                self._tagged_note_list.extend(tagged_note_list_to_add)
+                self._tagged_note_list.append(" <linebreak>\n")
                 self._note_statistics = self._merge_statistics(self._note_statistics, note_statistics_to_add)
             elif pagecontent.name not in ["lb", "pb"] and pagecontent.name not in self._exclude_tags:
                 text_list.append(" ")
@@ -168,8 +180,10 @@ class TEIFile:
             if page.name is not None and page.name not in self._exclude_tags:
                 self._pagelist.append({"name": page.name, "page": page})
                 if page.name == "closer" or page.name == "postscript":
-                    text_list = text_list + [" <linebreak>\n"]
-                    tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                    #text_list = text_list + [" <linebreak>\n"]
+                    text_list.append(" <linebreak>\n")
+                    #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                    tagged_text_list.append(" <linebreak>\n")
                 if page.name in self._note_tags:
                     (
                         note_list_to_add,
@@ -177,8 +191,12 @@ class TEIFile:
                         note_statistics_to_add,
                     ) = self._get_text_from_contentlist(page.contents, True)
                     # print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
-                    self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
-                    self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                    #self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
+                    self._note_list.extend(note_list_to_add)
+                    self._note_list.append(" <linebreak>\n")
+                    #self._tagged_note_list = self._tagged_note_list + tagged_note_list_to_add + [" <linebreak>\n"]
+                    self._tagged_note_list.extend(tagged_note_list_to_add)
+                    self._tagged_note_list.append(" <linebreak>\n")
                     self._note_statistics = self._merge_statistics(self._note_statistics, note_statistics_to_add)
                 else:
                     (
@@ -186,12 +204,18 @@ class TEIFile:
                         new_tagged_text_list,
                         new_statistics,
                     ) = self._get_text_from_contentlist(page.contents, False)
-                text_list = text_list + new_text_list + [" <linebreak>\n"]
-                tagged_text_list = tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
+                #text_list = text_list + new_text_list + [" <linebreak>\n"]
+                text_list.extend(new_text_list)
+                text_list.append(" <linebreak>\n")
+                #tagged_text_list = tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
+                tagged_text_list.extend(new_tagged_text_list)
+                tagged_text_list.append(" <linebreak>\n")
                 statistics = self._merge_statistics(statistics, new_statistics)
                 if page.name == "opener":
-                    text_list = text_list + [" <linebreak>\n"]
-                    tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                    #text_list = text_list + [" <linebreak>\n"]
+                    text_list.append(" <linebreak>\n")
+                    #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                    tagged_text_list.append(" <linebreak>\n")
         text = ""
         for element in text_list:
             text = text + str(element)
@@ -247,35 +271,42 @@ class TEIFile:
         for i in range(len(self._tagged_text_line_list)):
             # print(self._tagged_text_line_list[i])
             cur_line_text = ""
+            tokenlist=[]
             for j in range(len(self._tagged_text_line_list[i])):
                 if j > 0:
-                    cur_line_text += " "
+                    #nlp sentence split has problems with strings whose length is longer than 1000000. That is why we use the following workaround
+                    if len(cur_line_text)+len(self._tagged_text_line_list[i][j][0])>999000 and self._tagged_text_line_list[i][j][1]=="O":
+                        tokenlist.append(self._nlp(cur_line_text))
+                        cur_line_text = ""
+                    else:
+                        cur_line_text += " "
                 cur_line_text += self._tagged_text_line_list[i][j][0]
             # print('cur line text: ',cur_line_text)
-            tokens = self._nlp(cur_line_text)
+            tokenlist.append(self._nlp(cur_line_text))
             k = 0
             new_line_list = []
             cur_word = ""
-            for sent in tokens.sents:
-                space_before = False
-                for wordindex in range(len(sent)):
-                    cur_tag_element = self._tagged_text_line_list[i][k]
-                    cur_word += str(sent[wordindex])
-                    word_to_insert = str(sent[wordindex])
-                    if cur_tag_element[2] == 1:
-                        word_to_insert = word_to_insert.upper()
-                    if wordindex == 0 and not cur_tag_element[1].startswith("I-"):
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 2])
-                    elif space_before:
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 0])
-                    else:
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 1])
-                    if cur_word == cur_tag_element[0]:
-                        space_before = True
-                        cur_word = ""
-                        k += 1
-                    else:
-                        space_before = False
+            for tokens in tokenlist:
+                for sent in tokens.sents:
+                    space_before = False
+                    for wordindex in range(len(sent)):
+                        cur_tag_element = self._tagged_text_line_list[i][k]
+                        cur_word += str(sent[wordindex])
+                        word_to_insert = str(sent[wordindex])
+                        if cur_tag_element[2] == 1:
+                            word_to_insert = word_to_insert.upper()
+                        if wordindex == 0 and not cur_tag_element[1].startswith("I-"):
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 2])
+                        elif space_before:
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 0])
+                        else:
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 1])
+                        if cur_word == cur_tag_element[0]:
+                            space_before = True
+                            cur_word = ""
+                            k += 1
+                        else:
+                            space_before = False
             self._tagged_text_line_list[i] = new_line_list
         # for line_list in self._tagged_text_line_list:
         #    print(line_list)
@@ -314,35 +345,42 @@ class TEIFile:
         for i in range(len(self._tagged_note_line_list)):
             # print(self._tagged_text_line_list[i])
             cur_line_note = ""
+            tokenlist=[]
             for j in range(len(self._tagged_note_line_list[i])):
                 if j > 0:
-                    cur_line_note += " "
+                    #nlp sentence split has problems with strings whose length is longer than 1000000. That is why we use the following workaround
+                    if len(cur_line_note)+len(self._tagged_note_line_list[i][j][0])>999000 and self._tagged_note_line_list[i][j][1]=="O":
+                        tokenlist.append(self._nlp(cur_line_note))
+                        cur_line_note = ""
+                    else:
+                        cur_line_note += " "
                 cur_line_note += self._tagged_note_line_list[i][j][0]
             # print('cur line text: ',cur_line_text)
-            tokens = self._nlp(cur_line_note)
+            tokenlist.append(self._nlp(cur_line_note))
             k = 0
             new_line_list = []
             cur_word = ""
-            for sent in tokens.sents:
-                space_before = False
-                for wordindex in range(len(sent)):
-                    cur_tag_element = self._tagged_note_line_list[i][k]
-                    cur_word += str(sent[wordindex])
-                    word_to_insert = str(sent[wordindex])
-                    if cur_tag_element[2] == 1:
-                        word_to_insert = word_to_insert.upper()
-                    if wordindex == 0 and not cur_tag_element[1].startswith("I-"):
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 2])
-                    elif space_before:
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 0])
-                    else:
-                        new_line_list.append([word_to_insert, cur_tag_element[1], 1])
-                    if cur_word == cur_tag_element[0]:
-                        space_before = True
-                        cur_word = ""
-                        k += 1
-                    else:
-                        space_before = False
+            for tokens in tokenlist:
+                for sent in tokens.sents:
+                    space_before = False
+                    for wordindex in range(len(sent)):
+                        cur_tag_element = self._tagged_note_line_list[i][k]
+                        cur_word += str(sent[wordindex])
+                        word_to_insert = str(sent[wordindex])
+                        if cur_tag_element[2] == 1:
+                            word_to_insert = word_to_insert.upper()
+                        if wordindex == 0 and not cur_tag_element[1].startswith("I-"):
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 2])
+                        elif space_before:
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 0])
+                        else:
+                            new_line_list.append([word_to_insert, cur_tag_element[1], 1])
+                        if cur_word == cur_tag_element[0]:
+                            space_before = True
+                            cur_word = ""
+                            k += 1
+                        else:
+                            space_before = False
             self._tagged_note_line_list[i] = new_line_list
         # for line_list in self._tagged_text_line_list:
         #    print(line_list)
@@ -403,11 +441,21 @@ if __name__ == "__main__":
     with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Standard.json") as f:
         # with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
         tr = json.load(f)
+    with open("TNM/Dehmel_Edition.json") as f:
+        # with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
+        tnm = json.load(f)
     # print(tr)
     # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
-    brief = TEIFile("../uwe_johnson_data/data_Dehmel/trainingsdaten_UTF8_ntee.xml", tr_config=tr)
+    brief = TEIFile("../uwe_johnson_data/data_Dehmel_short/dehmel_groundtruth_build_test_daten.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True)
+    #brief = TEIFile("../uwe_johnson_data/data_Dehmel/trainingsdaten_UTF8_ntee.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True,nlp=spacy.load('de_core_news_sm'))
+    brief.build_tagged_text_line_list()
+    #print('10',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',10))
+    #print('20',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',20))
+    #print('50',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',30))
+    #print('50',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',50))
+    #print('100',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',100))
     # print(brief.get_text())
 
     # print(brief.get_notes())

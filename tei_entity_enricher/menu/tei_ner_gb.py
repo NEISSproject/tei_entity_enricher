@@ -113,7 +113,7 @@ class TEINERGroundtruthBuilder:
             val = False
             if self.tng_save_message is None:
                 st.error("Please define a name for the Groundtruth before building it!")
-        elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))):
+        elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))) and os.path.isfile(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"), build_config[self.tng_attr_name].replace(" ", "_")+".json")):
             val = False
             if self.tng_save_message is None:
                 st.error(
