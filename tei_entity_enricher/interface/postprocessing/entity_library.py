@@ -290,7 +290,7 @@ class EntityLibrary:
                 wikidata_connector = WikidataConnector(
                     input=[input_tuple], wikidata_web_api_limit=wikidata_query_match_limit
                 )
-                if input_entity["type"] not in list(wikidata_connector.wikidata_sparql_queries.keys()):
+                if input_entity["type"] not in list(wikidata_connector.link_suggestion_categories.keys()):
                     return ([], 0, "entity ignored due to missing or incorrect 'type' value")
                 wikidata_connector_result = wikidata_connector.get_wikidata_search_results()
                 if wikidata_connector_result[input_tuple][0] > 0:

@@ -48,7 +48,7 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     for index, e in enumerate(fr_result):
         if e["name"].strip() == "":
             return f"An entity (number: {index + 1}) in editor content is missing a valid 'name' value"
-        if e["type"] not in list(wcon.wikidata_sparql_queries.keys()):
+        if e["type"] not in list(wcon.link_suggestion_categories.keys()):
             return (
                 f"An entity (number: {index + 1}, name: {e['name']}) in editor content is missing a valid 'type' value"
             )
