@@ -774,7 +774,7 @@ def get_full_xml_of_tree_content(cur_element):
     elif isinstance(cur_element, list):
         text = ""
         for element in cur_element:
-            text = text + get_full_xml_of_tree_content(element)
+            text += get_full_xml_of_tree_content(element)
         return text
     elif isinstance(cur_element, str):
         return cur_element
