@@ -73,6 +73,7 @@ class NERTrainer(MenuBase):
 
     def _train_manager(self):
         self.train_process_manager = get_train_process_manager(workdir=self._wd)
+        self.train_process_manager.set_current_params(self._params)
         return_code = self.train_process_manager.st_manager()
         return return_code
 
