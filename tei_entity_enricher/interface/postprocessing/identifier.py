@@ -33,7 +33,7 @@ class Identifier:
 
     def get_entity_type_list(self) -> List[str]:
         wikidata_con = WikidataConnector(check_connectivity=False, show_printmessages=False)
-        return list(wikidata_con.wikidata_sparql_queries.keys())
+        return list(wikidata_con.link_suggestion_categories.keys())
 
     def check_entity_library(
         self, input_tuple: tuple = None, loaded_library: EntityLibrary = None, query_by_type: bool = True
