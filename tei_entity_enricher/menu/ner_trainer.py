@@ -328,52 +328,6 @@ class NERTrainer(MenuBase):
 
         return 0
 
-    def build_lst_files_if_necessary(self):
-        if (
-            st.session_state.nt_train_option == "Self-Defined"
-            and st.session_state.nt_train_list_option == "From Folder"
-        ):
-            if os.path.isdir(self._params.nt_train_dir):
-                trainfilelist = [
-                    os.path.join(self._params.nt_train_dir, filepath + "\n")
-                    for filepath in os.listdir(self._params.nt_train_dir)
-                    if filepath.endswith(".json")
-                ]
-                with open(
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "train.lst",
-                    ),
-                    "w+",
-                ) as htrain:
-                    htrain.writelines(trainfilelist)
-                self._params.trainer_params_json["gen"]["train"]["lists"] = [
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "train.lst",
-                    )
-                ]
-            if os.path.isdir(self._params.nt_val_dir):
-                valfilelist = [
-                    os.path.join(self._params.nt_val_dir, filepath + "\n")
-                    for filepath in os.listdir(self._params.nt_val_dir)
-                    if filepath.endswith(".json")
-                ]
-                with open(
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "val.lst",
-                    ),
-                    "w+",
-                ) as hval:
-                    hval.writelines(valfilelist)
-                self._params.trainer_params_json["gen"]["val"]["lists"] = [
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "val.lst",
-                    )
-                ]
-
     def load_trainer_params(self):
         with remember_cwd():
             os.chdir(self._wd)
@@ -381,8 +335,6 @@ class NERTrainer(MenuBase):
         return 0
 
     def save_train_params(self):
-        self.build_lst_files_if_necessary()
-        with remember_cwd():
-            os.chdir(self._wd)
-            config_io.set_config(self._params.trainer_params_json)
-        return 0
+        self.train_process_manager = get_train_process_manager(workdir=self._wd)
+        self.train_process_manager.set_current_params(self._params)
+        return self.train_process_manager.save_train_params()
