@@ -20,6 +20,7 @@ menu_groundtruth_builder = "Groundtruth Builder"
 menu_TEI_write_mapping = "TEI Write Entity Mapping"
 menu_link_sug_cat = "Link Suggestion Categories"
 menu_NER_trainer = "NER Trainer"
+menu_NER_resume = "Resume NER Training"
 menu_NER_prediction = "NER Prediction"
 menu_postprocessing = "Postprocessing"
 

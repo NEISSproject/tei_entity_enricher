@@ -113,7 +113,7 @@ class NERTrainer(MenuBase):
                 if self.set_output_directory() != 0:
                     self._data_config_check.append("Invalid output directory")
 
-                self._params.trainer_params_json["epochs"]=st.number_input(label="Epochs to train",min_value=1,value=self._params.trainer_params_json["epochs"],step=1,help="Insert the number of epochs your model schould be trained for. I you have no idea we suggest 30 epochs for a training.")
+                self._params.trainer_params_json["epochs"]=st.number_input(label="Epochs to train",min_value=1,value=self._params.trainer_params_json["epochs"],step=1,help="Insert the number of epochs your model should be trained for. I you have no idea we suggest 30 epochs for a training.")
 
                 if self._data_config_check:
                     st.error(f"Fix {self._data_config_check} to continue!")
