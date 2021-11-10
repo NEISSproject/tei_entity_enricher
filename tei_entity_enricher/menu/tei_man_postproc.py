@@ -1,5 +1,7 @@
 import streamlit as st
+import xml.etree.ElementTree as ET
 import os
+from streamlit_ace import st_ace
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
@@ -25,6 +27,10 @@ from tei_entity_enricher.interface.postprocessing.identifier import Identifier
 
 class TEIManPP:
     def __init__(self, show_menu=True, entity_library=None):
+        self.tei_mm_edit_options = [
+            "Loop over the predicted tags and possibly enrich them with a reference link",
+            "Modify a TEI File directly",
+        ]
         self.search_options = [
             f"By {menu_TEI_write_mapping}",
             f"By {menu_TEI_read_mapping}",
@@ -37,6 +43,8 @@ class TEIManPP:
         self.check_one_time_attributes()
         self.entity_library = entity_library  # get_entity_library()
         if show_menu:
+            if "tmp_ace_key_counter" not in st.session_state:
+                st.session_state.tmp_ace_key_counter = 0
             self.tr = tei_reader.TEIReader(show_menu=False)
             self.tnm = tnm_map.TEINERMap(show_menu=False)
             self.tnw = tnw_map.TEINERPredWriteMap(show_menu=False)
@@ -50,12 +58,16 @@ class TEIManPP:
             st.session_state.tmp_save_message = None
         else:
             self.tmp_save_message = None
+            if "tmp_save_message" not in st.session_state:
+                st.session_state.tmp_save_message = None
 
         if "tmp_warn_message" in st.session_state and st.session_state.tmp_warn_message is not None:
             self.tmp_warn_message = st.session_state.tmp_warn_message
             st.session_state.tmp_warn_message = None
         else:
             self.tmp_warn_message = None
+            if "tmp_warn_message" not in st.session_state:
+                st.session_state.tmp_warn_message = None
 
         if "tmp_reload_aggrids" in st.session_state and st.session_state.tmp_reload_aggrids == True:
             self.tmp_reload_aggrids = True
@@ -334,126 +346,191 @@ class TEIManPP:
                     st.write("No link suggestions found!")
         return tag_entry
 
+    def load_tei_file_content(self,teipath):
+        with open(file=teipath, mode="r", encoding="utf8") as f:
+            tei = f.read()
+        st.session_state.tmp_last_loaded_direct_tei = tei
+        st.session_state.tmp_direct_change_teifile_save = teipath
+        return tei
+
     def tei_edit_environment(self):
-        st.write(f"Loop manually over the predicted tags defined by a {menu_TEI_write_mapping}.")
-        # self.tei_man_pp_params.tmp_selected_tr_name =
-        st.selectbox(
-            label=f"Select a {menu_TEI_reader_config}!",
-            options=list(self.tr.configdict.keys()),
-            key="tmp_selected_tr_name",
-        )
-        selected_tr = self.tr.configdict[st.session_state.tmp_selected_tr_name]
-        tag_list, sparqllist = self.define_search_criterion()
-        # self.tei_man_pp_params.tmp_teifile =
+        def edit_choice_change():
+            if "tmp_matching_tag_list" in st.session_state:
+                del st.session_state["tmp_matching_tag_list"]
+            st.session_state.tmp_reload_aggrids = True
+            if "tmp_ace_el_editor_content" in st.session_state:
+                del st.session_state["tmp_ace_el_editor_content"]
+            st.session_state.tmp_ace_key_counter += 1
+        st.radio(label="TEI File Edit options",options=self.tei_mm_edit_options,key="tmp_manual_edit_choice",on_change=edit_choice_change, help='Choose an option, how you will edit a TEI. Warning! If you change the edit option, you loose unsaved changes.')
+
+        if self.tei_mm_edit_options.index(st.session_state.tmp_manual_edit_choice)==0:
+            #st.write(f"Loop manually over the predicted tags defined by a {menu_TEI_write_mapping}.")
+            # self.tei_man_pp_params.tmp_selected_tr_name =
+            st.selectbox(
+                label=f"Select a {menu_TEI_reader_config}!",
+                options=list(self.tr.configdict.keys()),
+                key="tmp_selected_tr_name",
+            )
+            selected_tr = self.tr.configdict[st.session_state.tmp_selected_tr_name]
+            tag_list, sparqllist = self.define_search_criterion()
+            # self.tei_man_pp_params.tmp_teifile =
         small_file_selector(
             label="Choose a TEI File:",
             key="tmp_teifile",
             help="Choose a TEI file for manually manipulating its tags.",
         )
-        if st.button(
-            "Search Matching Entities in TEI-File:",
-            key="tmp_search_entities",
-            help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
-        ):
-            if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
-                for key in st.session_state:
-                    if key.startswith("tmp_edit_del_tag"):
-                        st.session_state[key] = False
-                tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
-                st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
-                st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
-                st.session_state.tmp_tr_from_last_search = selected_tr
-                if "tmp_current_loop_element" in st.session_state:
-                    del st.session_state["tmp_current_loop_element"]
-                if "tmp_loop_number_input" in st.session_state:
-                    del st.session_state["tmp_loop_number_input"]
-                if len(st.session_state.tmp_matching_tag_list) > 0:
-                    self.tmp_reload_aggrids = True
-                    st.session_state.tmp_current_loop_element = 1
-                    if len(st.session_state.tmp_matching_tag_list) > 1:
-                        st.session_state.tmp_loop_number_input = 1
-                        st.session_state.tmp_loop_rerun_after_search = 1
-                    st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
-                    self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
-            else:
-                st.session_state.tmp_matching_tag_list = []
-                st.warning("Please select a TEI file to be searched for entities.")
+        if self.tei_mm_edit_options.index(st.session_state.tmp_manual_edit_choice)==0:
+            if st.button(
+                "Search Matching Entities in TEI-File:",
+                key="tmp_search_entities",
+                help="Searches all entities in the currently chosen TEI-File with respect to the chosen search criterion.",
+            ):
+                if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
+                    for key in st.session_state:
+                        if key.startswith("tmp_edit_del_tag"):
+                            st.session_state[key] = False
+                    tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
+                    st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
+                    st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
+                    st.session_state.tmp_tr_from_last_search = selected_tr
+                    if "tmp_current_loop_element" in st.session_state:
+                        del st.session_state["tmp_current_loop_element"]
+                    if "tmp_loop_number_input" in st.session_state:
+                        del st.session_state["tmp_loop_number_input"]
+                    if len(st.session_state.tmp_matching_tag_list) > 0:
+                        self.tmp_reload_aggrids = True
+                        st.session_state.tmp_current_loop_element = 1
+                        if len(st.session_state.tmp_matching_tag_list) > 1:
+                            st.session_state.tmp_loop_number_input = 1
+                            st.session_state.tmp_loop_rerun_after_search = 1
+                        st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
+                        self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
+                else:
+                    st.session_state.tmp_matching_tag_list = []
+                    st.warning("Please select a TEI file to be searched for entities.")
 
-        if "tmp_matching_tag_list" not in st.session_state:
-            st.info("Use the search button to loop through a TEI file for the entities specified above.")
-        elif len(st.session_state.tmp_matching_tag_list) < 1:
-            st.warning("The last search resulted in no matching entities.")
+            if "tmp_matching_tag_list" not in st.session_state:
+                st.info("Use the search button to loop through a TEI file for the entities specified above.")
+            elif len(st.session_state.tmp_matching_tag_list) < 1:
+                st.warning("The last search resulted in no matching entities.")
+            else:
+                if len(st.session_state.tmp_matching_tag_list) == 1:
+                    st.write("One tag in the TEI-File matches the search conditions.")
+                else:
+
+                    def loop_slider_change():
+                        st.session_state.tmp_loop_number_input = st.session_state.tmp_current_loop_element
+                        st.session_state.tmp_reload_aggrids = True
+
+                    def loop_number_input_change():
+                        st.session_state.tmp_current_loop_element = st.session_state.tmp_loop_number_input
+                        st.session_state.tmp_reload_aggrids = True
+
+                    st.slider(
+                        label=f"Matching tags in the TEI file (found {str(len(st.session_state.tmp_matching_tag_list))} entries) ",
+                        min_value=1,
+                        max_value=len(st.session_state.tmp_matching_tag_list),
+                        key="tmp_current_loop_element",
+                        on_change=loop_slider_change,
+                    )
+                    st.number_input(
+                        "Goto Search Result with Index:",
+                        min_value=1,
+                        max_value=len(st.session_state.tmp_matching_tag_list),
+                        key="tmp_loop_number_input",
+                        on_change=loop_number_input_change,
+                    )
+                    if (
+                        "tmp_loop_rerun_after_search" in st.session_state
+                        and st.session_state.tmp_loop_rerun_after_search == 1
+                    ):
+                        st.session_state.tmp_loop_rerun_after_search = 0
+                        st.experimental_rerun()
+
+                st.markdown("### Modify manually!")
+                st.session_state.tmp_matching_tag_list[
+                    st.session_state.tmp_current_loop_element - 1
+                ] = self.tei_edit_specific_entity(
+                    tag_entry=st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1],
+                    tr=st.session_state.tmp_tr_from_last_search,
+                    index=st.session_state.tmp_current_loop_element - 1,
+                )
+                st.markdown("### Save the changes!")
+                if self.validate_manual_changes_before_saving(st.session_state.tmp_matching_tag_list):
+
+                    def save_changes():
+                        self.save_manual_changes_to_tei(
+                            st.session_state.tmp_teifile,
+                            st.session_state.tmp_teifile_save,
+                            st.session_state.tmp_matching_tag_list,
+                            st.session_state.tmp_tr_from_last_search,
+                        )
+                        del st.session_state["tmp_matching_tag_list"]
+                        st.session_state.tmp_save_message = (
+                            f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
+                        )
+                        st.session_state.tmp_reload_aggrids = True
+
+                    col1, col2 = st.columns([0.1, 0.9])
+                    with col1:
+                        st.button(
+                            "Save to",
+                            key="tmp_edit_save_changes_button",
+                            help="Save the current changes to the the specified path.",
+                            on_click=save_changes,
+                        )
+                    with col2:
+                        st.text_input(
+                            "Path to save the changes to:",
+                            key="tmp_teifile_save",
+                        )
         else:
-            if len(st.session_state.tmp_matching_tag_list) == 1:
-                st.write("One tag in the TEI-File matches the search conditions.")
+            if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
+                editor_init_content = (
+                    st.session_state.tmp_ace_el_editor_content
+                    if "tmp_ace_el_editor_content" in st.session_state
+                    else self.load_tei_file_content(st.session_state.tmp_teifile)
+                )
+                st.session_state.tmp_ace_el_editor_content = st_ace(
+                    value=editor_init_content,
+                    height=500,
+                    language="xml",
+                    readonly=False,
+                    key="tmp_ace_internal_key" + str(st.session_state.tmp_ace_key_counter),
+                )
+                #if "tmp_ace_el_editor_content" not in st.session_state:
+                #     st.session_state.tmp_ace_el_editor_content = editor_content
+                st.markdown("### Save the changes!")
+                if self.validate_direct_tei_changes(st.session_state.tmp_ace_el_editor_content):
+                    st.info("Don't forget to press CTRL+ENTER to apply the last changes you made before saving!")
+                    def save_changes():
+                        with open(file=st.session_state.tmp_direct_change_teifile_save, mode="w", encoding="utf8") as file:
+                            file.write(st.session_state.tmp_ace_el_editor_content)
+                        if "tmp_ace_el_editor_content" in st.session_state:
+                            del st.session_state["tmp_ace_el_editor_content"]
+                        st.session_state.tmp_ace_key_counter += 1
+                        st.session_state.tmp_save_message = (
+                            f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
+                        )
+
+                    col1, col2 = st.columns([0.1, 0.9])
+                    with col1:
+                        st.button(
+                            "Save to",
+                            key="tmp_direct_edit_save_changes_button",
+                            help="Save the current changes to the the specified path.",
+                            on_click=save_changes,
+                        )
+                    with col2:
+                        st.text_input(
+                            "Path to save the changes to:",
+                            key="tmp_direct_change_teifile_save",
+                        )
             else:
-
-                def loop_slider_change():
-                    st.session_state.tmp_loop_number_input = st.session_state.tmp_current_loop_element
-                    st.session_state.tmp_reload_aggrids = True
-
-                def loop_number_input_change():
-                    st.session_state.tmp_current_loop_element = st.session_state.tmp_loop_number_input
-                    st.session_state.tmp_reload_aggrids = True
-
-                st.slider(
-                    label=f"Matching tags in the TEI file (found {str(len(st.session_state.tmp_matching_tag_list))} entries) ",
-                    min_value=1,
-                    max_value=len(st.session_state.tmp_matching_tag_list),
-                    key="tmp_current_loop_element",
-                    on_change=loop_slider_change,
-                )
-                st.number_input(
-                    "Goto Search Result with Index:",
-                    min_value=1,
-                    max_value=len(st.session_state.tmp_matching_tag_list),
-                    key="tmp_loop_number_input",
-                    on_change=loop_number_input_change,
-                )
-                if (
-                    "tmp_loop_rerun_after_search" in st.session_state
-                    and st.session_state.tmp_loop_rerun_after_search == 1
-                ):
-                    st.session_state.tmp_loop_rerun_after_search = 0
-                    st.experimental_rerun()
-
-            st.markdown("### Modify manually!")
-            st.session_state.tmp_matching_tag_list[
-                st.session_state.tmp_current_loop_element - 1
-            ] = self.tei_edit_specific_entity(
-                tag_entry=st.session_state.tmp_matching_tag_list[st.session_state.tmp_current_loop_element - 1],
-                tr=st.session_state.tmp_tr_from_last_search,
-                index=st.session_state.tmp_current_loop_element - 1,
-            )
-            st.markdown("### Save the changes!")
-            if self.validate_manual_changes_before_saving(st.session_state.tmp_matching_tag_list):
-
-                def save_changes():
-                    self.save_manual_changes_to_tei(
-                        st.session_state.tmp_teifile,
-                        st.session_state.tmp_teifile_save,
-                        st.session_state.tmp_matching_tag_list,
-                        st.session_state.tmp_tr_from_last_search,
-                    )
-                    del st.session_state["tmp_matching_tag_list"]
-                    st.session_state.tmp_save_message = (
-                        f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
-                    )
-                    st.session_state.tmp_reload_aggrids = True
-
-                col1, col2 = st.columns([0.1, 0.9])
-                with col1:
-                    st.button(
-                        "Save to",
-                        key="tmp_edit_save_changes_button",
-                        help="Save the current changes to the the specified path.",
-                        on_click=save_changes,
-                    )
-                with col2:
-                    st.text_input(
-                        "Path to save the changes to:",
-                        key="tmp_teifile_save",
-                    )
+                if "tmp_ace_el_editor_content" in st.session_state:
+                    del st.session_state["tmp_ace_el_editor_content"]
+                st.session_state.tmp_ace_key_counter += 1
+                st.warning("Please select a TEI-File to directly modify it.")
 
         if self.tmp_save_message is not None:
             st.success(self.tmp_save_message)
@@ -558,6 +635,21 @@ class TEIManPP:
                 tag["pure_tagcontent"] = tei_writer.get_pure_text_of_tree_element(tag["tagcontent"], tr)
                 st.session_state["tmp_ls_search_string" + str(index)] = tag["pure_tagcontent"]
             index += 1
+
+    def validate_direct_tei_changes(self,current_editor_content):
+        val=True
+        if st.session_state.tmp_last_loaded_direct_tei==current_editor_content:
+            val=False
+            if st.session_state.tmp_save_message is None:
+                st.warning("Currently there are no changes to save. Don't forget to press CTRL+ENTER to apply your changes!")
+        else:
+            try:
+                ET.fromstring(current_editor_content)
+            except ET.ParseError as e:
+                val=False
+                if st.session_state.tmp_save_message is None:
+                    st.error(f"Save not allowed. Your Changes lead to an syntactically incorrect XML-File. See the following parsing error: {e}")
+        return val
 
     def validate_manual_changes_before_saving(self, changed_tag_list):
         val = True
