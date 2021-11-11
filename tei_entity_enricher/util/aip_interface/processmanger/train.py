@@ -104,6 +104,13 @@ class TrainProcessManager(ProcessManagerBase):
 
     def save_train_params(self):
         self.build_lst_files_if_necessary()
+        if self._params.trainer_params_json["early_stopping"]["mode"]=="min":
+            #Workaround for bugfixing wrong parametrization
+            self._params.trainer_params_json["early_stopping"]["mode"]="max"
+            self._params.trainer_params_json["early_stopping"]["current"]=0.0
+            self._params.trainer_params_json["early_stopping"]["monitor"]="val_SeqEvalF1FixRule"
+            self._params.trainer_params_json["scenario"]["model"]["use_crf"]=True
+            self._params.trainer_params_json["scenario"]["model"]["crf_with_ner_forb_trans"]=True
         with remember_cwd():
             os.chdir(self.work_dir)
             config_io.set_config(self._params.trainer_params_json)
