@@ -108,12 +108,31 @@ class NERTrainer(MenuBase):
                 self._params.choose_model_widget(
                     label, init=self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"]
                 )
-                self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"] = self._params.model
+                if self._params.is_hf_model:
+                    self._params.trainer_params_json["scenario"]["model"]["model"] = "NERwithHFBERT"
+                    self._params.trainer_params_json["scenario"]["data"]["use_hf_model"] = True
+                    self._params.trainer_params_json["scenario"]["data"]["pretrained_hf_model"] = self._params.model
+                    self._params.trainer_params_json["gen"]["setup"]["train"]["batch_size"] = 8
+                    self._params.trainer_params_json["gen"]["setup"]["val"]["batch_size"] = 8
+                    self._params.trainer_params_json["samples_per_epoch"]=1250
+                else:
+                    self._params.trainer_params_json["scenario"]["model"]["model"] = "NERwithMiniBERT"
+                    self._params.trainer_params_json["scenario"]["data"]["use_hf_model"] = False
+                    self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"] = self._params.model
+                    self._params.trainer_params_json["gen"]["setup"]["train"]["batch_size"] = 16
+                    self._params.trainer_params_json["gen"]["setup"]["val"]["batch_size"] = 16
+                    self._params.trainer_params_json["samples_per_epoch"]=5000
 
                 if self.set_output_directory() != 0:
                     self._data_config_check.append("Invalid output directory")
 
-                self._params.trainer_params_json["epochs"]=st.number_input(label="Epochs to train",min_value=1,value=self._params.trainer_params_json["epochs"],step=1,help="Insert the number of epochs your model should be trained for. I you have no idea we suggest 30 epochs for a training.")
+                self._params.trainer_params_json["epochs"] = st.number_input(
+                    label="Epochs to train",
+                    min_value=1,
+                    value=self._params.trainer_params_json["epochs"],
+                    step=1,
+                    help="Insert the number of epochs your model should be trained for. I you have no idea we suggest 30 epochs for a training.",
+                )
 
                 if self._data_config_check:
                     st.error(f"Fix {self._data_config_check} to continue!")
