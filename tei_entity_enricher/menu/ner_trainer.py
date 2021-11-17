@@ -112,6 +112,7 @@ class NERTrainer(MenuBase):
                     self._params.trainer_params_json["scenario"]["model"]["model"] = "NERwithHFBERT"
                     self._params.trainer_params_json["scenario"]["data"]["use_hf_model"] = True
                     self._params.trainer_params_json["scenario"]["data"]["pretrained_hf_model"] = self._params.model
+                    self._params.trainer_params_json["scenario"]["data"]["hf_cache_dir"] = os.path.join(self._wd, "templates","hf_cache")
                     self._params.trainer_params_json["gen"]["setup"]["train"]["batch_size"] = 8
                     self._params.trainer_params_json["gen"]["setup"]["val"]["batch_size"] = 8
                     self._params.trainer_params_json["samples_per_epoch"]=1250
