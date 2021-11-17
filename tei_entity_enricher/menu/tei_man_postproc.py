@@ -38,7 +38,6 @@ class TEIManPP:
         ]
         self.tmp_link_choose_option_gnd = "GND id"
         self.tmp_link_choose_option_wikidata = "Wikidata id"
-        self.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
         self.tmp_base_ls_search_type_options = ["without specified type"]
         self.check_one_time_attributes()
         self.entity_library = entity_library  # get_entity_library()
@@ -122,7 +121,7 @@ class TEIManPP:
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
-    def add_suggestion_link_to_tag_entry(self, suggestion, tag_entry):
+    def add_suggestion_link_to_tag_entry(self, link_to_add, tag_entry):
         entry_dict = {}
         if tag_entry["tagbegin"].endswith("/>"):
             end = -2
@@ -134,11 +133,6 @@ class TEIManPP:
                 if "=" in element:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
-        if st.session_state.tmp_link_choose_option == self.tmp_link_choose_option_wikidata:
-            link_to_add = "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"]
-        else:
-            # default gnd
-            link_to_add = "http://d-nb.info/gnd/" + suggestion["gnd_id"]
         entry_dict["ref"] = link_to_add
         new_tagbegin = "<" + tag_entry["name"]
         for attr in entry_dict.keys():
@@ -149,6 +143,26 @@ class TEIManPP:
             new_tagbegin = new_tagbegin + ">"
         tag_entry["tagbegin"] = new_tagbegin
         st.session_state.tmp_reload_aggrids = True
+
+    def get_id_and_link_to_link_choose_option(self,suggestion,link_choose_option):
+        if link_choose_option==self.tmp_link_choose_option_wikidata:
+            return [suggestion["wikidata_id"]],[replace_empty_string(add_markdown_link_if_not_None(suggestion["wikidata_id"],"https://www.wikidata.org/wiki/" + suggestion["wikidata_id"]))]
+        elif link_choose_option==self.tmp_link_choose_option_gnd:
+            return [suggestion["gnd_id"]],[replace_empty_string(add_markdown_link_if_not_None(suggestion["gnd_id"], "http://d-nb.info/gnd/" + suggestion["gnd_id"]))]
+        elif link_choose_option in st.session_state.tmp_further_ids_config.keys() and link_choose_option in suggestion["furtherIds"].keys() and len(suggestion["furtherIds"][link_choose_option])>0:
+            return suggestion["furtherIds"][link_choose_option],[replace_empty_string(add_markdown_link_if_not_None(id,st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",id))) for id in suggestion["furtherIds"][link_choose_option]]
+        else:
+            return [None],[replace_empty_string(add_markdown_link_if_not_None(None,None))]
+
+    def get_link_to_id(self,data_id,link_choose_option):
+        if link_choose_option==self.tmp_link_choose_option_wikidata:
+            return "https://www.wikidata.org/wiki/" + data_id
+        elif link_choose_option==self.tmp_link_choose_option_gnd:
+            return "http://d-nb.info/gnd/" + data_id
+        elif link_choose_option in st.session_state.tmp_further_ids_config.keys() and data_id is not None:
+            return st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",data_id)
+        else:
+            return ""
 
     def tei_edit_specific_entity(self, tag_entry, tr, index):
         col1, col2 = st.columns(2)
@@ -266,21 +280,20 @@ class TEIManPP:
                 if len(tag_entry["link_suggestions"]) > 0:
                     col3.selectbox(
                         label="Choose links from",
-                        options=self.tmp_link_choose_options,
+                        options=st.session_state.tmp_link_choose_options,
                         help='Define the source where links should be added from when pressing an "Add link"-Button',
                         key="tmp_link_choose_option",
                     )
-                    scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
+                    scol1, scol2, scol3, scol4, scol5, scol6 = st.columns(6)
                     scol1.markdown("### Name")
                     scol2.markdown("### Further Names")
                     scol3.markdown("### Description")
-                    scol4.markdown("### Wikidata_Id")
-                    scol5.markdown("### GND_id")
-                    scol6.markdown("### Use Suggestion")
-                    scol7.markdown("### Entity Library")
+                    scol4.markdown(f"### {st.session_state.tmp_link_choose_option}")
+                    scol5.markdown("### Use Suggestion")
+                    scol6.markdown("### Entity Library")
                     for suggestion in tag_entry["link_suggestions"]:
                         # workaround: new column definition because of unique row height
-                        scol1, scol2, scol3, scol4, scol5, scol6, scol7 = st.columns(7)
+                        scol1, scol2, scol3, scol4, scol5, scol6 = st.columns(6)
                         scol1.markdown(replace_empty_string(suggestion["name"]))
                         if len(suggestion["furtherNames"]) > 10:
                             further_names = suggestion["furtherNames"][:10] + ["..."]
@@ -288,32 +301,25 @@ class TEIManPP:
                             further_names = suggestion["furtherNames"]
                         scol2.markdown(replace_empty_string(get_listoutput(further_names)))
                         scol3.markdown(replace_empty_string(suggestion["description"]))
-                        scol4.markdown(
-                            replace_empty_string(
-                                add_markdown_link_if_not_None(
-                                    suggestion["wikidata_id"],
-                                    "https://www.wikidata.org/wiki/" + suggestion["wikidata_id"],
-                                )
-                            )
-                        )
-                        scol5.markdown(
-                            replace_empty_string(
-                                add_markdown_link_if_not_None(
-                                    suggestion["gnd_id"], "http://d-nb.info/gnd/" + suggestion["gnd_id"]
-                                )
-                            )
-                        )
+                        id_list, data_link_list = self.get_id_and_link_to_link_choose_option(suggestion,st.session_state.tmp_link_choose_option)
+                        if len(id_list)>1:
+                            used_id=scol4.selectbox(label='Choose a link',options=id_list,key="tmp_sel_link_" + str(suggestion_id) + "_" + str(st.session_state.tmp_current_loop_element) + "_" + st.session_state.tmp_link_choose_option,help='Choose a link to specify which of the links should be used.')
+                        else:
+                            used_id=id_list[0]
+                        chosen_link=self.get_link_to_id(used_id,st.session_state.tmp_link_choose_option)
+                        scol4.markdown(get_listoutput(data_link_list))
+
                         suggestion_id += 1
 
                         def add_link_as_attribute(suggestion, tag_entry):
                             self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
 
-                        scol6.button(
+                        scol5.button(
                             "Add link as ref attribute",
                             key="tmp" + str(suggestion_id),
                             on_click=add_link_as_attribute,
                             args=(
-                                suggestion,
+                                chosen_link,
                                 tag_entry,
                             ),
                         )
@@ -335,7 +341,7 @@ class TEIManPP:
                                 st.session_state.pp_ace_key_counter += 1
                                 st.session_state.tmp_save_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
 
-                        scol7.button(
+                        scol6.button(
                             "Add to Entity Library",
                             key="tmp_el_" + str(suggestion_id),
                             on_click=add_entity_to_library,
@@ -405,6 +411,21 @@ class TEIManPP:
                             st.session_state.tmp_loop_rerun_after_search = 1
                         st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
                         self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
+                        st.session_state.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
+                        if self.entity_library.data is None:
+                            st.session_state.tmp_further_ids_config={}
+                        else:
+                            st.session_state.tmp_further_ids_config=self.entity_library.load_furtherIds_config()
+                            st.session_state.tmp_link_choose_options.extend(list(st.session_state.tmp_further_ids_config.keys()))
+                        keys_to_delete=[]
+                        for key in st.session_state:
+                            if key.startswith("tmp_sel_link_"):
+                                keys_to_delete.append(key)
+                        for key in keys_to_delete:
+                            print("del", key)
+                            del st.session_state[key]
+
+
                 else:
                     st.session_state.tmp_matching_tag_list = []
                     st.warning("Please select a TEI file to be searched for entities.")
