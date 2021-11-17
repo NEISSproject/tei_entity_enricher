@@ -128,7 +128,7 @@ class Identifier:
         entity library query result:
         {
             ('Berlin', 'place'): [
-                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
+                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": "", "furtherIds": {"geonames.com": ["2950159", "2950157", "6547383", "6547539"]}},
                 {}
             ]
         }
@@ -152,7 +152,7 @@ class Identifier:
         output:
         {
             ('Berlin', 'place'): [
-                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": ""},
+                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": "", "furtherIds": {"geonames.com": ["2950159", "2950157", "6547383", "6547539"]}},
                 {}
             ]
         }
@@ -201,6 +201,7 @@ class Identifier:
                                 else ""
                             )
                             _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
+                            _furtherIds_to_add = _temp_el.get_further_ids_of_wikidata_entity(subkey.get("id", ""))
                             entity_list_in_query_wikidata_result.append(
                                 {
                                     "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
@@ -209,6 +210,7 @@ class Identifier:
                                     "description": subkey.get("description", "No description delivered"),
                                     "wikidata_id": subkey.get("id", ""),
                                     "gnd_id": _gnd_id_to_add,
+                                    "furtherIds": _furtherIds_to_add,
                                 }
                             )
                         wikidata_output_dict[key] = entity_list_in_query_wikidata_result
@@ -249,6 +251,7 @@ class Identifier:
                                 else ""
                             )
                             _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
+                            _furtherIds_to_add = _temp_el.get_further_ids_of_wikidata_entity(subkey.get("id", ""))
                             entity_list_in_query_wikidata_result.append(
                                 {
                                     "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
@@ -257,6 +260,7 @@ class Identifier:
                                     "description": subkey.get("description", "No description delivered"),
                                     "wikidata_id": subkey.get("id", ""),
                                     "gnd_id": _gnd_id_to_add,
+                                    "furtherIds": _furtherIds_to_add,
                                 }
                             )
                         output_dict[key] = entity_list_in_query_wikidata_result
@@ -278,6 +282,7 @@ class Identifier:
                             else ""
                         )
                         _furtherNames_to_add = _temp_el.get_further_names_of_wikidata_entity(subkey.get("id", ""))
+                        _furtherIds_to_add = _temp_el.get_further_ids_of_wikidata_entity(subkey.get("id", ""))
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": subkey.get("label", f"No name delivered, search pattern was: {key[0]}"),
@@ -286,6 +291,7 @@ class Identifier:
                                 "description": subkey.get("description", "No description delivered"),
                                 "wikidata_id": subkey.get("id", ""),
                                 "gnd_id": _gnd_id_to_add,
+                                "furtherIds": _furtherIds_to_add,
                             }
                         )
                     output_dict[key] = entity_list_in_query_wikidata_result

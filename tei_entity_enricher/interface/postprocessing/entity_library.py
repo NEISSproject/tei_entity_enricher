@@ -6,8 +6,12 @@ from tei_entity_enricher.interface.postprocessing.gnd_connector import GndConnec
 from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
 from tei_entity_enricher.util.exceptions import MissingDefinition, FileNotFound, BadFormat
 import os
+from urllib.parse import urlparse
 from tei_entity_enricher import __version__
 from SPARQLWrapper import SPARQLWrapper, JSON
+
+# todo: prüfen, wie furtherIds im Moment zu Entitäten in der entity library hinzugefügt werden können
+# todo: wahrscheinlich furtherIds-Befüllung in add_missing_ids() einbauen
 
 
 class EntityLibrary:
@@ -34,6 +38,11 @@ class EntityLibrary:
             as default value on init for processing reasons in menu/tei_postprocessing.py
         data:
             currently loaded dict, is loaded from json file on __init__(), if a correct filepath in data_file is provided
+        furtherIds_config:
+            dict loaded from file, which contains database information for NEL in postprocessing
+            (keys are hostnames and values are lists,
+            containing 1.: the wikidata property id which is used to retrieve the respective Identifier information from wikidata sparql endpoint,
+            2. a uri template with a blank, in which an id can be inserted later to create a specific entitiy uri for the respective database)
         """
         self.use_default_data_file: bool = use_default_data_file
         self.default_data_file: str = os.path.join(local_save_path, "config", "postprocessing", "entity_library.json")
@@ -44,6 +53,45 @@ class EntityLibrary:
             print(f"EntityLibrary loaded from {self.data_file}...") if self.show_printmessages else None
         else:
             print("EntityLibrary initialized without data...") if self.show_printmessages else None
+        self.furtherIds_config: Union[dict, None] = self.load_furtherIds_config()
+
+    def load_furtherIds_config(self) -> None:
+        """used to load furtherIds_config.json from a local json file in config folder;
+        file defines which ids (besides compulsory gnd and wikidata) are saved in entity dicts
+        and which databases can be selected in manual postprocessing menu for adding reference uris as attribute to xml elements"""
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "furtherIds_config.json")
+        fr = FileReader(
+            filepath=default_filepath, origin="local", internal_call=True, show_printmessages=self.show_printmessages
+        )
+        result = None
+        try:
+            result = fr.loadfile_json()
+        except FileNotFound:
+            print(
+                f"EntityLibrary load_furtherIds_config(): could not load furtherIds_config.json from config folder, file not found. creating default config file..."
+            ) if self.show_printmessages else None
+            try:
+                makedir_if_necessary(os.path.dirname(default_filepath))
+                FileWriter(
+                    data={
+                        "geonames.com": ["wdt:P1566", "https://www.geonames.org/{}"],
+                        "viaf.org": ["wdt:P214", "https://viaf.org/viaf/{}"],
+                    },
+                    filepath=default_filepath,
+                    show_printmessages=self.show_printmessages,
+                ).writefile_json()
+            except:
+                print(
+                    f"EntityLibrary load_furtherIds_config(): could not create default furtherIds_config.json in config folder."
+                ) if self.show_printmessages == True else None
+                return f"EntityLibrary load_furtherIds_config(): could not create default furtherIds config in config folder."
+            result = fr.loadfile_json()
+        except BadFormat:
+            print(
+                f"EntityLibrary load_furtherIds_config(): could not load furtherIds_config.json from config folder, no valid json format."
+            ) if self.show_printmessages else None
+            return f"EntityLibrary load_furtherIds_config(): could not load furtherIds_config.json from config folder, no valid json format."
+        return result
 
     def load_library(self, create_new_file: bool = False) -> Union[bool, str]:
         """used to load existing library data from a local json file with filepath saved in self.data_file"""
@@ -71,6 +119,7 @@ class EntityLibrary:
                                 "description": "",
                                 "wikidata_id": "",
                                 "gnd_id": "",
+                                "furtherIds": {},
                             }
                         ],
                         filepath=self.data_file,
@@ -166,7 +215,8 @@ class EntityLibrary:
     ) -> Union[Tuple[int, int], str]:
         """method to add entities to library, which has been passed to function via data parameter;
         structure of data has to match the structure of self.data entities;
-        data structure and redundancy checks are compulsory"""
+        data structure and redundancy checks are compulsory;
+        test, if type string matches a type defined in link_sugesstion_categories.json, takes place in the GUI"""
         entity_amount_before_filtering = len(data)
         # check of data structure
         structure_check_cache = Cache(data=data)
@@ -273,15 +323,28 @@ class EntityLibrary:
         self,
         input_entity: dict = None,
         try_to_identify_entities_without_id_values: bool = False,
+        replace_furtherIds_information=False,
         wikidata_query_match_limit: str = "5",
     ) -> Union[Tuple[List[dict], int, str], Tuple[list, int, str]]:
         """method for postprocessing gui to get missing ids or identification suggestions for a single entity;
-        returned tuple contains a list of entities, an integer value and a status message string;
+        returns tuple contains a list of entities, an integer value and a status message string;
         if the integer equals 0, then the identification suggestion is save and it can be saved or ignored without
         manually checking the result by user,
         if the integer equals -1, then the user has to choose if the suggested entity/entities should be added to entity library;
         if the returned list is empty, no suggestions was neccessary or could be made due to try_to_identify_entities_without_id_values parameter
         setting or a lack of matching data in wikidata database or due to an connection error"""
+
+        # add missing furtherIds
+        # todo: schalter: A auffüllen oder B ersetzen? (replace_furtherIds_information parameter einbauen)
+        # todo: wenn A:
+        # todo: self.furtherIds_config mit entity["furtherIds"] vergleichen: sind werte in den listen? (fehlende stellen in einer todo-Liste mit hostnamen einsammeln)
+        # todo: wenn irgendwo was fehlt (todo-Liste hat einträge):
+        # todo: 1. daten von wikidata und gnd api abrufen, entsprechend der furtherIds_config.json
+        # todo: 2. datenbanken, zu denen werte fehlen, aus todo-liste auslesen
+        # todo: 3. zu den benötigten Einträgen die Rückgabe-Werte von wikidata und gnd api zu einer diskreten Menge zusammenfügen (Dubletten entfernen)
+        # todo: wenn B:
+        # todo: daten von wikidata und gnd api abrufen, entsprechend der furtherIds_config.json, und das Ergebnis-dict in entity["furtherIds"] schreiben
+
         if (input_entity["wikidata_id"] == "") and (input_entity["gnd_id"] == ""):
             if try_to_identify_entities_without_id_values == False:
                 return ([], 0, "entity ignored due to try_to_identify_entities_without_id_values parameter setting")
@@ -303,6 +366,7 @@ class EntityLibrary:
                             else ""
                         )
                         _furtherNames_to_add = self.get_further_names_of_wikidata_entity(entity.get("id", ""))
+                        _furtherIds_to_add = self.get_further_ids_of_wikidata_entity(entity.get("id", ""))
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": entity.get("label", f"No name delivered, search pattern was: {input_tuple[0]}"),
@@ -311,6 +375,7 @@ class EntityLibrary:
                                 "description": entity.get("description", "No description delivered"),
                                 "wikidata_id": entity.get("id", ""),
                                 "gnd_id": _gnd_id_to_add,
+                                "furtherIds": _furtherIds_to_add,
                             }
                         )
                     return_value_len = len(entity_list_in_query_wikidata_result)
@@ -351,14 +416,16 @@ class EntityLibrary:
         if (input_entity["wikidata_id"] == "") and (input_entity["gnd_id"] != ""):
             gnd_connector = GndConnector(input_entity["gnd_id"])
             gnd_data = gnd_connector.get_gnd_data(["sameAs"])
-            filter_list_result = list(
-                filter(
-                    lambda item: "http://www.wikidata.org/entity/" in item["@id"],
-                    gnd_data[input_entity["gnd_id"]]["sameAs"],
-                )
-            )
+            gnd_connector_sameAs_id_key = list(
+                gnd_connector.apilist[gnd_connector.apiindex]["baseAliases"]["sameAs"][1][0].keys()
+            )[0]
+            filter_list_result = [
+                item
+                for item in gnd_data[input_entity["gnd_id"]]["sameAs"]
+                if "http://www.wikidata.org/entity/" in item[gnd_connector_sameAs_id_key]
+            ]
             if len(filter_list_result) == 1:
-                from_gnd_api_retrieved_wikidata_id = filter_list_result[0]["@id"][31:]
+                from_gnd_api_retrieved_wikidata_id = filter_list_result[0][gnd_connector_sameAs_id_key][31:]
                 returned_entity = input_entity.copy()
                 returned_entity["wikidata_id"] = from_gnd_api_retrieved_wikidata_id
                 return ([returned_entity], 0, f"wikidata_id {from_gnd_api_retrieved_wikidata_id} determined")
@@ -372,9 +439,11 @@ class EntityLibrary:
         add_first_suggested_wikidata_entity_if_no_id_was_given: bool = False,
         wikidata_query_match_limit: str = "5",
     ) -> Union[List[str], list]:
+        """NOT IN USE AT THE MOMENT"""
         return_messages = []
         for entity in self.data:
             entity_unchanged = entity.copy()
+            # add missing gnd_id or wikidata_id value
             if (entity["wikidata_id"] == "") and (entity["gnd_id"] == ""):
                 if add_first_suggested_wikidata_entity_if_no_id_was_given == False:
                     return_messages.append(
@@ -423,14 +492,16 @@ class EntityLibrary:
             if (entity["wikidata_id"] == "") and (entity["gnd_id"] != ""):
                 gnd_connector = GndConnector(entity["gnd_id"])
                 gnd_data = gnd_connector.get_gnd_data(["sameAs"])
-                filter_list_result = list(
-                    filter(
-                        lambda item: "http://www.wikidata.org/entity/" in item["@id"],
-                        gnd_data[entity["gnd_id"]]["sameAs"],
-                    )
-                )
+                gnd_connector_sameAs_id_key = list(
+                    gnd_connector.apilist[gnd_connector.apiindex]["baseAliases"]["sameAs"][1][0].keys()
+                )[0]
+                filter_list_result = [
+                    item
+                    for item in gnd_data[entity["gnd_id"]]["sameAs"]
+                    if "http://www.wikidata.org/entity/" in item[gnd_connector_sameAs_id_key]
+                ]
                 if len(filter_list_result) == 1:
-                    from_gnd_api_retrieved_wikidata_id = filter_list_result[0]["@id"][31:]
+                    from_gnd_api_retrieved_wikidata_id = filter_list_result[0][gnd_connector_sameAs_id_key][31:]
                     entity["wikidata_id"] = from_gnd_api_retrieved_wikidata_id
                     return_messages.append(f"entity {entity_unchanged} changed to {entity}")
                 else:
@@ -489,8 +560,75 @@ class EntityLibrary:
         # return empty list, if no result is returned by sparql query
         if len(query_result["results"]["bindings"]) == 0:
             return []
-        # return a list with distinct values: for that the list is transformed to a set and back to new list without value doublets
+        # return a list with distinct values: for this, the list is transformed to a set and back to new list without value doublets
         return list(set([item["label"]["value"] for item in query_result["results"]["bindings"]]))
+
+    def get_further_names_of_gnd_entity(self, gnd_id: str = None) -> List[str]:
+        """method to get further names of a gnd entity,
+        returns a list for a furtherName value of an entity library entity dict,
+        origin of the information is the database related to the gnd api choosen in gndConnector object
+
+        NOT IN USE AT THE MOMENT"""
+        if gnd_id == "":
+            return []
+        gnd_connector = GndConnector(gnd_id)
+        query_result = gnd_connector.get_gnd_data(["furtherNames"])
+        return query_result[gnd_id]["furtherNames"]
+
+    def get_further_ids_of_wikidata_entity(self, wikidata_id: str = None) -> dict:
+        """method to get further ids of a wikidata entity, retrieving entity ids from databases defined in self.furtherIds_config,
+        returns a dict which can be used as value for furtherId key in entity library entity dicts,
+        information are retrieved from wikidata sparql endpoint on the basis of the properties defined in self.furtherIds_config
+
+        output example for 'Berlin': {"geonames.com": ["2950159", "2950157", "6547383", "6547539"], "viaf.org": ["122530980"]}
+        """
+        if wikidata_id == "":
+            return []
+        endpoint_url = "https://query.wikidata.org/sparql"
+        user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
+        further_ids_query = """
+            PREFIX wd: <http://www.wikidata.org/entity/>
+            PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+            SELECT ?label WHERE {
+            VALUES ?p { %s } 
+            wd:%s ?p ?label .
+            }
+        """
+        result_dict = {key: [] for key in self.furtherIds_config}
+        for key in self.furtherIds_config:
+            sparql = SPARQLWrapper(endpoint=endpoint_url, agent=user_agent)
+            sparql.setQuery(further_ids_query % (self.furtherIds_config[key][0], wikidata_id))
+            sparql.setReturnFormat(JSON)
+            query_result = sparql.query().convert()
+            for query_result_item in query_result["results"]["bindings"]:
+                result_dict[key].append(query_result_item["label"]["value"])
+        return result_dict
+
+    def get_further_ids_of_gnd_entity(self, gnd_id: str = None) -> List[str]:
+        """method to get further ids of a gnd entity,
+        returns a dict for a furtherIds value of an entity library entity dict,
+        keys are the hostnames of the urls provided by query, values are the complete uris,
+        origin of the information is the database related to the gnd api choosen in gndConnector object
+
+        NOT IN USE AT THE MOMENT"""
+        if gnd_id == "":
+            return []
+        gnd_connector = GndConnector(gnd_id)
+        gnd_connector_sameAs_id_key = list(
+            gnd_connector.apilist[gnd_connector.apiindex]["baseAliases"]["sameAs"][1][0].keys()
+        )[0]
+        query_result = gnd_connector.get_gnd_data(["sameAs"])
+        uri_list = [
+            item[gnd_connector_sameAs_id_key]
+            for item in query_result[gnd_id]["sameAs"]
+            if "https://d-nb.info/gnd" not in item[gnd_connector_sameAs_id_key]
+            if "wikipedia.org" not in item[gnd_connector_sameAs_id_key]
+            if "wikisource.org" not in item[gnd_connector_sameAs_id_key]
+            if "wikidata.org" not in item[gnd_connector_sameAs_id_key]
+        ]
+        uri_dict = {urlparse(i).hostname: i for i in uri_list}
+        return uri_dict
 
     def reset(self):
         self.data_file = None

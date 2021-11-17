@@ -285,7 +285,8 @@ class Cache:
                 'type': 'entityType',
                 'description': '',
                 'wikidata_id': 'Q1234',
-                'gnd_id': '12345678'
+                'gnd_id': '12345678',
+                'furtherIds': {}
             },
             {
                 'name': 'entityName2',
@@ -293,7 +294,8 @@ class Cache:
                 'type': 'entityType',
                 'description': '',
                 'wikidata_id': 'Q12345',
-                'gnd_id': '123456789'
+                'gnd_id': '123456789',
+                'furtherIds': {}
             }
         ]
         this check is used in Postprocessing GUI for editor input checks,
@@ -351,16 +353,31 @@ class Cache:
                 for entity in self.data:
                     if type(entity) != dict:
                         return False
-                    compulsory_keys = ["name", "type", "description", "wikidata_id", "gnd_id", "furtherNames"]
+                    compulsory_keys = [
+                        "name",
+                        "type",
+                        "description",
+                        "wikidata_id",
+                        "gnd_id",
+                        "furtherNames",
+                        "furtherIds",
+                    ]
+                    # check for keys which shouldnt be in entity dict
                     for key in list(entity.keys()):
                         if key not in compulsory_keys:
                             return False
+                    # check if all compulsory keys are in the entity dict
                     for key in compulsory_keys:
                         if key not in list(entity.keys()):
                             return False
+                    # check if furtherNames is a list
                     if type(entity[compulsory_keys[5]]) != list:
                         return False
-                    for key in compulsory_keys[:-1]:
+                    # check if furtherIds is a dict
+                    if type(entity[compulsory_keys[6]]) != dict:
+                        return False
+                    # check if the first 5 keys have str values
+                    for key in compulsory_keys[:-2]:
                         if type(entity[key]) != str:
                             return False
                 return True
