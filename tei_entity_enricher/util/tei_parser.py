@@ -216,6 +216,22 @@ class TEIFile:
                     text_list.append(" <linebreak>\n")
                     #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
                     tagged_text_list.append(" <linebreak>\n")
+            else:
+                if isinstance(page, str):
+                    content=[page]
+                else:
+                    content=page
+                (
+                    new_text_list,
+                    new_tagged_text_list,
+                    new_statistics,
+                ) = self._get_text_from_contentlist(content, False)
+                text_list.extend(new_text_list)
+                text_list.append(" <linebreak>\n")
+                tagged_text_list.extend(new_tagged_text_list)
+                tagged_text_list.append(" <linebreak>\n")
+                statistics = self._merge_statistics(statistics, new_statistics)
+
         text = ""
         for element in text_list:
             text = text + str(element)
@@ -448,14 +464,13 @@ if __name__ == "__main__":
     # brief=tei_file('../uwe_johnson_data/data_040520/briefe/0003_060000.xml')
     # Arendt Example: '../uwe_johnson_data/data_hannah_arendt/III-001-existenzPhilosophie.xml', '../uwe_johnson_data/data_hannah_arendt/III-002-zionismusHeutigerSicht.xml'
     # Sturm Example: '../uwe_johnson_data/data_sturm/briefe/Q.01.19140115.FMA.01.xml' '../uwe_johnson_data/data_sturm/briefe/Q.01.19150413.JVH.01.xml'
-    brief = TEIFile("../uwe_johnson_data/data_Dehmel_short/dehmel_groundtruth_build_test_daten.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True)
+    #brief = TEIFile("../uwe_johnson_data/data_Dehmel_short/dehmel_groundtruth_build_test_daten.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True)
     #brief = TEIFile("../uwe_johnson_data/data_Dehmel/trainingsdaten_UTF8_ntee.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True,nlp=spacy.load('de_core_news_sm'))
-    brief.build_tagged_text_line_list()
-    #print('10',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',10))
-    #print('20',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',20))
-    #print('50',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',30))
-    #print('50',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',50))
-    #print('100',brief.split_text_if_necessary('abcdefg? fsgdeghdh! fsgdgsetheth: wefws. aefaef eqrqwqeewewe',100))
-    # print(brief.get_text())
+    import spacy
+    #brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/_tei_writer_test_ohne-ab-wrapper-element_MINIMALVERSION.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
+    brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/draco_test.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
+    raw_ner_data = split_into_sentences(brief.build_tagged_text_line_list())
+    print(raw_ner_data)
+    #print(brief.get_text())
 
     # print(brief.get_notes())
