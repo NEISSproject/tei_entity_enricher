@@ -265,6 +265,9 @@ class TEINERPredWriteMap:
                     del st.session_state[self.build_tnw_sel_edit_entity_key(mode)]
                 if "tnw_entity_dict" in st.session_state:
                     del st.session_state["tnw_entity_dict"]
+                for key in st.session_state:
+                    if key.startswith("tnw_tag_def_"):
+                        del st.session_state[key]
 
             st.selectbox(
                 label=f"Corresponding {menu_entity_definition}",
@@ -317,6 +320,7 @@ class TEINERPredWriteMap:
                         or key.startswith("tnw_ent_" + mode)
                         or key.startswith("tnw_fixed_tags_" + mode)
                         or key.startswith("tnw_name_" + mode)
+                        or key.startswith("tnw_tag_def_")
                     ):
                         del st.session_state[key]
                 st.session_state.tnw_rerun_save_message = (
@@ -343,10 +347,14 @@ class TEINERPredWriteMap:
         if tnw_edit_entity not in cur_entity_dict.keys():
             cur_entity_dict[tnw_edit_entity] = [None, {}]
         mapping_entry = cur_entity_dict[tnw_edit_entity]
-        mapping_entry[0] = st.text_input(
-            "Tag",
-            mapping_entry[0] or "",
+        tag_name_key="tnw_tag_def_" + self.build_tnw_ntd_sel_key(mode) + tnw_edit_entity + mode
+        if tag_name_key not in st.session_state:
+            st.session_state[tag_name_key]=mapping_entry[0] if mapping_entry[0] is not None else ""
+        st.text_input(
+            label="Tag",
+            key=tag_name_key
         )
+        mapping_entry[0]=st.session_state[tag_name_key]
         if mapping_entry[0]:
             mapping_entry[1] = self.show_editable_attr_value_def(mapping_entry[1], tnw_edit_entity + mode)
         return cur_entity_dict
@@ -409,6 +417,9 @@ class TEINERPredWriteMap:
                 st.session_state.tnw_reload_aggrids = True
                 if "tnw_entity_dict" in st.session_state:
                     del st.session_state["tnw_entity_dict"]
+                for key in st.session_state:
+                    if key.startswith("tnw_tag_def_"):
+                        del st.session_state[key]
 
             if self.tnw_save_message is not None:
                 st.success(self.tnw_save_message)

@@ -259,6 +259,9 @@ class TEINERMap:
                     del st.session_state[self.build_tnm_sel_edit_entity_key(mode)]
                 if "tnm_entity_dict" in st.session_state:
                     del st.session_state["tnm_entity_dict"]
+                for key in st.session_state:
+                    if key.startswith("tnm_tag_def_"):
+                        del st.session_state[key]
 
             st.selectbox(
                 label=f"Corresponding {menu_entity_definition}",
@@ -303,7 +306,7 @@ class TEINERMap:
                 # if mode != self.tnm_mode_edit:
                 #    del st.session_state["tnm_sel_mapping_name_" + mode]
                 for key in st.session_state:
-                    if key.startswith("tnm_ntd_sel_"+mode) or key.startswith("tnm_ent_"+mode) or key.startswith("tnm_name_"+mode):
+                    if key.startswith("tnm_ntd_sel_"+mode) or key.startswith("tnm_ent_"+mode) or key.startswith("tnm_name_"+mode) or key.startswith("tnm_tag_def_"):
                         del st.session_state[key]
                 st.session_state.tnm_rerun_save_message = (
                     f"{menu_TEI_read_mapping} {mapping[self.tnm_attr_name]} succesfully saved!"
@@ -333,11 +336,14 @@ class TEINERMap:
         index = 0
         for mapping_entry in cur_entity_dict[tnm_edit_entity]:
             index += 1
-            mapping_entry[0] = st.text_input(
-                "Tag " + str(index),
-                mapping_entry[0] or "",
-                # key="tnm" + self.tei_ner_map_params.tnm_ntd_name + tnm_edit_entity + mode + str(index),
+            tag_name_key="tnm_tag_def_" + self.build_tnm_ntd_sel_key(mode) + tnm_edit_entity + mode + str(index)
+            if tag_name_key not in st.session_state:
+                st.session_state[tag_name_key]=mapping_entry[0] if mapping_entry[0] is not None else ""
+            st.text_input(
+                label="Tag " + str(index),
+                key=tag_name_key
             )
+            mapping_entry[0]=st.session_state[tag_name_key]
             if mapping_entry[0]:
                 mapping_entry[1] = self.show_editable_attr_value_def(
                     mapping_entry[1], tnm_edit_entity + mode + str(index)
@@ -407,6 +413,9 @@ class TEINERMap:
                 st.session_state.tnm_reload_aggrids = True
                 if "tnm_entity_dict" in st.session_state:
                     del st.session_state["tnm_entity_dict"]
+                for key in st.session_state:
+                    if key.startswith("tnm_tag_def_"):
+                        del st.session_state[key]
 
             if self.tnm_save_message is not None:
                 st.success(self.tnm_save_message)
