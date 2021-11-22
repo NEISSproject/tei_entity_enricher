@@ -505,6 +505,7 @@ class TEIManPP:
                         st.text_input(
                             "Path to save the changes to:",
                             key="tmp_teifile_save",
+                            value=st.session_state.tmp_teifile,
                         )
         else:
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
