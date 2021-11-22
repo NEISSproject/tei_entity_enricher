@@ -990,9 +990,10 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    # tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
+    tei_file = TEI_Writer("../uwe_johnson_data/Mareike_Fehler/draco_test.xml", tr=tr)
+    print(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr))
     # print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
-    test_write_pred_results(tr=tr, tnw=tnw, pred_out_dir="ner_prediction")
+    #test_write_pred_results(tr=tr, tnw=tnw, pred_out_dir="ner_prediction")
     # mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
     # print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml

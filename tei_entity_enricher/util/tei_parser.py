@@ -110,6 +110,9 @@ class TEIFile:
                 and pagecontent != "\n"
                 and str(pagecontent.__class__.__name__) != "Comment"
             ):
+                if pagecontent.name == "closer" or pagecontent.name == "postscript":
+                    text_list.append(" <linebreak>\n")
+                    tagged_text_list.append(" <linebreak>\n")
                 entity = self.get_entity_name_to_pagecontent(pagecontent)
                 if pagecontent.name is not None and entity is None:
                     (
@@ -146,6 +149,9 @@ class TEIFile:
                     tagged_text_list.extend(tagged_text_list_to_add)
                     tagged_text_list.append(" </" + entity + "> ")
                     statistics = self._merge_statistics(statistics, statistics_to_add)
+                if pagecontent.name == "opener":
+                    text_list.append(" <linebreak>\n")
+                    tagged_text_list.append(" <linebreak>\n")
             elif pagecontent.name in self._note_tags:
                 (
                     note_list_to_add,
@@ -176,20 +182,19 @@ class TEIFile:
         self._tagged_note_list = []
         self._note_statistics = {}
         # pages = textcontent.find_all(['opener','p','closer','postscript'])
-        for page in textcontent.find("body").contents:
-            if page.name is not None and page.name not in self._exclude_tags:
+        for page in textcontent.contents:
+            if isinstance(page, str):
+                content=[page]
+            else:
+                content=page.contents
+            if page.name not in self._exclude_tags:
                 self._pagelist.append({"name": page.name, "page": page})
-                if page.name == "closer" or page.name == "postscript":
-                    #text_list = text_list + [" <linebreak>\n"]
-                    text_list.append(" <linebreak>\n")
-                    #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
-                    tagged_text_list.append(" <linebreak>\n")
                 if page.name in self._note_tags:
                     (
                         note_list_to_add,
                         tagged_note_list_to_add,
                         note_statistics_to_add,
-                    ) = self._get_text_from_contentlist(page.contents, True)
+                    ) = self._get_text_from_contentlist(content, True)
                     # print(note_list_to_add,tagged_note_list_to_add,note_statistics_to_add)
                     #self._note_list = self._note_list + note_list_to_add + [" <linebreak>\n"]
                     self._note_list.extend(note_list_to_add)
@@ -203,34 +208,14 @@ class TEIFile:
                         new_text_list,
                         new_tagged_text_list,
                         new_statistics,
-                    ) = self._get_text_from_contentlist(page.contents, False)
-                #text_list = text_list + new_text_list + [" <linebreak>\n"]
-                text_list.extend(new_text_list)
-                text_list.append(" <linebreak>\n")
-                #tagged_text_list = tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
-                tagged_text_list.extend(new_tagged_text_list)
-                tagged_text_list.append(" <linebreak>\n")
-                statistics = self._merge_statistics(statistics, new_statistics)
-                if page.name == "opener":
-                    #text_list = text_list + [" <linebreak>\n"]
+                    ) = self._get_text_from_contentlist(content, False)
+                    #text_list = text_list + new_text_list + [" <linebreak>\n"]
+                    text_list.extend(new_text_list)
                     text_list.append(" <linebreak>\n")
-                    #tagged_text_list = tagged_text_list + [" <linebreak>\n"]
+                    #tagged_text_list = tagged_text_list + new_tagged_text_list + [" <linebreak>\n"]
+                    tagged_text_list.extend(new_tagged_text_list)
                     tagged_text_list.append(" <linebreak>\n")
-            else:
-                if isinstance(page, str):
-                    content=[page]
-                else:
-                    content=page
-                (
-                    new_text_list,
-                    new_tagged_text_list,
-                    new_statistics,
-                ) = self._get_text_from_contentlist(content, False)
-                text_list.extend(new_text_list)
-                text_list.append(" <linebreak>\n")
-                tagged_text_list.extend(new_tagged_text_list)
-                tagged_text_list.append(" <linebreak>\n")
-                statistics = self._merge_statistics(statistics, new_statistics)
+                    statistics = self._merge_statistics(statistics, new_statistics)
 
         text = ""
         for element in text_list:
@@ -469,8 +454,8 @@ if __name__ == "__main__":
     import spacy
     #brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/_tei_writer_test_ohne-ab-wrapper-element_MINIMALVERSION.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
     brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/draco_test.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
-    raw_ner_data = split_into_sentences(brief.build_tagged_text_line_list())
-    print(raw_ner_data)
-    #print(brief.get_text())
+    #raw_ner_data = split_into_sentences(brief.build_tagged_text_line_list())
+    #print(raw_ner_data)
+    print(brief.get_text())
 
     # print(brief.get_notes())
