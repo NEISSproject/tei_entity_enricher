@@ -251,6 +251,7 @@ class TEIManPP:
             col2.text_input(
                 label="Link suggestion search string",
                 key="tmp_ls_search_string" + str(index),
+                value=tag_entry["pure_tagcontent"],
                 on_change=change_search_string,
                 args=(index,),
                 help=f'You can insert an alternative search string for link suggestions to the entity {tag_entry["pure_tagcontent"]} here.',
