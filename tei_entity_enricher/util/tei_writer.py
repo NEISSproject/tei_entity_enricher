@@ -82,6 +82,8 @@ class TEI_Writer:
         return endstartindex
 
     def _extract_next_tag(self, cur_text, swap=False, allow_only_end_tags=False):
+        #if swap:
+        #    print(cur_text)
         beginstartindex = cur_text.find("<")
         swap_tag = ""
         if beginstartindex >= 0:
@@ -249,6 +251,74 @@ class TEI_Writer:
             )
 
     def _build_subtexttaglist(self, cur_text, swap=False):
+        #rewritten to don't have trouble with maximum recrusive depth (see old variant self.build_subtexttaglist_old)
+        cur_end_text=cur_text
+        returnlist=[]
+        while cur_end_text is not None:
+            return_element, swap_tag, splitreturn , cur_end_text = self._build_subtexttaglist_part(cur_text=cur_end_text,swap=swap)
+            if swap and len(swap_tag) > 0:
+                return [], swap_tag
+            if splitreturn:
+                returnlist.extend(return_element)
+            elif return_element is not None:
+                returnlist.append(return_element)
+        return returnlist, swap_tag
+
+
+    def _build_subtexttaglist_part(self, cur_text, swap=False):
+        # if swap and cur_text=='<lem type="print">Chl.</lem><rdg type="original"><del type="strikethrough"><subst><del type="overwritten">ich</del><add type="superimposed">Ch.</add></subst></del><add place="left-margin">Chl.</add></rdg>':
+        #    print("Hallo")
+        tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, cur_swap_tag = self._extract_next_tag(
+            cur_text, swap=swap
+        )
+        if swap and len(cur_swap_tag) > 0:
+            return None, cur_swap_tag, False , None
+        elif tag_name is not None:
+            returnlist = []
+            if beginstartindex > 0:
+                returnlist.append(cur_text[:beginstartindex])
+            tag_dict = {
+                "name": tag_name,
+                "tagbegin": cur_text[beginstartindex : beginstopindex + 1],
+                "tag_id": str(self._max_id),
+            }
+            self._max_id += 1
+            if endstartindex > 0:
+                tag_dict["tagend"] = cur_text[endstartindex : endstopindex + 1]
+                if beginstopindex + 1 < endstartindex:
+                    tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
+                        cur_text[beginstopindex + 1 : endstartindex], swap=swap
+                    )
+                    if swap and len(swap_tag) > 0:
+                        (
+                            tag_name,
+                            new_text,
+                            beginstartindex,
+                            beginstopindex,
+                            endstartindex,
+                            endstopindex,
+                        ) = self._swap_tag_ends(tag_name, swap_tag, cur_text)
+                        if endstartindex == -1 and endstopindex == -1:
+                            return None, swap_tag, False, None
+                        tag_dict["name"] = tag_name
+                        tag_dict["tagbegin"] = new_text[beginstartindex : beginstopindex + 1]
+                        tag_dict["tagend"] = new_text[endstartindex : endstopindex + 1]
+                        tag_dict["tagcontent"], swap_tag = self._build_subtexttaglist(
+                            new_text[beginstopindex + 1 : endstartindex], swap=swap
+                        )
+                returnlist.append(tag_dict)
+                if endstopindex + 1 < len(cur_text):
+                    return returnlist, "", True, cur_text[endstopindex + 1 :]
+            elif beginstopindex + 1 < len(cur_text):
+                returnlist.append(tag_dict)
+                return returnlist, "", True, cur_text[beginstopindex + 1 :]
+            else:
+                returnlist.append(tag_dict)
+            return returnlist, "", True, None
+        else:
+            return cur_text, "", False, None
+
+    def _build_subtexttaglist_old(self, cur_text, swap=False):
         # if swap and cur_text=='<lem type="print">Chl.</lem><rdg type="original"><del type="strikethrough"><subst><del type="overwritten">ich</del><add type="superimposed">Ch.</add></subst></del><add place="left-margin">Chl.</add></rdg>':
         #    print("Hallo")
         tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, cur_swap_tag = self._extract_next_tag(
@@ -774,7 +844,7 @@ def get_full_xml_of_tree_content(cur_element):
     elif isinstance(cur_element, list):
         text = ""
         for element in cur_element:
-            text = text + get_full_xml_of_tree_content(element)
+            text += get_full_xml_of_tree_content(element)
         return text
     elif isinstance(cur_element, str):
         return cur_element
@@ -906,7 +976,7 @@ def test_write_pred_results(tr, tnw, pred_out_dir):
 if __name__ == "__main__":
     import json
 
-    with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/UJA_Edition.json") as f:
+    with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Standard.json") as f:
         # with open("tei_entity_enricher/tei_entity_enricher/templates/TR_Configs/Arendt_Edition.json") as f:
         tr = json.load(f)
     # print(tr)
@@ -920,9 +990,10 @@ if __name__ == "__main__":
     #    tr=tr,
     #    tnw=tnw,
     # )
-    # tei_file = TEI_Writer("test/0809_101259.xml", tr=tr)
+    tei_file = TEI_Writer("../uwe_johnson_data/Mareike_Fehler/draco_test.xml", tr=tr)
+    print(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr))
     # print(parse_xml_to_text(get_pure_text_of_tree_element(tei_file.get_text_tree(), tr, id_to_mark="5")))
-    test_write_pred_results(tr=tr, tnw=tnw, pred_out_dir="ner_prediction")
+    #test_write_pred_results(tr=tr, tnw=tnw, pred_out_dir="ner_prediction")
     # mlist=tei_file.get_list_of_tags_matching_tag_list([["",{"":""}]])
     # print(mlist[1],mlist[5])
     # run_test("test",tr) #test/0809_101259.xml test/0045_060044.xml

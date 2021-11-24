@@ -61,6 +61,9 @@ class ProcessManagerBase:
         # returns an error message if its execution failed otherwise it has to return None
         return None
 
+    def force_process_start(self):
+        st.session_state.force_process_start=True
+
     def start(self):
         if not self.process:
             # self.process = subprocess.Popen(
@@ -107,6 +110,9 @@ class ProcessManagerBase:
             self.message("Process has stopped.", level="info")
 
     def process_state(self, st_element=st):
+        if "force_process_start" in st.session_state and st.session_state.force_process_start==True:
+            st.session_state.force_process_start=False
+            self.start()
         if self.process is not None:
             if self.process.poll() is None:
                 self.message("running...", level="info", st_element=st_element)
@@ -175,7 +181,7 @@ class ProcessManagerBase:
         with st.container():
             st.text(self.name)
             b1, b2, b3, b4, b5, process_status = st.columns([2, 2, 2, 2, 4, 6])
-            b1.button("Start", on_click=self.start)
+            b1.button("Start", on_click=self.force_process_start)
             b2.button("Stop", on_click=self.stop)
             b3.button("Clear", on_click=self.clear_process)
             b4.button("refresh")

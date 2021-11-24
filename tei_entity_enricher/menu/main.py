@@ -4,6 +4,7 @@ import streamlit as st
 from tei_entity_enricher.menu.ner_prediction import NERPrediction
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
+from tei_entity_enricher.menu.ner_resume import NERResumer
 import tei_entity_enricher.menu.tei_reader as tr
 import tei_entity_enricher.menu.ner_task_def as ntd
 import tei_entity_enricher.menu.tei_ner_map as tnm
@@ -20,6 +21,7 @@ from tei_entity_enricher.util.helper import (
     menu_groundtruth_builder,
     menu_TEI_write_mapping,
     menu_NER_trainer,
+    menu_NER_resume,
     menu_NER_prediction,
     menu_link_sug_cat,
 )
@@ -44,7 +46,7 @@ class Main:
                 st.session_state.main_menu_page = args.start_state
             else:
                 st.session_state.main_menu_page = list(pages.keys())[0]
-            if st.session_state.main_menu_page in [menu_NER_trainer, menu_NER_prediction]:
+            if st.session_state.main_menu_page in [menu_NER_trainer, menu_NER_prediction, menu_NER_resume]:
                 st.session_state["mm_main_page1"] = True
             elif st.session_state.main_menu_page == menu_postprocessing:
                 st.session_state["mm_main_page2"] = True
@@ -70,6 +72,7 @@ class Main:
             col1, col2 = st.sidebar.columns([0.1, 0.9])
             conf_pages = pages.copy()
             del conf_pages[menu_NER_trainer]
+            del conf_pages[menu_NER_resume]
             del conf_pages[menu_NER_prediction]
             del conf_pages[menu_postprocessing]
             col2.radio(label="", options=conf_pages, key="mm_submenu_radio0")
@@ -85,7 +88,7 @@ class Main:
         )
         if st.session_state.mm_main_page1:
             col1, col2 = st.sidebar.columns([0.1, 0.9])
-            conf_pages = {menu_NER_trainer: pages[menu_NER_trainer], menu_NER_prediction: pages[menu_NER_prediction]}
+            conf_pages = {menu_NER_trainer: pages[menu_NER_trainer], menu_NER_resume: pages[menu_NER_resume] , menu_NER_prediction: pages[menu_NER_prediction]}
             col2.radio(label="", options=conf_pages, key="mm_submenu_radio1")
             st.session_state.main_menu_page = st.session_state.mm_submenu_radio1
         st.sidebar.checkbox(
@@ -109,6 +112,7 @@ class Main:
             menu_groundtruth_builder: self.gt_builder,
             menu_TEI_write_mapping: self.tei_ner_writer,
             menu_NER_trainer: self.ner_trainer,
+            menu_NER_resume: self.ner_resume,
             menu_NER_prediction: self.ner_prediction,
             menu_link_sug_cat: self.sd_sparql,
             menu_postprocessing: self.ner_postprocessing,
@@ -151,6 +155,9 @@ class Main:
 
     def ner_trainer(self):
         NERTrainer()
+
+    def ner_resume(self):
+        NERResumer()
 
     def ner_prediction(self):
         NERPrediction()

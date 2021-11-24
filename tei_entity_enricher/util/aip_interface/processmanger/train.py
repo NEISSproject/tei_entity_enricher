@@ -1,10 +1,12 @@
 import logging
-import sys
+import sys, os
 from queue import Empty
 
 import streamlit as st
 
 from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
+from tei_entity_enricher.util import config_io
+from tei_entity_enricher.util.helper import remember_cwd
 
 logger = logging.getLogger(__name__)
 ON_POSIX = "posix" in sys.builtin_module_names
@@ -47,3 +49,69 @@ class TrainProcessManager(ProcessManagerBase):
             pass
 
         return f"{self._current_epoch}step:{self._progress_content}"
+
+    def set_current_params(self,params):
+        self._params=params
+
+    def build_lst_files_if_necessary(self):
+        if (
+            st.session_state.nt_train_option == "Self-Defined"
+            and st.session_state.nt_train_list_option == "From Folder"
+        ):
+            if os.path.isdir(self._params.nt_train_dir):
+                trainfilelist = [
+                    os.path.join(self._params.nt_train_dir, filepath + "\n")
+                    for filepath in os.listdir(self._params.nt_train_dir)
+                    if filepath.endswith(".json")
+                ]
+                with open(
+                    os.path.join(
+                        self._params.trainer_params_json["output_dir"],
+                        "train.lst",
+                    ),
+                    "w+",
+                ) as htrain:
+                    htrain.writelines(trainfilelist)
+                self._params.trainer_params_json["gen"]["train"]["lists"] = [
+                    os.path.join(
+                        self._params.trainer_params_json["output_dir"],
+                        "train.lst",
+                    )
+                ]
+            if os.path.isdir(self._params.nt_val_dir):
+                valfilelist = [
+                    os.path.join(self._params.nt_val_dir, filepath + "\n")
+                    for filepath in os.listdir(self._params.nt_val_dir)
+                    if filepath.endswith(".json")
+                ]
+                with open(
+                    os.path.join(
+                        self._params.trainer_params_json["output_dir"],
+                        "val.lst",
+                    ),
+                    "w+",
+                ) as hval:
+                    hval.writelines(valfilelist)
+                self._params.trainer_params_json["gen"]["val"]["lists"] = [
+                    os.path.join(
+                        self._params.trainer_params_json["output_dir"],
+                        "val.lst",
+                    )
+                ]
+
+    def do_before_start_process(self):
+        self.save_train_params()
+
+    def save_train_params(self):
+        self.build_lst_files_if_necessary()
+        if self._params.trainer_params_json["early_stopping"]["mode"]=="min":
+            #Workaround for bugfixing wrong parametrization
+            self._params.trainer_params_json["early_stopping"]["mode"]="max"
+            self._params.trainer_params_json["early_stopping"]["current"]=0.0
+            self._params.trainer_params_json["early_stopping"]["monitor"]="val_SeqEvalF1FixRule"
+            self._params.trainer_params_json["scenario"]["model"]["use_crf"]=True
+            self._params.trainer_params_json["scenario"]["model"]["crf_with_ner_forb_trans"]=True
+        with remember_cwd():
+            os.chdir(self.work_dir)
+            config_io.set_config(self._params.trainer_params_json)
+        return 0

@@ -73,6 +73,7 @@ class NERTrainer(MenuBase):
 
     def _train_manager(self):
         self.train_process_manager = get_train_process_manager(workdir=self._wd)
+        self.train_process_manager.set_current_params(self._params)
         return_code = self.train_process_manager.st_manager()
         return return_code
 
@@ -107,10 +108,32 @@ class NERTrainer(MenuBase):
                 self._params.choose_model_widget(
                     label, init=self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"]
                 )
-                self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"] = self._params.model
+                if self._params.is_hf_model:
+                    self._params.trainer_params_json["scenario"]["model"]["model"] = "NERwithHFBERT"
+                    self._params.trainer_params_json["scenario"]["data"]["use_hf_model"] = True
+                    self._params.trainer_params_json["scenario"]["data"]["pretrained_hf_model"] = self._params.model
+                    self._params.trainer_params_json["scenario"]["data"]["hf_cache_dir"] = os.path.join(self._wd, "templates","hf_cache")
+                    self._params.trainer_params_json["gen"]["setup"]["train"]["batch_size"] = 8
+                    self._params.trainer_params_json["gen"]["setup"]["val"]["batch_size"] = 8
+                    self._params.trainer_params_json["samples_per_epoch"]=1250
+                else:
+                    self._params.trainer_params_json["scenario"]["model"]["model"] = "NERwithMiniBERT"
+                    self._params.trainer_params_json["scenario"]["data"]["use_hf_model"] = False
+                    self._params.trainer_params_json["scenario"]["model"]["pretrained_bert"] = self._params.model
+                    self._params.trainer_params_json["gen"]["setup"]["train"]["batch_size"] = 16
+                    self._params.trainer_params_json["gen"]["setup"]["val"]["batch_size"] = 16
+                    self._params.trainer_params_json["samples_per_epoch"]=5000
 
                 if self.set_output_directory() != 0:
                     self._data_config_check.append("Invalid output directory")
+
+                self._params.trainer_params_json["epochs"] = st.number_input(
+                    label="Epochs to train",
+                    min_value=1,
+                    value=self._params.trainer_params_json["epochs"],
+                    step=1,
+                    help="Insert the number of epochs your model should be trained for. I you have no idea we suggest 30 epochs for a training.",
+                )
 
                 if self._data_config_check:
                     st.error(f"Fix {self._data_config_check} to continue!")
@@ -327,52 +350,6 @@ class NERTrainer(MenuBase):
 
         return 0
 
-    def build_lst_files_if_necessary(self):
-        if (
-            st.session_state.nt_train_option == "Self-Defined"
-            and st.session_state.nt_train_list_option == "From Folder"
-        ):
-            if os.path.isdir(self._params.nt_train_dir):
-                trainfilelist = [
-                    os.path.join(self._params.nt_train_dir, filepath + "\n")
-                    for filepath in os.listdir(self._params.nt_train_dir)
-                    if filepath.endswith(".json")
-                ]
-                with open(
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "train.lst",
-                    ),
-                    "w+",
-                ) as htrain:
-                    htrain.writelines(trainfilelist)
-                self._params.trainer_params_json["gen"]["train"]["lists"] = [
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "train.lst",
-                    )
-                ]
-            if os.path.isdir(self._params.nt_val_dir):
-                valfilelist = [
-                    os.path.join(self._params.nt_val_dir, filepath + "\n")
-                    for filepath in os.listdir(self._params.nt_val_dir)
-                    if filepath.endswith(".json")
-                ]
-                with open(
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "val.lst",
-                    ),
-                    "w+",
-                ) as hval:
-                    hval.writelines(valfilelist)
-                self._params.trainer_params_json["gen"]["val"]["lists"] = [
-                    os.path.join(
-                        self._params.trainer_params_json["output_dir"],
-                        "val.lst",
-                    )
-                ]
-
     def load_trainer_params(self):
         with remember_cwd():
             os.chdir(self._wd)
@@ -380,8 +357,6 @@ class NERTrainer(MenuBase):
         return 0
 
     def save_train_params(self):
-        self.build_lst_files_if_necessary()
-        with remember_cwd():
-            os.chdir(self._wd)
-            config_io.set_config(self._params.trainer_params_json)
-        return 0
+        self.train_process_manager = get_train_process_manager(workdir=self._wd)
+        self.train_process_manager.set_current_params(self._params)
+        return self.train_process_manager.save_train_params()

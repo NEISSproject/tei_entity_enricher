@@ -17,7 +17,7 @@ class WikidataConnector:
         wikidata_web_api_limit: str = "50",
         show_printmessages: bool = True,
     ) -> None:
-        """establishes connection to wikida web api and wikidata´s sparql endpoint,
+        """establishes connection to wikidata web api and wikidata´s sparql endpoint,
         used to get a list of possible entities refering to input name and type strings
 
         input:
@@ -25,7 +25,7 @@ class WikidataConnector:
         check_connectivity:
             execute connectivity check in __init__() or not (see connectivity_check())
         wikidata_web_api_language:
-            language setting of wikidata web api
+            language setting of wikidata web api (language in which the results are shown ('uselang' parameter) and language defining the domain in which data is searched for ('language' parameter of wbsearchentities action))
         wikidata_web_api_limit:
             maximum amount of returned search hits in wikidata web api query results
         show_printmessages:
@@ -41,12 +41,12 @@ class WikidataConnector:
         self.wikidata_web_api_baseUrl: str = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&format=json&language={}&uselang={}&limit={}"
         self.wikidata_web_api_language: str = wikidata_web_api_language
         self.wikidata_web_api_limit: str = wikidata_web_api_limit
-        self.wikidata_sparql_queries_filepath: str = os.path.join(
+        self.link_suggestion_categories_filepath: str = os.path.join(
             local_save_path, "config", "postprocessing", "link_sugesstion_categories.json"
         )
         try:
-            self.wikidata_sparql_queries: Union[dict, None] = FileReader(
-                filepath=self.wikidata_sparql_queries_filepath,
+            self.link_suggestion_categories: Union[dict, None] = FileReader(
+                filepath=self.link_suggestion_categories_filepath,
                 origin="local",
                 internal_call=True,
                 show_printmessages=False,
@@ -55,7 +55,7 @@ class WikidataConnector:
             print(
                 "WikidataConnector: could not find link_sugesstion_categories.json in config dir. creating file with default settings..."
             ) if self.show_printmessages else None
-            self.wikidata_sparql_queries: dict = {
+            self.link_suggestion_categories: dict = {
                 "person": [
                     ["Q5"],
                     "q5 = human",
@@ -73,10 +73,10 @@ class WikidataConnector:
                 ],
             }
             try:
-                makedir_if_necessary(os.path.dirname(self.wikidata_sparql_queries_filepath))
+                makedir_if_necessary(os.path.dirname(self.link_suggestion_categories_filepath))
                 FileWriter(
-                    data=self.wikidata_sparql_queries,
-                    filepath=self.wikidata_sparql_queries_filepath,
+                    data=self.link_suggestion_categories,
+                    filepath=self.link_suggestion_categories_filepath,
                     show_printmessages=False,
                 ).writefile_json()
             except:
@@ -211,7 +211,7 @@ class WikidataConnector:
                             precise_spelling.append(search_list_element)
                     filereader_result["search"] = precise_spelling
             if filter_for_correct_type == True:
-                correct_type = []
+                correctly_typed_entities = []
                 entry_amount = len(filereader_result["search"])
                 percent = 100 / entry_amount if entry_amount > 0 else 100
                 progressbar = 0
@@ -221,8 +221,8 @@ class WikidataConnector:
                         f"type filtering in {string_tuple} result: {math.floor(progressbar * 10 ** 2) / 10 ** 2}"
                     ) if self.show_printmessages == True else None
                     if self.check_wikidata_entity_type(search_list_element["id"], string_tuple[1]) == True:
-                        correct_type.append(search_list_element)
-                filereader_result["search"] = correct_type
+                        correctly_typed_entities.append(search_list_element)
+                filereader_result["search"] = correctly_typed_entities
             result_dict[string_tuple] = [
                 len(filereader_result["search"]),
                 filereader_result,
@@ -239,7 +239,7 @@ class WikidataConnector:
         which determines, if the entity in question is a member of one of specific classes
         (see local 'query_string' variable for details: 'wdt:P31/wdt:P279*'-property means 'is a member of a specific class or
         a member of any subclass (any level beneath) of a specific class' and the FILTER statement
-        (created with local function _build_filter_string() on basis of data from self.wikidata_sparql_queries)
+        (created with local function _build_filter_string() on basis of data from self.link_suggestion_categories)
         defines a set of classes, out of which only one class has to match the query statement to let the query return true)
 
         a sparqle query to wikidata endpoint needs an agent parameter in the header to get an answer,
@@ -252,7 +252,7 @@ class WikidataConnector:
 
         def _build_filter_string(type_string) -> str:
             filter_string = "("
-            type_checking_entity_list = self.wikidata_sparql_queries.get(type)[0]
+            type_checking_entity_list = self.link_suggestion_categories.get(type)[0]
             for index, x in enumerate(type_checking_entity_list):
                 if index != len(type_checking_entity_list) - 1:
                     filter_string += "wd:" + x + ", "
@@ -260,7 +260,7 @@ class WikidataConnector:
                     filter_string += "wd:" + x + ")"
             return filter_string
 
-        if type not in list(self.wikidata_sparql_queries.keys()):
+        if type not in list(self.link_suggestion_categories.keys()):
             return None
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)

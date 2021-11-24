@@ -48,7 +48,7 @@ def el_editor_content_check(ace_editor_content: str) -> Union[bool, str]:
     for index, e in enumerate(fr_result):
         if e["name"].strip() == "":
             return f"An entity (number: {index + 1}) in editor content is missing a valid 'name' value"
-        if e["type"] not in list(wcon.wikidata_sparql_queries.keys()):
+        if e["type"] not in list(wcon.link_suggestion_categories.keys()):
             return (
                 f"An entity (number: {index + 1}, name: {e['name']}) in editor content is missing a valid 'type' value"
             )
@@ -301,6 +301,12 @@ class TEINERPostprocessing:
                     with self.el_add_missing_ids_menu_placeholder.container():
                         progress_bar = st.progress(0)
                         st.checkbox(
+                            label="Replace all furtherIds information with new query results",
+                            value=False,
+                            help="When activated, all existing furtherIds information will be overwritten. When deactivated, information will be added only to empty furtherIds fields.",
+                            key="pp_replace_all_fi_information",
+                        )
+                        st.checkbox(
                             label="Try to identify entities without any ids",
                             value=False,
                             help="When activated, for every entity in entity library, which has no id data at all, a list of matching entities in wikidata database will be suggested.",
@@ -349,6 +355,7 @@ class TEINERPostprocessing:
                                     _temp_result_entity_identification = self.pp_el_library_object.return_identification_suggestions_for_entity(
                                         input_entity=entity,
                                         try_to_identify_entities_without_id_values=st.session_state.pp_identify_ent_wo_ids,
+                                        replace_furtherIds_information=st.session_state.pp_replace_all_fi_information,
                                         wikidata_query_match_limit=str(wikidata_search_amount),
                                     )
                                     current_progress_state = progress_amount_list[index]

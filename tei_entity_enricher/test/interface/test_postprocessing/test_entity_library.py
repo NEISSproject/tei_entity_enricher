@@ -45,6 +45,7 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
                             "description": "",
                             "wikidata_id": "Q123",
                             "gnd_id": "123",
+                            "furtherIds": {},
                         }
                     ]
                 ),
@@ -62,6 +63,7 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
                                 "description": "",
                                 "wikidata_id": "",
                                 "gnd_id": "",
+                                "furtherIds": {},
                             }
                         ]
                     )
@@ -80,6 +82,7 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
                                 "description": "",
                                 "wikidata_id": "Q123",
                                 "gnd_id": "",
+                                "furtherIds": {},
                             }
                         ]
                     )
@@ -98,6 +101,7 @@ class TestPostprocessingEntityLibrary(unittest.TestCase):
                                 "description": "",
                                 "wikidata_id": "",
                                 "gnd_id": "123",
+                                "furtherIds": {},
                             }
                         ]
                     )
