@@ -208,7 +208,7 @@ class TEINERPostprocessing:
                     st.session_state.pp_el_create_filepath_if_not_found
                 )
                 if load_attempt_result == True:
-                    logger.info(
+                    logger.debug(
                         f"Entity library loading process from file {st.session_state.pp_el_filepath} succeeded."
                     )
                 elif type(load_attempt_result) == str:
@@ -464,7 +464,7 @@ class TEINERPostprocessing:
                     key="pp_ace_internal_key" + str(st.session_state.pp_ace_key_counter),
                 )
                 editor_content = fix_editor_content(editor_content)
-                logger.info(editor_content)
+                logger.debug(editor_content)
                 if "pp_ace_el_editor_content" not in st.session_state:
                     st.session_state.pp_ace_el_editor_content = editor_content
                 if (editor_content) and (editor_content != st.session_state.pp_ace_el_editor_content):
@@ -505,7 +505,7 @@ class TEINERPostprocessing:
                             el_add_entities_from_file_single_file_result = (
                                 self.pp_el_library_object.add_entities_from_file(file=uploaded_file)
                             )
-                            logger.info(
+                            logger.debug(
                                 f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}."
                             )
                             if type(el_add_entities_from_file_single_file_result) == str:
