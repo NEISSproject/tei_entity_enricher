@@ -75,7 +75,7 @@ class Main:
             del conf_pages[menu_NER_resume]
             del conf_pages[menu_NER_prediction]
             del conf_pages[menu_postprocessing]
-            col2.radio(label="", options=conf_pages, key="mm_submenu_radio0")
+            col2.radio(label="Submenu:", options=conf_pages, key="mm_submenu_radio0")
             st.session_state.main_menu_page = st.session_state.mm_submenu_radio0
         st.sidebar.checkbox(
             label="Training and Prediction",
@@ -89,7 +89,7 @@ class Main:
         if st.session_state.mm_main_page1:
             col1, col2 = st.sidebar.columns([0.1, 0.9])
             conf_pages = {menu_NER_trainer: pages[menu_NER_trainer], menu_NER_resume: pages[menu_NER_resume] , menu_NER_prediction: pages[menu_NER_prediction]}
-            col2.radio(label="", options=conf_pages, key="mm_submenu_radio1")
+            col2.radio(label="Submenu:", options=conf_pages, key="mm_submenu_radio1")
             st.session_state.main_menu_page = st.session_state.mm_submenu_radio1
         st.sidebar.checkbox(
             label=menu_postprocessing,
