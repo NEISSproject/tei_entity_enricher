@@ -168,11 +168,12 @@ class TEIManPP:
         col1, col2 = st.columns(2)
         with col1:
             if "tmp_edit_del_tag" + str(index) not in st.session_state:
-                st.session_state["tmp_edit_del_tag" + str(index)] = False
+                st.session_state["tmp_edit_del_tag" + str(index)] = True if "delete" in tag_entry and tag_entry["delete"] else False
             st.checkbox(
                 "Remove this tag from the TEI-File",
                 # tag_entry["delete"],
                 key="tmp_edit_del_tag" + str(index),
+                value=tag_entry["delete"] if "delete" in tag_entry else False,
                 help="Set this checkbox if you want to remove this tag from the TEI-File.",
             )
             tag_entry["delete"] = st.session_state["tmp_edit_del_tag" + str(index)]
