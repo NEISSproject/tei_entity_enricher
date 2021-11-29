@@ -548,6 +548,7 @@ class TEIManPP:
                         st.text_input(
                             "Path to save the changes to:",
                             key="tmp_direct_change_teifile_save",
+                            value=st.session_state.tmp_teifile,
                         )
             else:
                 if "tmp_ace_el_editor_content" in st.session_state:
