@@ -534,7 +534,7 @@ class TEIManPP:
                             del st.session_state["tmp_ace_el_editor_content"]
                         st.session_state.tmp_ace_key_counter += 1
                         st.session_state.tmp_save_message = (
-                            f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
+                            f"Changes successfully saved to {st.session_state.tmp_direct_change_teifile_save}!"
                         )
 
                     col1, col2 = st.columns([0.1, 0.9])
