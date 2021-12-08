@@ -11,9 +11,9 @@ from tei_entity_enricher.util import config_io
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
-    remember_cwd,
     menu_NER_resume,
 )
+from tei_entity_enricher.util.train_course_helper import extract_val_metrics_from_train_log, show_metric_line_chart,c_ef1,c_loss, c_epoch
 from tei_entity_enricher.util.aip_interface.processmanger.resume import get_resume_process_manager
 
 logger = logging.getLogger(__name__)
@@ -37,8 +37,67 @@ class NERResumer(MenuBase):
     def _params(self) -> NERResumeParams:
         return get_params()
 
+    def show_train_course(self):
+        train_ev_expander = st.expander(f"Training course of {os.path.basename(self._params.model)}", expanded=False)
+        with train_ev_expander:
+            if os.path.isfile(os.path.join(self._params.model, "train.log")):
+                metrics=extract_val_metrics_from_train_log(os.path.join(self._params.model, "train.log"))
+                if len(metrics)==1:
+                    st.info(f"There is no train course to show, because only one epoch was found with ({c_ef1}: {metrics[0][c_ef1]}; {c_loss}: {metrics[0][c_loss]})")
+                elif len(metrics)>1:
+                    st.markdown('#### Metrics on the validation set per Epoch')
+                    col1,col2=st.columns(2)
+                    with col1:
+                        st.markdown('##### '+c_ef1)
+                        show_metric_line_chart(metrics,c_ef1)
+                    with col2:
+                        st.markdown('##### '+c_loss)
+                        show_metric_line_chart(metrics,c_loss)
+                    epochlist=[]
+                    epoch_to_ef1_dict={}
+                    epoch_to_loss_dict={}
+                    for metric in metrics:
+                        epochlist.append(metric[c_epoch])
+                        epoch_to_ef1_dict[metric[c_epoch]]=metric[c_ef1]
+                        epoch_to_loss_dict[metric[c_epoch]]=metric[c_loss]
+                    epochlist.sort()
+                    min_epoch=min(epochlist)
+                    max_epoch=max(epochlist)
+                    if "rt_current_epoch" not in st.session_state:
+                        st.session_state["rt_current_epoch"]=max(epochlist)
+                    if "rt_last_epoch" not in st.session_state:
+                        st.session_state["rt_last_epoch"]=st.session_state.rt_current_epoch
+                    st.slider(
+                        label=f"Show metrics to epoch: ",
+                        min_value=min_epoch,
+                        max_value=max_epoch,
+                        key="rt_current_epoch",
+                    )
+
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric(c_epoch,st.session_state.rt_current_epoch,st.session_state.rt_current_epoch-st.session_state.rt_last_epoch,delta_color="off")
+                    with col2:
+                        st.metric(c_ef1,epoch_to_ef1_dict[st.session_state.rt_current_epoch],round(epoch_to_ef1_dict[st.session_state.rt_current_epoch]-epoch_to_ef1_dict[st.session_state.rt_last_epoch],4))
+                    with col3:
+                        st.metric(c_loss,epoch_to_loss_dict[st.session_state.rt_current_epoch],round(epoch_to_loss_dict[st.session_state.rt_current_epoch]-epoch_to_loss_dict[st.session_state.rt_last_epoch],4),delta_color="inverse")
+                    st.markdown(f"Currently displayed: Epoch {str(st.session_state.rt_current_epoch)}. Previously displayed: Epoch {str(st.session_state.rt_last_epoch)}")
+                    st.session_state.rt_last_epoch=st.session_state.rt_current_epoch
+                else:
+                    st.warning(f"Couldn't load training course of {os.path.basename(self._params.model)}.")
+            else:
+                st.warning(f"Couldn't load training course of {os.path.basename(self._params.model)}.")
+
+    def check_model_change(self):
+        if "rt_last_selected_model" in st.session_state:
+            if st.session_state.rt_last_selected_model!=self._params.model:
+                del st.session_state["rt_current_epoch"]
+                del st.session_state["rt_last_epoch"]
+        st.session_state.rt_last_selected_model=self._params.model
+
     def show_resume_config_options(self):
         self.select_model_dir()
+        self.check_model_change()
         if self._params.model and os.path.isfile(os.path.join(self._params.model, "trainer_params.json")):
             self._params.trainer_params_json = config_io.get_config(
                 os.path.join(self._params.model, "trainer_params.json")
@@ -46,6 +105,7 @@ class NERResumer(MenuBase):
             st.info(
                 f'The model {os.path.basename(self._params.model)} was already trained for {self._params.trainer_params_json["current_epoch"]} epochs. The highest entity-wise F1 score obtained so far from the best epoch on the validation set was {self._params.trainer_params_json["early_stopping"]["current"]}.'
             )
+            self.show_train_course()
             if self._params.resume_to_epoch is None:
                 self._params.resume_to_epoch={}
             if self._params.model not in self._params.resume_to_epoch.keys():
