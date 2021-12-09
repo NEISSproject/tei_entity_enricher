@@ -91,8 +91,10 @@ class NERResumer(MenuBase):
     def check_model_change(self):
         if "rt_last_selected_model" in st.session_state:
             if st.session_state.rt_last_selected_model!=self._params.model:
-                del st.session_state["rt_current_epoch"]
-                del st.session_state["rt_last_epoch"]
+                if "rt_current_epoch" in st.session_state:
+                    del st.session_state["rt_current_epoch"]
+                if "rt_last_epoch" in st.session_state:
+                    del st.session_state["rt_last_epoch"]
         st.session_state.rt_last_selected_model=self._params.model
 
     def show_resume_config_options(self):
