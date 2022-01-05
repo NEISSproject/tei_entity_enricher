@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -8,6 +9,7 @@ import streamlit as st
 from tei_entity_enricher.menu.menu_base import MenuBase
 from tei_entity_enricher.util.aip_interface.evaluate_params import NEREvaluateParams, get_params
 import tei_entity_enricher.menu.tei_ner_gb as gb
+import tei_entity_enricher.menu.tei_ner_map as tei_map
 from tei_entity_enricher.util.helper import (
     module_path,
     state_ok,
@@ -29,6 +31,7 @@ class NEREvaluator(MenuBase):
 
         if self.show_menu:
             self.tng = gb.TEINERGroundtruthBuilder(show_menu=False)
+            self.tnm = tei_map.TEINERMap(show_menu=False)
             self.workdir()
             self.show()
 
@@ -54,6 +57,19 @@ class NEREvaluator(MenuBase):
             else:
                 st.info(f"No evaluations for the model {os.path.basename(self._params.model)} found.")
 
+    def validate_evaluation_config(self,tng_name):
+        if os.path.isfile(os.path.join(self._params.model,'trainer_params.json')):
+            with open(os.path.join(self._params.model,'trainer_params.json')) as f:
+                trainer_params=json.load(f)
+            tagspath=os.path.basename(trainer_params["scenario"]["data"]["tags"])
+            model_ntd_name=tagspath[:-4].replace('_',' ')
+            tnm=self.tng.tngdict[tng_name][self.tng.tng_attr_tnm]
+            ntd_name=tnm[self.tnm.tnm_attr_ntd]["name"]
+            if tagspath[:-4]!=ntd_name.replace(' ','_'):
+                st.warning(f"Warning: The selected model '{os.path.basename(self._params.model)}' was trained for the Entity Definition '{model_ntd_name}', whereas the test set of the selected Groundtruth '{tng_name}' was builded for the Entity Definition '{ntd_name}'")
+        else:
+            self._check_list.append(f"Couldn't find train parameters of the selected model {os.path.basename(self._params.model)}.")
+
 
     def show_evaluation_module(self):
         if self._params.model:
@@ -66,6 +82,7 @@ class NEREvaluator(MenuBase):
                     key="ne_sel_tng_name",
                     help="Choose a Groundtruth whose test set you want to evaluate.",
                 )
+                self.validate_evaluation_config(st.session_state.ne_sel_tng_name)
                 trainlistfilepath, devlistfilepath, testlistfilepath = self.tng.get_filepath_to_gt_lists(
                     st.session_state.ne_sel_tng_name
                 )
