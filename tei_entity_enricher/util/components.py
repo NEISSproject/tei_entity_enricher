@@ -158,6 +158,7 @@ def dir_selector(folder_path="", sub_level=0, max_level=10, parent=""):
 def get_sel_dict():
     return dict()
 
+
 def small_dir_selector(label=None, value=local_save_path, key="", help=None, return_state=False, ask_make=False):
     col1, col2 = st.columns([10, 1])
     col3, col4, col5 = st.columns([25, 25, 50])
@@ -178,7 +179,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
     if key not in st.session_state:
         st.session_state[key] = value
 
-    col1.text_input(label=label, key=key, help=help)
+    col1.text_input(label=label, key=key, value=value, help=help)
 
     if os.path.isdir(st.session_state[key]):
         col2.latex(state_ok)
@@ -219,7 +220,9 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
             on_click=ds_reset,
         )
 
-        if ask_make and (os.path.isdir(os.path.dirname(st.session_state[key])) or os.path.dirname(st.session_state[key])==""):
+        if ask_make and (
+            os.path.isdir(os.path.dirname(st.session_state[key])) or os.path.dirname(st.session_state[key]) == ""
+        ):
             st.button(
                 f"Create dir: {st.session_state[key]}",
                 key=key + "_create_dir",
@@ -229,6 +232,7 @@ def small_dir_selector(label=None, value=local_save_path, key="", help=None, ret
     if return_state:
         return st.session_state[key], ret_state
     return st.session_state[key]
+
 
 def small_file_selector(label=None, value=local_save_path, key="", help=None, return_state=False):
     col1, col2 = st.columns([10, 1])
@@ -247,7 +251,7 @@ def small_file_selector(label=None, value=local_save_path, key="", help=None, re
     if key not in st.session_state:
         st.session_state[key] = value
 
-    col1.text_input(label=label, key=key, help=help)
+    col1.text_input(label=label, key=key, value=value, help=help)
 
     if os.path.isfile(st.session_state[key]) or os.path.isdir(st.session_state[key]):
         if os.path.isfile(st.session_state[key]):

@@ -168,11 +168,12 @@ class TEIManPP:
         col1, col2 = st.columns(2)
         with col1:
             if "tmp_edit_del_tag" + str(index) not in st.session_state:
-                st.session_state["tmp_edit_del_tag" + str(index)] = False
+                st.session_state["tmp_edit_del_tag" + str(index)] = True if "delete" in tag_entry and tag_entry["delete"] else False
             st.checkbox(
                 "Remove this tag from the TEI-File",
                 # tag_entry["delete"],
                 key="tmp_edit_del_tag" + str(index),
+                value=tag_entry["delete"] if "delete" in tag_entry else False,
                 help="Set this checkbox if you want to remove this tag from the TEI-File.",
             )
             tag_entry["delete"] = st.session_state["tmp_edit_del_tag" + str(index)]
@@ -251,6 +252,7 @@ class TEIManPP:
             col2.text_input(
                 label="Link suggestion search string",
                 key="tmp_ls_search_string" + str(index),
+                value=tag_entry["pure_tagcontent"],
                 on_change=change_search_string,
                 args=(index,),
                 help=f'You can insert an alternative search string for link suggestions to the entity {tag_entry["pure_tagcontent"]} here.',
@@ -504,6 +506,7 @@ class TEIManPP:
                         st.text_input(
                             "Path to save the changes to:",
                             key="tmp_teifile_save",
+                            value=st.session_state.tmp_teifile,
                         )
         else:
             if "tmp_teifile" in st.session_state and os.path.isfile(st.session_state.tmp_teifile):
@@ -531,7 +534,7 @@ class TEIManPP:
                             del st.session_state["tmp_ace_el_editor_content"]
                         st.session_state.tmp_ace_key_counter += 1
                         st.session_state.tmp_save_message = (
-                            f"Changes successfully saved to {st.session_state.tmp_teifile_save}!"
+                            f"Changes successfully saved to {st.session_state.tmp_direct_change_teifile_save}!"
                         )
 
                     col1, col2 = st.columns([0.1, 0.9])
@@ -546,6 +549,7 @@ class TEIManPP:
                         st.text_input(
                             "Path to save the changes to:",
                             key="tmp_direct_change_teifile_save",
+                            value=st.session_state.tmp_teifile,
                         )
             else:
                 if "tmp_ace_el_editor_content" in st.session_state:

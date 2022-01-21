@@ -12,6 +12,7 @@ import logging
 
 from streamlit_ace import st_ace
 from streamlit_autorefresh import st_autorefresh
+from tei_entity_enricher.util.helper import MessageType
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,8 @@ class ProcessManagerBase:
         self.verbose: int = verbose
         self.process: Optional[subprocess.Popen[str]] = None
         self.current_process_finished: bool = False
+        self.messageType: str = None
+        self.after_finish_message: str = None
         self.outs_str = ""
         self.errs_str = ""
         self.error_out = None
@@ -32,15 +35,15 @@ class ProcessManagerBase:
         self._log_content: str = ""
         self._progress_content: str = ""
 
-    def message(self, message, level="info", st_element=st):
+    def message(self, message, level=MessageType.info, st_element=st):
         """level: info, error, warning, success"""
         fn_dict = {
-            "info": (st_element.info, logger.info),
-            "error": (st_element.error, logger.error),
-            "warning": (st_element.warning, logger.warning),
-            "success": (st_element.success, logger.info),
+            MessageType.info: (st_element.info, logger.info),
+            MessageType.error: (st_element.error, logger.error),
+            MessageType.warning: (st_element.warning, logger.warning),
+            MessageType.success: (st_element.success, logger.info),
         }
-        if level not in ["info", "error", "warning", "success"]:
+        if level not in [MessageType.info, MessageType.error, MessageType.warning, MessageType.success]:
             msg = f"{message} was called with invalid level: {level}"
             logger.error(msg)
             if self.verbose >= 2:
@@ -58,11 +61,11 @@ class ProcessManagerBase:
         return None
 
     def do_after_finish_process(self):
-        # returns an error message if its execution failed otherwise it has to return None
-        return None
+        # returns a tupel of a messageType and message if there has to be displayed a special message otherwise it has to return None, None
+        return None, None
 
     def force_process_start(self):
-        st.session_state.force_process_start=True
+        st.session_state.force_process_start = True
 
     def start(self):
         if not self.process:
@@ -71,6 +74,8 @@ class ProcessManagerBase:
             # )
             error = self.do_before_start_process()
             self.current_process_finished = False
+            self.messageType = None
+            self.after_finish_message = None
             if error is None:
                 self.process = subprocess.Popen(
                     args=self.process_command_list(),
@@ -88,9 +93,9 @@ class ProcessManagerBase:
                 t_err.daemon = True  # thread dies with the program
                 t_err.start()
             else:
-                self.message(f"process could not be started because an error occured: {error}", level="error")
+                self.message(f"process could not be started because an error occured: {error}", level=MessageType.error)
         else:
-            self.message("Process is not empty, please clear process first.", level="error")
+            self.message("Process is not empty, please clear process first.", level=MessageType.error)
             # error_msg = "Process is not empty, please clear process first."
             # if self.verbose >= 1:
             #     logger.error(error_msg)
@@ -107,32 +112,37 @@ class ProcessManagerBase:
                 self.process.kill()
                 return_code = self.process.wait(timeout=3)
         if return_code is not None:
-            self.message("Process has stopped.", level="info")
+            self.message("Process has stopped.", level=MessageType.info)
 
     def process_state(self, st_element=st):
-        if "force_process_start" in st.session_state and st.session_state.force_process_start==True:
-            st.session_state.force_process_start=False
+        if "force_process_start" in st.session_state and st.session_state.force_process_start == True:
+            st.session_state.force_process_start = False
             self.start()
         if self.process is not None:
             if self.process.poll() is None:
-                self.message("running...", level="info", st_element=st_element)
+                self.message("running...", level=MessageType.info, st_element=st_element)
             elif self.process.poll() == 0:
                 if not self.current_process_finished:
                     # run do_after_finish_process only once it its run is succesful
-                    error = self.do_after_finish_process()
-                    if error is not None:
+                    self.messageType, self.after_finish_message = self.do_after_finish_process()
+                    self.current_process_finished = True
+                    if self.messageType is not None:
                         self.message(
-                            f"process could not be finished because an error occured: {error}", "error", st_element
+                            self.after_finish_message, self.messageType, st
                         )
                     else:
-                        self.current_process_finished = True
-                        self.message("finished successful :-)", level="success", st_element=st_element)
+                        self.message("finished successful :-)", level=MessageType.success, st_element=st_element)
                 else:
-                    self.message("finished successful :-)", level="success", st_element=st_element)
+                    if self.messageType is not None:
+                        self.message(
+                            self.after_finish_message, self.messageType, st
+                        )
+                    else:
+                        self.message("finished successful :-)", level=MessageType.success, st_element=st_element)
             else:
-                self.message(f"process finished with error code: {self.process.poll()}", "error", st_element)
+                self.message(f"process finished with error code: {self.process.poll()}", MessageType.error, st_element)
         else:
-            self.message(f"process is empty", level="info", st_element=st_element)
+            self.message(f"process is empty", level=MessageType.info, st_element=st_element)
 
     def is_process_running(self):
         if self.process is not None and self.process.poll() is None:

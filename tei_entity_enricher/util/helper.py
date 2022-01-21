@@ -20,9 +20,18 @@ menu_groundtruth_builder = "Groundtruth Builder"
 menu_TEI_write_mapping = "TEI Write Entity Mapping"
 menu_link_sug_cat = "Link Suggestion Categories"
 menu_NER_trainer = "NER Trainer"
-menu_NER_resume = "Resume NER Training"
+menu_NER_resume = "Resume Training"
+menu_NER_evaluate = "Evaluate Training"
 menu_NER_prediction = "NER Prediction"
 menu_postprocessing = "Postprocessing"
+
+
+class MessageType:
+    info: str = "info"
+    success: str = "success"
+    warning: str = "warning"
+    error: str = "error"
+
 
 latex_color_list = [
     "red",
@@ -259,13 +268,13 @@ def transform_arbitrary_text_to_latex(text):
 
 
 def print_st_message(type, message):
-    if type == "info":
+    if type == MessageType.info:
         st.info(message)
-    elif type == "success":
+    elif type == MessageType.success:
         st.success(message)
-    elif type == "warning":
+    elif type == MessageType.warning:
         st.warning(message)
-    elif type == "error":
+    elif type == MessageType.error:
         st.error(message)
     else:
         st.error(f'Type "{type}" for Message "{message}" not known.')

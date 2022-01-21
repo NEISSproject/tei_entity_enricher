@@ -19,6 +19,7 @@ from tei_entity_enricher.util.helper import (
     makedir_if_necessary,
     print_st_message,
     menu_postprocessing,
+    MessageType,
 )
 
 logger = logging.getLogger(__name__)
@@ -208,7 +209,7 @@ class TEINERPostprocessing:
                     st.session_state.pp_el_create_filepath_if_not_found
                 )
                 if load_attempt_result == True:
-                    logger.info(
+                    logger.debug(
                         f"Entity library loading process from file {st.session_state.pp_el_filepath} succeeded."
                     )
                 elif type(load_attempt_result) == str:
@@ -216,7 +217,7 @@ class TEINERPostprocessing:
                     logger.warning(f"Entity library loading process failed: {load_attempt_result}")
                     self.el_filepath_state_col.latex(state_failed)
                     # self.el_init_message_placeholder.error(load_attempt_result)
-                    st.session_state.pp_el_init_message = ["error", load_attempt_result]
+                    st.session_state.pp_el_init_message = [MessageType.error, load_attempt_result]
                     self.pp_el_library_object.data_file = None
 
     def quit_button_trigger(self):
@@ -234,11 +235,11 @@ class TEINERPostprocessing:
                 save_attempt_result = self.pp_el_library_object.save_library()
                 if save_attempt_result == True:
                     st.session_state.pp_el_misc_message = [
-                        "success",
+                        MessageType.success,
                         "The current state of the entity library was successfully saved.",
                     ]
                 else:
-                    st.session_state.pp_el_misc_message = ["error", "Could not save current state of entity library."]
+                    st.session_state.pp_el_misc_message = [MessageType.error, "Could not save current state of entity library."]
 
     def export_button_trigger(self):
         st.session_state.pp_last_pressed_button = "export"
@@ -254,11 +255,11 @@ class TEINERPostprocessing:
             except FileNotFoundError:
                 fw_return_value = "folder_not_found"
             if fw_return_value == True:
-                st.session_state.pp_el_misc_message = ["success", "Entity Library successfully exported."]
+                st.session_state.pp_el_misc_message = [MessageType.success, "Entity Library successfully exported."]
             elif fw_return_value == False:
-                st.session_state.pp_el_misc_message = ["error", "Entity Library export failed: File already exists."]
+                st.session_state.pp_el_misc_message = [MessageType.error, "Entity Library export failed: File already exists."]
             elif fw_return_value == "folder_not_found":
-                st.session_state.pp_el_misc_message = ["error", "Entity Library export failed: Folder does not exist."]
+                st.session_state.pp_el_misc_message = [MessageType.error, "Entity Library export failed: Folder does not exist."]
 
         with self.el_filepath_container:
             if "pp_last_pressed_button" in st.session_state and st.session_state.pp_last_pressed_button == "export":
@@ -464,7 +465,7 @@ class TEINERPostprocessing:
                     key="pp_ace_internal_key" + str(st.session_state.pp_ace_key_counter),
                 )
                 editor_content = fix_editor_content(editor_content)
-                logger.info(editor_content)
+                logger.debug(editor_content)
                 if "pp_ace_el_editor_content" not in st.session_state:
                     st.session_state.pp_ace_el_editor_content = editor_content
                 if (editor_content) and (editor_content != st.session_state.pp_ace_el_editor_content):
@@ -505,7 +506,7 @@ class TEINERPostprocessing:
                             el_add_entities_from_file_single_file_result = (
                                 self.pp_el_library_object.add_entities_from_file(file=uploaded_file)
                             )
-                            logger.info(
+                            logger.debug(
                                 f"add_entities_from_file() result for {uploaded_file.name}: {el_add_entities_from_file_single_file_result}."
                             )
                             if type(el_add_entities_from_file_single_file_result) == str:
@@ -520,9 +521,9 @@ class TEINERPostprocessing:
                                 st.session_state.pp_el_add_from_file_message_list = []
                                 for message in result_messages:
                                     if "success" in message:
-                                        st.session_state.pp_el_add_from_file_message_list.append(["success", message])
+                                        st.session_state.pp_el_add_from_file_message_list.append([MessageType.success, message])
                                     else:
-                                        st.session_state.pp_el_add_from_file_message_list.append(["info", message])
+                                        st.session_state.pp_el_add_from_file_message_list.append([MessageType.info, message])
                         if "pp_ace_el_editor_content" in st.session_state:
                             st.session_state["pp_ace_el_editor_content"] = json.dumps(
                                 self.pp_el_library_object.data, indent=4

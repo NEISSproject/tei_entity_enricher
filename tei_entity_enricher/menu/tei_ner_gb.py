@@ -393,7 +393,7 @@ class TEINERGroundtruthBuilder:
                 max_value=int(
                     100 - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)
                 ),
-                value=10,
+                value=int(10 if "tng_test_percentage" not in st.session_state else st.session_state.tng_test_percentage),
                 key="tng_test_percentage",
             )
         with col6:
@@ -401,7 +401,7 @@ class TEINERGroundtruthBuilder:
                 "Percentage for the validation set",
                 min_value=0,
                 max_value=int(100 - st.session_state.tng_test_percentage),
-                value=10,
+                value=int(10 if "tng_dev_percentage" not in st.session_state else st.session_state.tng_dev_percentage),
                 key="tng_dev_percentage",
             )
         with col7:

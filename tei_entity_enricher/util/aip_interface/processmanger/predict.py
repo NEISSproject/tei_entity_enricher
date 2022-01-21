@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import math
+import traceback
 
 import streamlit as st
 
@@ -10,6 +11,7 @@ from tei_entity_enricher.util.aip_interface.prediction_params import NERPredicti
 from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 from tei_entity_enricher.util.spacy_lm import get_spacy_lm
 from tei_entity_enricher.util.tei_writer import TEI_Writer
+from tei_entity_enricher.util.helper import MessageType
 import tei_entity_enricher.util.tei_parser as tp
 
 logger = logging.getLogger(__name__)
@@ -107,28 +109,44 @@ class PredictProcessManager(ProcessManagerBase):
             with open(os.path.join(self._params.prediction_out_dir, "predict_file_dict.json")) as h2:
                 file_dict = json.load(h2)
             filelist = list(file_dict.keys())
+            failed_prediction_files=[]
             for tei_file_path in filelist:
                 _, teifilename = os.path.split(tei_file_path)
                 progress_bar.progress(math.floor((filelist.index(tei_file_path) + 1) / len(filelist) * 100))
                 self.message(f"Include predicted entities into {teifilename}...", st_element=message_placeholder)
-                predicted_data = all_predict_data[file_dict[tei_file_path]["begin"] : file_dict[tei_file_path]["end"]]
-                if self._params.predict_tei_reader["use_notes"]:
-                    if file_dict[tei_file_path]["note_end"] - file_dict[tei_file_path]["end"] > 0:
-                        predicted_note_data = all_predict_data[
-                            file_dict[tei_file_path]["end"] : file_dict[tei_file_path]["note_end"]
-                        ]
+                try:
+                    predicted_data = all_predict_data[file_dict[tei_file_path]["begin"] : file_dict[tei_file_path]["end"]]
+                    if self._params.predict_tei_reader["use_notes"]:
+                        if file_dict[tei_file_path]["note_end"] - file_dict[tei_file_path]["end"] > 0:
+                            predicted_note_data = all_predict_data[
+                                file_dict[tei_file_path]["end"] : file_dict[tei_file_path]["note_end"]
+                            ]
+                        else:
+                            predicted_note_data = []
                     else:
                         predicted_note_data = []
-                else:
-                    predicted_note_data = []
-                brief = TEI_Writer(
-                    tei_file_path,
-                    tr=self._params.predict_tei_reader,
-                    tnw=self._params.predict_tei_write_map,
-                    untagged_symbols=["O", "UNK"],
-                )
-                brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
-                brief.write_back_to_file(os.path.join(self._params.prediction_out_dir, teifilename))
+                    brief = TEI_Writer(
+                        tei_file_path,
+                        tr=self._params.predict_tei_reader,
+                        tnw=self._params.predict_tei_write_map,
+                        untagged_symbols=["O", "UNK"],
+                    )
+                    brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
+                    brief.write_back_to_file(os.path.join(self._params.prediction_out_dir, teifilename))
+                except Exception as ex:
+                    ret_message="".join(traceback.TracebackException.from_exception(ex).format())
+                    failed_prediction_files.append([teifilename,ret_message.replace("\n","\n\n")])
             message_placeholder.empty()
             progress_bar_placeholder.empty()
-        return None
+            if len(failed_prediction_files)>0:
+                if len(filelist)==1:
+                    return MessageType.error, f"Prediction to file {failed_prediction_files[0][0]} was not succesful because of the following error: \n\n" + failed_prediction_files[0][1]
+                elif len(filelist)==len(failed_prediction_files):
+                    return MessageType.error, f"It was not possible to write back the prediction results into the TEI-Files. For example for the file {failed_prediction_files[0][0]} occured the error: \n\n" + failed_prediction_files[0][1]
+                else:
+                    ret_message="For the following files It was not possible to write back the prediction results into the TEI-Files: \n\n"
+                    for failed_prediction in failed_prediction_files:
+                        ret_message+=failed_prediction[0]+', \n\n'
+                    ret_message+=f"For example for the file {failed_prediction_files[0][0]} occured the error: \n\n" + failed_prediction_files[0][1]
+                    return MessageType.warning, ret_message
+        return None, None
