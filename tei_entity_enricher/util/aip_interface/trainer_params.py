@@ -41,7 +41,7 @@ class NERTrainerParams(AIPBaseParams):
         self.possible_models = dict((os.path.relpath(x, target_dir), x) for x in possible_paths)
         self.possible_models.update(allowed_hf_models)
         logger.debug(f"model dict: {self.possible_models}")
-        return 0 if possible_paths else -1
+        return 0 if possible_paths or len(allowed_hf_models.keys())>0 else -1
 
     def choose_model_widget(self, label="model", init=None, st_element=st):
         if init is not None and f"select_{label}" not in st.session_state and init in list(self.possible_models.keys()):
