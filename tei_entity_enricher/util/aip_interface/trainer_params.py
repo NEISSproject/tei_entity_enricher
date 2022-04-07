@@ -11,11 +11,11 @@ from tei_entity_enricher.util.aip_interface.base_params import AIPBaseParams
 logger = logging.getLogger(__name__)
 
 allowed_hf_models = {
-    "From Huggingface: German language model (deepset/gbert-base)": "deepset/gbert-base",
-    "From Huggingface: English language model (bert-base-cased)": "bert-base-cased",
-    "From Huggingface: Multilingual language model (bert-base-multilingual-cased)": "bert-base-multilingual-cased",
-    "From Huggingface: French language model (Geotrend/bert-base-fr-cased)": "Geotrend/bert-base-fr-cased",
-    "From Huggingface: Spanish language model (Geotrend/bert-base-es-cased)": "Geotrend/bert-base-es-cased",
+    "From Hugging Face: German language model (deepset/gbert-base)": "deepset/gbert-base",
+    "From Hugging Face: English language model (bert-base-cased)": "bert-base-cased",
+    "From Hugging Face: Multilingual language model (bert-base-multilingual-cased)": "bert-base-multilingual-cased",
+    "From Hugging Face: French language model (Geotrend/bert-base-fr-cased)": "Geotrend/bert-base-fr-cased",
+    "From Hugging Face: Spanish language model (Geotrend/bert-base-es-cased)": "Geotrend/bert-base-es-cased",
 }
 
 
