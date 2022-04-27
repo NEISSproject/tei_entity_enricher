@@ -52,6 +52,9 @@ class NERTrainer(MenuBase):
     def _params(self) -> NERTrainerParams:
         return get_params()
 
+    def get_train_process(self):
+        return get_train_process_manager(workdir=self._wd)
+
     def show(self):
         st.latex("\\text{\Huge{" + menu_NER_trainer + "}}")
         if self.workdir() != 0:

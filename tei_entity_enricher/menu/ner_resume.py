@@ -40,6 +40,9 @@ class NERResumer(MenuBase):
     def _params(self) -> NERResumeParams:
         return get_params()
 
+    def get_resume_process(self):
+        return get_resume_process_manager(workdir=os.path.join(os.getcwd(), "ner_trainer"))
+
     def show_train_course(self):
         train_ev_expander = st.expander(f"Training course of {os.path.basename(self._params.model)}", expanded=False)
         with train_ev_expander:

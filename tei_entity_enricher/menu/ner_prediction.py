@@ -67,6 +67,10 @@ class NERPrediction(MenuBase):
     def _params(self) -> NERPredictionParams:
         return get_params()
 
+
+    def get_predict_process(self):
+        return get_predict_process_manager(workdir=os.getcwd())
+
     def check(self, **kwargs):
         # Todo implement
         return True

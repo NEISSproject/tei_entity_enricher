@@ -39,6 +39,9 @@ class NEREvaluator(MenuBase):
     def _params(self) -> NEREvaluateParams:
         return get_params()
 
+    def get_eval_process(self):
+        return get_evaluate_process_manager(workdir=os.path.join(os.getcwd(), "ner_trainer"))
+
     def build_eval_dict_list_tablestring(self, eval_dict_list):
         tablestring = f"Test set of Groundtruth | {c_ef1} \n -----|-------"
         for eval_dict in eval_dict_list:
