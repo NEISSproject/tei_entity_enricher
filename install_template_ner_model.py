@@ -13,7 +13,7 @@ def download(url: str, dest_filename: str):
 def install_template_models():
     dest_folder=os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)),"ner_trainer","templates","models_ner")
     makedir_if_necessary(dest_folder)
-    urllink="https://unibox.uni-rostock.de/dl/fi2SJcYwmX2oKXjRkaUrci89/.dir"
+    urllink="https://unibox.uni-rostock.de/dl/fiAHgWX9ku24ZdqSwhv6vT9v/.dir"
     try:
         download(urllink, dest_filename=os.path.join(dest_folder,"templates.zip"))
         logging.info("Extract ner template models.")
