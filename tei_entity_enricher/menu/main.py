@@ -3,6 +3,7 @@ import logging
 import streamlit as st
 import os
 from tei_entity_enricher.menu.ner_prediction import NERPrediction
+from tei_entity_enricher.__init__ import __version__
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.menu.ner_resume import NERResumer
@@ -35,6 +36,9 @@ logger = logging.getLogger(__name__)
 
 class Main:
     def __init__(self, args):
+        if "shut_down_ntee" not in st.session_state:
+            st.session_state["shut_down_ntee"]=False
+
         self.show(args)
         self.train_process=None
 
@@ -142,6 +146,7 @@ class Main:
 
         # Include NEISS Logo
         logo_frame.image(neiss_logo)
+        st.sidebar.write("Version: " + __version__)
 
         self.show_main_menu(pages, args)
 
@@ -218,5 +223,6 @@ class Main:
             logger.info("predict process terminated")
 
 
+        st.latex("\\text{\Huge{NTEE was shut down}}")
         logger.info("NTEE was terminated.")
         os._exit(0)
