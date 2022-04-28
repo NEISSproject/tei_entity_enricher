@@ -17,6 +17,7 @@
 # ==============================================================================
 from setuptools import setup, find_packages
 import os
+from install_template_ner_model import install_template_models
 from tei_entity_enricher import __version__
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -41,3 +42,4 @@ setup(
     keywords=["ner", "tei", "gui"],
     data_files=[("", [os.path.join(this_dir, "requirements.txt")])],
 )
+install_template_models()

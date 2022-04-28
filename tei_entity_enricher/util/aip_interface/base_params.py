@@ -22,13 +22,23 @@ class AIPBaseParams(ABC):
     def path_check(self, root, subdirs, files):
         raise NotImplementedError
 
-    def scan_models(self, target_dir):
+    def scan_models(self, target_dir, template_dir=None):
         possible_paths = []
+        possible_template_paths = []
         for root, subdirs, files in os.walk(target_dir):
             if self.path_check(root, subdirs, files):
                 possible_paths.append(root)
         logger.debug(f"model possible_paths: {possible_paths}")
+        if template_dir is not None:
+            for root, subdirs, files in os.walk(template_dir):
+                if self.path_check(root, subdirs, files):
+                    possible_template_paths.append(root)
+            logger.debug(f"model possible_template_paths: {possible_template_paths}")
+
         self.possible_models = dict((os.path.relpath(x, target_dir), x) for x in possible_paths)
+        if len(possible_template_paths)>0:
+           for possible_template_path in possible_template_paths:
+               self.possible_models[os.path.relpath(possible_template_path, template_dir)+" (Template)"]=possible_template_path
         logger.debug(f"model dict: {self.possible_models}")
         return 0 if possible_paths else -1
 

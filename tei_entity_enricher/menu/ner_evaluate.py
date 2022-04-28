@@ -113,7 +113,8 @@ class NEREvaluator(MenuBase):
     def select_model_dir(self):
         label = "NER Model for Evaluation"
         target_dir = os.path.join(self._wd, "models_ner")
-        if self._params.scan_models(target_dir) != 0:
+        template_dir = os.path.join(self._wd, "templates", "models_ner")
+        if self._params.scan_models(target_dir,template_dir) != 0:
             self._params.possible_models = {f"no {label} found": None}
             self._check_list.append(f"no {label} found")
         self._params.choose_model_widget(label)
