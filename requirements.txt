@@ -1,6 +1,6 @@
 streamlit == 1.2.0
 streamlit-ace == 0.1.1
-streamlit-aggrid
+streamlit-aggrid == 0.2.3.post2
 streamlit-autorefresh == 0.0.1
 Pillow
 bs4 == 0.0.1
