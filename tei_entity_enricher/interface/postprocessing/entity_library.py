@@ -323,7 +323,7 @@ class EntityLibrary:
         self,
         input_entity: dict = None,
         try_to_identify_entities_without_id_values: bool = False,
-        replace_furtherIds_information=False,
+        replace_furtherIds_information: bool = False,
         wikidata_query_match_limit: str = "5",
     ) -> Union[Tuple[List[dict], int, str], Tuple[list, int, str]]:
         """method for postprocessing gui to get missing ids or identification suggestions for a single entity;
@@ -366,7 +366,12 @@ class EntityLibrary:
                             else ""
                         )
                         _furtherNames_to_add = self.get_further_names_of_wikidata_entity(entity.get("id", ""))
-                        _furtherIds_to_add = self.get_further_ids_of_wikidata_entity(entity.get("id", ""))
+                        _furtherIds_to_add = (
+                            self.get_further_ids_of_wikidata_entity(entity.get("id", ""))
+                            # HIER WEITER
+                            # if replace_furtherIds_information
+                            # else self.get_missing_further_ids_of_wikidata_entity(entity.get("id", ""))
+                        )
                         entity_list_in_query_wikidata_result.append(
                             {
                                 "name": entity.get("label", f"No name delivered, search pattern was: {input_tuple[0]}"),
@@ -410,6 +415,9 @@ class EntityLibrary:
             if gnd_id_of_first_suggested_entity != "":
                 returned_entity = input_entity.copy()
                 returned_entity["gnd_id"] = gnd_id_of_first_suggested_entity
+                # HIER WEITER
+                # returned_entity["furtherIds"] = self.get_further_ids_of_wikidata_entity(input_entity["wikidata_id"]) if replace_furtherIds_information else self.get_missing_further_ids_of_wikidata_entity(input_entity["wikidata_id"])
+                returned_entity["furtherIds"] = self.get_further_ids_of_wikidata_entity(input_entity["wikidata_id"])
                 return ([returned_entity], 0, f"gnd_id {gnd_id_of_first_suggested_entity} determined")
             else:
                 return ([], 0, "no id data could be retrieved for entity")
@@ -512,7 +520,7 @@ class EntityLibrary:
                 continue
         return return_messages
 
-    def get_gnd_id_of_wikidata_entity(self, wikidata_id: str):
+    def get_gnd_id_of_wikidata_entity(self, wikidata_id: str) -> list:
         """method to get gnd id number for a given wikidata id by sparql query,
         p227 = gnd id"""
         query = """
@@ -575,6 +583,18 @@ class EntityLibrary:
         query_result = gnd_connector.get_gnd_data(["furtherNames"])
         return query_result[gnd_id]["furtherNames"]
 
+    def get_missing_further_ids_of_wikidata_entity(self, wikidata_id: str = None) -> dict:
+        """method to get missing further ids of an entity from entity library, retrieving entity ids from databases defined in self.furtherIds_config,
+        returns a dict which can be used as value for furtherId key in entity library entity dicts,
+        information are retrieved from wikidata sparql endpoint on the basis of the properties defined in self.furtherIds_config
+        and on the basis of the current state of the respective entity in the currently loaded entity library
+
+        output example for 'Berlin': {"geonames.com": ["2950159", "2950157", "6547383", "6547539"], "viaf.org": ["122530980"]}
+        """
+        if wikidata_id == "":
+            return {}
+        # HIER WEITER
+
     def get_further_ids_of_wikidata_entity(self, wikidata_id: str = None) -> dict:
         """method to get further ids of a wikidata entity, retrieving entity ids from databases defined in self.furtherIds_config,
         returns a dict which can be used as value for furtherId key in entity library entity dicts,
@@ -583,7 +603,7 @@ class EntityLibrary:
         output example for 'Berlin': {"geonames.com": ["2950159", "2950157", "6547383", "6547539"], "viaf.org": ["122530980"]}
         """
         if wikidata_id == "":
-            return []
+            return {}
         endpoint_url = "https://query.wikidata.org/sparql"
         user_agent = "NEISS TEI Entity Enricher v.{}".format(__version__)
         further_ids_query = """
@@ -605,16 +625,20 @@ class EntityLibrary:
                 result_dict[key].append(query_result_item["label"]["value"])
         return result_dict
 
-    def get_further_ids_of_gnd_entity(self, gnd_id: str = None) -> List[str]:
+    def get_further_ids_of_gnd_entity(self, gnd_id: str = None) -> dict:
         """method to get further ids of a gnd entity,
         returns a dict for a furtherIds value of an entity library entity dict,
         keys are the hostnames of the urls provided by query, values are the complete uris,
         origin of the information is the database related to the gnd api choosen in gndConnector object
 
+        output example for '119108127' (Rudolf Berlin): {"cpr.uni-rostock.de": "http://cpr.uni-rostock.de/resolve/gnd/119108127", "www.deutsche-biographie.de": "http://www.deutsche-biographie.de/pnd119108127.html#adbcontent"}
+
         NOT IN USE AT THE MOMENT"""
         if gnd_id == "":
-            return []
+            return {}
         gnd_connector = GndConnector(gnd_id)
+        # ATTENTION: NEXT LINE JUST FOR TESTING PURPOSE
+        # gnd_connector.apiindex = 1
         gnd_connector_sameAs_id_key = list(
             gnd_connector.apilist[gnd_connector.apiindex]["baseAliases"]["sameAs"][1][0].keys()
         )[0]
