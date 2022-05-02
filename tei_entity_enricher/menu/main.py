@@ -2,6 +2,7 @@ import logging
 
 import streamlit as st
 import os
+from time import sleep
 from tei_entity_enricher.menu.ner_prediction import NERPrediction
 from tei_entity_enricher.__init__ import __version__
 
@@ -222,6 +223,7 @@ class Main:
             logger.info("predict process terminated")
 
 
-        st.latex("\\text{\Huge{NTEE was shut down}}")
+        st.info("NTEE was closed. You can close the Browser Tab now.")
         logger.info("NTEE was terminated.")
+        sleep(1)
         os._exit(0)
