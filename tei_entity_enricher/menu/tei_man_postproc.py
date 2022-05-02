@@ -82,7 +82,7 @@ class TEIManPP:
             self.tmp_reload_aggrids = False
 
     def load_manPostProc_config(self) -> None:
-        default_filepath = os.path.join(local_save_path, "config", "manPostProc_config.json")
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
         fr = FileReader(
             filepath=default_filepath, origin="local", internal_call=True, show_printmessages=False
         )
@@ -107,7 +107,7 @@ class TEIManPP:
         return result
 
     def save_manPostProc_config(self,manPostProc_config):
-        default_filepath = os.path.join(local_save_path, "config", "manPostProc_config.json")
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
         try:
             makedir_if_necessary(os.path.dirname(default_filepath))
             FileWriter(

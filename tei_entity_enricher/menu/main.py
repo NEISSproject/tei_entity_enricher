@@ -40,7 +40,6 @@ class Main:
             st.session_state["shut_down_ntee"]=False
 
         self.show(args)
-        self.train_process=None
 
     def show_main_menu_old(self, pages, args):
         # Define sidebar as radiobuttons
