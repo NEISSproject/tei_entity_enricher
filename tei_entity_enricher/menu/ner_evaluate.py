@@ -68,7 +68,7 @@ class NEREvaluator(MenuBase):
             model_ntd_name=tagspath[:-4].replace('_',' ')
             tnm=self.tng.tngdict[tng_name][self.tng.tng_attr_tnm]
             ntd_name=tnm[self.tnm.tnm_attr_ntd]["name"]
-            if tagspath[:-4]!=ntd_name.replace(' ','_'):
+            if tagspath[:-4]!=ntd_name.replace(' ','_') and not (model_ntd_name=='ner germeval wp' and tng_name=="Germeval"):
                 st.warning(f"Warning: The selected model '{os.path.basename(self._params.model)}' was trained for the Entity Definition '{model_ntd_name}', whereas the test set of the selected Groundtruth '{tng_name}' was builded for the Entity Definition '{ntd_name}'")
         else:
             self._check_list.append(f"Couldn't find train parameters of the selected model {os.path.basename(self._params.model)}.")

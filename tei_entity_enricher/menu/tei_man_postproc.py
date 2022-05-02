@@ -82,7 +82,7 @@ class TEIManPP:
             self.tmp_reload_aggrids = False
 
     def load_manPostProc_config(self) -> None:
-        default_filepath = os.path.join(local_save_path, "config", "manPostProc_config.json")
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
         fr = FileReader(
             filepath=default_filepath, origin="local", internal_call=True, show_printmessages=False
         )
@@ -107,7 +107,7 @@ class TEIManPP:
         return result
 
     def save_manPostProc_config(self,manPostProc_config):
-        default_filepath = os.path.join(local_save_path, "config", "manPostProc_config.json")
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
         try:
             makedir_if_necessary(os.path.dirname(default_filepath))
             FileWriter(
@@ -392,29 +392,36 @@ class TEIManPP:
                             ),
                         )
 
-                        def add_entity_to_library(suggestion):
-                            entity_to_add = suggestion
-                            if (
-                                "type" in entity_to_add.keys()
-                                and entity_to_add["type"] == self.tmp_base_ls_search_type_options[0]
-                            ):
-                                entity_to_add["type"] = ""
-                            ret_value = self.entity_library.add_entities([suggestion])
-                            if isinstance(ret_value, str):
-                                st.session_state.tmp_warn_message = ret_value
-                            else:
-                                self.entity_library.save_library()
-                                if "pp_ace_el_editor_content" in st.session_state:
-                                    del st.session_state["pp_ace_el_editor_content"]
-                                st.session_state.pp_ace_key_counter += 1
-                                st.session_state.tmp_save_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
 
-                        scol6.button(
-                            "Add to Entity Library",
-                            key="tmp_el_" + str(suggestion_id),
-                            on_click=add_entity_to_library,
-                            args=(suggestion,),
-                        )
+                        if "origin" in suggestion.keys() and suggestion["origin"]=="wd":
+                            def add_entity_to_library(suggestion):
+                                if "origin" in suggestion.keys():
+                                    del suggestion["origin"]
+                                entity_to_add = suggestion
+                                if (
+                                    "type" in entity_to_add.keys()
+                                    and entity_to_add["type"] == self.tmp_base_ls_search_type_options[0]
+                                ):
+                                    entity_to_add["type"] = ""
+
+                                ret_value = self.entity_library.add_entities([suggestion])
+                                if isinstance(ret_value, str):
+                                    st.session_state.tmp_warn_message = ret_value
+                                else:
+                                    self.entity_library.save_library()
+                                    if "pp_ace_el_editor_content" in st.session_state:
+                                        del st.session_state["pp_ace_el_editor_content"]
+                                    st.session_state.pp_ace_key_counter += 1
+                                    st.session_state.tmp_save_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
+
+                            scol6.button(
+                                "Add to Entity Library",
+                                key="tmp_el_" + str(suggestion_id),
+                                on_click=add_entity_to_library,
+                                args=(suggestion,),
+                            )
+                        else:
+                            scol6.write("From Entity Library")
 
                 else:
                     st.write("No link suggestions found!")

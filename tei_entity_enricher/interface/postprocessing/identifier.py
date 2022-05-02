@@ -170,9 +170,12 @@ class Identifier:
                     loaded_library=query_entity_library,
                     query_by_type=entity_library_filter_for_correct_type,
                 )
+                copy_tuple_result_list=[]
                 for item in tuple_result_list:
-                    item["origin"] = "el"
-                query_entity_library_result[tuple] = tuple_result_list
+                    copy_item=item.copy()
+                    copy_item["origin"] = "el"
+                    copy_tuple_result_list.append(copy_item)
+                query_entity_library_result[tuple] = copy_tuple_result_list
             entity_library_has_data = self.check_entity_library_result_has_data(query_entity_library_result)
         query_wikidata_result = {}
         if do_wikidata_query == True:
