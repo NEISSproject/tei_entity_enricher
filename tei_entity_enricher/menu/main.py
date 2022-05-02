@@ -1,7 +1,10 @@
 import logging
 
 import streamlit as st
+import os
+from time import sleep
 from tei_entity_enricher.menu.ner_prediction import NERPrediction
+from tei_entity_enricher.__init__ import __version__
 
 from tei_entity_enricher.menu.ner_trainer import NERTrainer
 from tei_entity_enricher.menu.ner_resume import NERResumer
@@ -13,6 +16,7 @@ import tei_entity_enricher.menu.tei_ner_gb as tng
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw
 import tei_entity_enricher.menu.tei_postprocessing as pp
 import tei_entity_enricher.menu.link_sug_cat as lsc
+from tei_entity_enricher.util.aip_interface.processmanger.train import get_train_process_manager
 from tei_entity_enricher.util.helper import (
     load_images,
     menu_TEI_reader_config,
@@ -33,6 +37,9 @@ logger = logging.getLogger(__name__)
 
 class Main:
     def __init__(self, args):
+        if "shut_down_ntee" not in st.session_state:
+            st.session_state["shut_down_ntee"]=False
+
         self.show(args)
 
     def show_main_menu_old(self, pages, args):
@@ -139,6 +146,7 @@ class Main:
 
         # Include NEISS Logo
         logo_frame.image(neiss_logo)
+        st.sidebar.write("Version: " + __version__)
 
         self.show_main_menu(pages, args)
 
@@ -149,8 +157,12 @@ class Main:
         colesf.image(eu_esf)
         colbm.image(mv_bm)
 
-        # Display the selected page
-        pages[st.session_state.main_menu_page]()
+        # Display Shutdown-Button
+        if st.sidebar.button("Shutdown NTEE"):
+            self.shutdown_NTEE()
+        else:
+            # Display the selected page
+            pages[st.session_state.main_menu_page]()
 
     def tei_reader(self):
         tr.TEIReader()
@@ -184,3 +196,34 @@ class Main:
 
     def ner_postprocessing(self):
         pp.TEINERPostprocessing()
+
+    def shutdown_NTEE(self):
+        train_process_manger=NERTrainer(show_menu=False).get_train_process()
+        if train_process_manger.has_process():
+            train_process_manger.stop()
+            train_process_manger.clear_process()
+            logger.info("train process terminated")
+
+        resume_process_manger=NERResumer(show_menu=False).get_resume_process()
+        if resume_process_manger.has_process():
+            resume_process_manger.stop()
+            resume_process_manger.clear_process()
+            logger.info("resume process terminated")
+
+        eval_process_manger=NEREvaluator(show_menu=False).get_eval_process()
+        if eval_process_manger.has_process():
+            eval_process_manger.stop()
+            eval_process_manger.clear_process()
+            logger.info("eval process terminated")
+
+        predict_process_manger=NERPrediction(show_menu=False).get_predict_process()
+        if predict_process_manger.has_process():
+            predict_process_manger.stop()
+            predict_process_manger.clear_process()
+            logger.info("predict process terminated")
+
+
+        st.info("NTEE was closed. You can close the Browser Tab now.")
+        logger.info("NTEE was terminated.")
+        sleep(1)
+        os._exit(0)

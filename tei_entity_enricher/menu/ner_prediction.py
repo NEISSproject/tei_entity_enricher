@@ -67,6 +67,10 @@ class NERPrediction(MenuBase):
     def _params(self) -> NERPredictionParams:
         return get_params()
 
+
+    def get_predict_process(self):
+        return get_predict_process_manager(workdir=os.getcwd())
+
     def check(self, **kwargs):
         # Todo implement
         return True
@@ -93,7 +97,8 @@ class NERPrediction(MenuBase):
     def select_model_dir(self):
         label = "ner model"
         target_dir = os.path.join(self._wd, "ner_trainer", "models_ner")
-        if self._params.scan_models(target_dir) != 0:
+        template_dir = os.path.join(self._wd, "ner_trainer", "templates", "models_ner")
+        if self._params.scan_models(target_dir, template_dir) != 0:
             self._params.possible_models = {f"no {label} found": None}
             self._check_list.append(f"no {label} found")
         self._params.choose_model_widget(label)
@@ -103,7 +108,7 @@ class NERPrediction(MenuBase):
             label="Folder for prediction output",
             value=self._wd_ner_prediction,
             key="ner_prediction_output_dir",
-            help="Choose a directory with a trained NER model",
+            help="Choose a directory in which the results of the prediction should be stored.",
             return_state=True,
             ask_make=True,
         )

@@ -6,6 +6,9 @@ import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
 import tei_entity_enricher.menu.tei_ner_map as tnm_map
 import tei_entity_enricher.util.tei_writer as tei_writer
+from tei_entity_enricher.util.helper import local_save_path, makedir_if_necessary
+from tei_entity_enricher.interface.postprocessing.io import FileReader, FileWriter
+from tei_entity_enricher.util.exceptions import FileNotFound, BadFormat
 import tei_entity_enricher.menu.link_sug_cat as sparql
 import tei_entity_enricher.menu.ner_task_def as ner_task
 from tei_entity_enricher.util.components import (
@@ -39,6 +42,7 @@ class TEIManPP:
         self.tmp_link_choose_option_gnd = "GND id"
         self.tmp_link_choose_option_wikidata = "Wikidata id"
         self.tmp_base_ls_search_type_options = ["without specified type"]
+        self.tmp_conf_link_attr_name = "link_attribute_name"
         self.check_one_time_attributes()
         self.entity_library = entity_library  # get_entity_library()
         if show_menu:
@@ -49,6 +53,9 @@ class TEIManPP:
             self.tnw = tnw_map.TEINERPredWriteMap(show_menu=False)
             self.sds = sparql.LinkSugCat(show_menu=False)
             self.ntd = ner_task.NERTaskDef(show_menu=False)
+            self.manPostProc_config = self.load_manPostProc_config();
+            if "tmp_link_attr" not in st.session_state or st.session_state.tmp_link_attr is None:
+                st.session_state.tmp_link_attr=self.manPostProc_config[self.tmp_conf_link_attr_name]
             self.show()
 
     def check_one_time_attributes(self):
@@ -73,6 +80,44 @@ class TEIManPP:
             st.session_state.tmp_reload_aggrids = False
         else:
             self.tmp_reload_aggrids = False
+
+    def load_manPostProc_config(self) -> None:
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
+        fr = FileReader(
+            filepath=default_filepath, origin="local", internal_call=True, show_printmessages=False
+        )
+        result = None
+        try:
+            result = fr.loadfile_json()
+        except FileNotFound:
+            try:
+                makedir_if_necessary(os.path.dirname(default_filepath))
+                FileWriter(
+                    data={
+                        self.tmp_conf_link_attr_name: "ref",
+                    },
+                    filepath=default_filepath,
+                    show_printmessages=False,
+                ).writefile_json()
+            except:
+                return f"load_manPostProc_config(): could not create default manPostProc config in config folder."
+            result = fr.loadfile_json()
+        except BadFormat:
+            return f"load_manPostProc_config(): could not load manPostProc_config.json from config folder, no valid json format."
+        return result
+
+    def save_manPostProc_config(self,manPostProc_config):
+        default_filepath = os.path.join(local_save_path, "config", "postprocessing", "manPostProc_config.json")
+        try:
+            makedir_if_necessary(os.path.dirname(default_filepath))
+            FileWriter(
+                data=manPostProc_config,
+                filepath=default_filepath,
+                show_printmessages=False,
+            ).writefile_json(do_if_file_exists="replace")
+        except:
+            return f"save_manPostProc_config(): could not create save manPostProc config in config folder."
+
 
     def show_editable_attr_value_def(self, tagname, tagbegin):
         st.markdown("Editable Attributes and Values for current search result!")
@@ -121,7 +166,9 @@ class TEIManPP:
             returndict[answer["Attributes"][i]] = answer["Values"][i]
         return returndict
 
-    def add_suggestion_link_to_tag_entry(self, link_to_add, tag_entry):
+    def add_suggestion_link_to_tag_entry(self, link_to_add, tag_entry, attr_name):
+        if attr_name is None or attr_name=="":
+            attr_name="ref"
         entry_dict = {}
         if tag_entry["tagbegin"].endswith("/>"):
             end = -2
@@ -133,7 +180,7 @@ class TEIManPP:
                 if "=" in element:
                     attr_value = element.split("=")
                     entry_dict[attr_value[0]] = attr_value[1][1:-1]
-        entry_dict["ref"] = link_to_add
+        entry_dict[attr_name] = link_to_add
         new_tagbegin = "<" + tag_entry["name"]
         for attr in entry_dict.keys():
             new_tagbegin = new_tagbegin + " " + attr + '="' + entry_dict[attr] + '"'
@@ -150,7 +197,10 @@ class TEIManPP:
         elif link_choose_option==self.tmp_link_choose_option_gnd:
             return [suggestion["gnd_id"]],[replace_empty_string(add_markdown_link_if_not_None(suggestion["gnd_id"], "http://d-nb.info/gnd/" + suggestion["gnd_id"]))]
         elif link_choose_option in st.session_state.tmp_further_ids_config.keys() and link_choose_option in suggestion["furtherIds"].keys() and len(suggestion["furtherIds"][link_choose_option])>0:
-            return suggestion["furtherIds"][link_choose_option],[replace_empty_string(add_markdown_link_if_not_None(id,st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",id))) for id in suggestion["furtherIds"][link_choose_option]]
+            if "{}" in st.session_state.tmp_further_ids_config[link_choose_option][1]:
+                return suggestion["furtherIds"][link_choose_option],[replace_empty_string(add_markdown_link_if_not_None(id,st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",id))) for id in suggestion["furtherIds"][link_choose_option]]
+            else:
+                return suggestion["furtherIds"][link_choose_option],[replace_empty_string(id) for id in suggestion["furtherIds"][link_choose_option]]
         else:
             return [None],[replace_empty_string(add_markdown_link_if_not_None(None,None))]
 
@@ -160,7 +210,10 @@ class TEIManPP:
         elif link_choose_option==self.tmp_link_choose_option_gnd:
             return "http://d-nb.info/gnd/" + data_id
         elif link_choose_option in st.session_state.tmp_further_ids_config.keys() and data_id is not None:
-            return st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",data_id)
+            if "{}" in st.session_state.tmp_further_ids_config[link_choose_option][1]:
+                return st.session_state.tmp_further_ids_config[link_choose_option][1].replace("{}",data_id)
+            else:
+                return data_id
         else:
             return ""
 
@@ -234,7 +287,7 @@ class TEIManPP:
                 help="Define a search type for which link suggestions should be done!",
                 on_change=change_search_type,
             )
-            col1, col2, col3 = st.columns([0.25, 0.25, 0.5])
+            col1, col2, col3, col4 = st.columns([0.25, 0.25, 0.25, 0.25])
             if "link_suggestions" not in tag_entry.keys() or len(tag_entry["link_suggestions"]) == 0:
                 simple_search = True
             else:
@@ -286,6 +339,19 @@ class TEIManPP:
                         help='Define the source where links should be added from when pressing an "Add link"-Button',
                         key="tmp_link_choose_option",
                     )
+                    def save_tmp_link_attr():
+                        if st.session_state.tmp_link_attr is None or st.session_state.tmp_link_attr=="":
+                            self.manPostProc_config[self.tmp_conf_link_attr_name]="ref"
+                        else:
+                            self.manPostProc_config[self.tmp_conf_link_attr_name]=st.session_state.tmp_link_attr
+                        self.save_manPostProc_config(self.manPostProc_config)
+
+                    col4.text_input(label="Link or key attribute name",
+                        key="tmp_link_attr",
+                        value=self.manPostProc_config[self.tmp_conf_link_attr_name],
+                        on_change=save_tmp_link_attr,
+                        help='You can insert here the name of the attribute which is used to insert the link or key of a suggestion to the current entity.',
+                    )
                     scol1, scol2, scol3, scol4, scol5, scol6 = st.columns(6)
                     scol1.markdown("### Name")
                     scol2.markdown("### Further Names")
@@ -314,10 +380,10 @@ class TEIManPP:
                         suggestion_id += 1
 
                         def add_link_as_attribute(suggestion, tag_entry):
-                            self.add_suggestion_link_to_tag_entry(suggestion, tag_entry)
+                            self.add_suggestion_link_to_tag_entry(suggestion, tag_entry, st.session_state.tmp_link_attr)
 
                         scol5.button(
-                            "Add link as ref attribute",
+                            "Add link as attribute",
                             key="tmp" + str(suggestion_id),
                             on_click=add_link_as_attribute,
                             args=(
@@ -326,29 +392,36 @@ class TEIManPP:
                             ),
                         )
 
-                        def add_entity_to_library(suggestion):
-                            entity_to_add = suggestion
-                            if (
-                                "type" in entity_to_add.keys()
-                                and entity_to_add["type"] == self.tmp_base_ls_search_type_options[0]
-                            ):
-                                entity_to_add["type"] = ""
-                            ret_value = self.entity_library.add_entities([suggestion])
-                            if isinstance(ret_value, str):
-                                st.session_state.tmp_warn_message = ret_value
-                            else:
-                                self.entity_library.save_library()
-                                if "pp_ace_el_editor_content" in st.session_state:
-                                    del st.session_state["pp_ace_el_editor_content"]
-                                st.session_state.pp_ace_key_counter += 1
-                                st.session_state.tmp_save_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
 
-                        scol6.button(
-                            "Add to Entity Library",
-                            key="tmp_el_" + str(suggestion_id),
-                            on_click=add_entity_to_library,
-                            args=(suggestion,),
-                        )
+                        if "origin" in suggestion.keys() and suggestion["origin"]=="wd":
+                            def add_entity_to_library(suggestion):
+                                if "origin" in suggestion.keys():
+                                    del suggestion["origin"]
+                                entity_to_add = suggestion
+                                if (
+                                    "type" in entity_to_add.keys()
+                                    and entity_to_add["type"] == self.tmp_base_ls_search_type_options[0]
+                                ):
+                                    entity_to_add["type"] = ""
+
+                                ret_value = self.entity_library.add_entities([suggestion])
+                                if isinstance(ret_value, str):
+                                    st.session_state.tmp_warn_message = ret_value
+                                else:
+                                    self.entity_library.save_library()
+                                    if "pp_ace_el_editor_content" in st.session_state:
+                                        del st.session_state["pp_ace_el_editor_content"]
+                                    st.session_state.pp_ace_key_counter += 1
+                                    st.session_state.tmp_save_message = f'The entity "{replace_empty_string(suggestion["name"])}" was succesfully added to the currently initialized entity library.'
+
+                            scol6.button(
+                                "Add to Entity Library",
+                                key="tmp_el_" + str(suggestion_id),
+                                on_click=add_entity_to_library,
+                                args=(suggestion,),
+                            )
+                        else:
+                            scol6.write("From Entity Library")
 
                 else:
                     st.write("No link suggestions found!")

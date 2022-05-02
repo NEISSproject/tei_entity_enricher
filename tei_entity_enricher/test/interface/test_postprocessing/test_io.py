@@ -84,7 +84,7 @@ class TestPostprocessingIo(unittest.TestCase):
         for fr in self.get_FileReaders():
             if ".csv" in fr.filepath:
                 self.assertNotEqual(
-                    fr.loadfile_csv(),
+                    fr.loadfile_csv(transform_for_entity_library_import=False),
                     None,
                     "loadfile_csv() should not return None",
                 )

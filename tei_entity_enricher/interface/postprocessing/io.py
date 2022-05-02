@@ -143,13 +143,31 @@ class FileReader:
                 for row in csv_reader:
                     new_row = {}
                     new_furtherNames = []
+                    new_furtherIds = {}
                     for key in list(row.keys()):
+                        # furthernames case
                         if "furthernames" in key.lower():
                             new_furtherNames.append(row[key])
                             continue
+                        # furtherids case
+                        if "furtherids" in key.lower():
+                            _curr_fi_key = key.split(".", 1)[1]
+                            _curr_fi_key = _curr_fi_key.split("\\")[-2]
+                            if _curr_fi_key in new_furtherIds.keys():
+                                new_furtherIds[_curr_fi_key].append(row[key])
+                            else:
+                                new_furtherIds[_curr_fi_key] = [row[key]]
+                            continue
+                        # all other cases
                         new_row[key.lower()] = row[key]
-                    new_furtherNames = [i for i in new_furtherNames if i is not None]
+                    # furtherNames: delete None values in list and add list in new_row dict
+                    new_furtherNames = [i for i in new_furtherNames if len(i) > 0]
                     new_row["furtherNames"] = new_furtherNames
+                    # furtherIds: delete None values in lists and add dict in new_row dict
+                    for key in list(new_furtherIds.keys()):
+                        new_furtherIds[key] = [i for i in new_furtherIds[key] if len(i) > 0]
+                    new_row["furtherIds"] = new_furtherIds
+                    # add new_row to result
                     result.append(new_row)
                 return result
             else:
@@ -173,13 +191,31 @@ class FileReader:
                         for row in csv_reader:
                             new_row = {}
                             new_furtherNames = []
+                            new_furtherIds = {}
                             for key in list(row.keys()):
+                                # furthernames case
                                 if "furthernames" in key.lower():
                                     new_furtherNames.append(row[key])
                                     continue
+                                # furtherids case
+                                if "furtherids" in key.lower():
+                                    _curr_fi_key = key.split(".", 1)[1]
+                                    _curr_fi_key = _curr_fi_key.split("\\")[-2]
+                                    if _curr_fi_key in new_furtherIds.keys():
+                                        new_furtherIds[_curr_fi_key].append(row[key])
+                                    else:
+                                        new_furtherIds[_curr_fi_key] = [row[key]]
+                                    continue
+                                # all other cases
                                 new_row[key.lower()] = row[key]
-                            new_furtherNames = [i for i in new_furtherNames if i is not None]
+                            # furtherNames: delete None values in list and add list in new_row dict
+                            new_furtherNames = [i for i in new_furtherNames if len(i) > 0]
                             new_row["furtherNames"] = new_furtherNames
+                            # furtherIds: delete None values in lists and add dict in new_row dict
+                            for key in list(new_furtherIds.keys()):
+                                new_furtherIds[key] = [i for i in new_furtherIds[key] if len(i) > 0]
+                            new_row["furtherIds"] = new_furtherIds
+                            # add new_row to result
                             result.append(new_row)
                         return result
                 else:
@@ -204,13 +240,31 @@ class FileReader:
                     for row in csv_reader:
                         new_row = {}
                         new_furtherNames = []
+                        new_furtherIds = {}
                         for key in list(row.keys()):
+                            # furthernames case
                             if "furthernames" in key.lower():
                                 new_furtherNames.append(row[key])
                                 continue
+                            # furtherids case
+                            if "furtherids" in key.lower():
+                                _curr_fi_key = key.split(".", 1)[1]
+                                _curr_fi_key = _curr_fi_key.split("\\")[-2]
+                                if _curr_fi_key in new_furtherIds.keys():
+                                    new_furtherIds[_curr_fi_key].append(row[key])
+                                else:
+                                    new_furtherIds[_curr_fi_key] = [row[key]]
+                                continue
+                            # all other cases
                             new_row[key.lower().strip()] = row[key]
-                        new_furtherNames = [i for i in new_furtherNames if i is not None]
+                        # furtherNames: delete None values in list and add list in new_row dict
+                        new_furtherNames = [i for i in new_furtherNames if len(i) > 0]
                         new_row["furtherNames"] = new_furtherNames
+                        # furtherIds: delete None values in lists and add dict in new_row dict
+                        for key in list(new_furtherIds.keys()):
+                            new_furtherIds[key] = [i for i in new_furtherIds[key] if len(i) > 0]
+                        new_row["furtherIds"] = new_furtherIds
+                        # add new_row to result
                         result.append(new_row)
                 except:
                     response.close()

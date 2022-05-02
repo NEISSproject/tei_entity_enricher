@@ -95,14 +95,17 @@ class Identifier:
             for key in wikidata_result:
                 if wikidata_result[key][0] > 0:
                     result = True
+                    break
         return result
 
     def check_entity_library_result_has_data(self, entity_library_result: Dict[Tuple[str, str], List[dict]]) -> bool:
+        """check if any entity dict is inside of any of the value lists of the entity_library_result keys"""
         result = False
         if len(entity_library_result) > 0:
             for key in entity_library_result:
                 if len(entity_library_result[key]) > 0:
                     result = True
+                    break
         return result
 
     # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgeben
@@ -120,7 +123,8 @@ class Identifier:
     ) -> Union[Dict[Tuple[str, str], List[dict]], dict]:
         """delivers entity suggestions to tuples in self.input,
         returns dict with tuples as keys and entity list (list of dicts, whoses structure corresponds
-        to entity library entity structure) as values or returns an empty dict, if no suggestions could be made,
+        to entity library entity structure (with additional information about the origin of the respective entity (values "el" or "wd") for man-pp usage))
+        as values or returns an empty dict, if no suggestions could be made,
         uses entity library query and wikidata queries,
         if no reference to a active library instance is given in query_entity_library,
         no entity library query is executed
@@ -152,7 +156,7 @@ class Identifier:
         output:
         {
             ('Berlin', 'place'): [
-                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": "", "furtherIds": {"geonames.com": ["2950159", "2950157", "6547383", "6547539"]}},
+                {"name": "Berlin", "furtherNames": [], "type": "place", "description": "", "wikidata_id": "Q64", "gnd_id": "", "furtherIds": {"geonames.com": ["2950159", "2950157", "6547383", "6547539"]}, origin: "el"/"wd"},
                 {}
             ]
         }
@@ -168,7 +172,12 @@ class Identifier:
                     loaded_library=query_entity_library,
                     query_by_type=entity_library_filter_for_correct_type,
                 )
-                query_entity_library_result[tuple] = tuple_result_list
+                copy_tuple_result_list = []
+                for item in tuple_result_list:
+                    copy_item = item.copy()
+                    copy_item["origin"] = "el"
+                    copy_tuple_result_list.append(copy_item)
+                query_entity_library_result[tuple] = copy_tuple_result_list
             entity_library_has_data = self.check_entity_library_result_has_data(query_entity_library_result)
         query_wikidata_result = {}
         if do_wikidata_query == True:
@@ -211,6 +220,7 @@ class Identifier:
                                     "wikidata_id": subkey.get("id", ""),
                                     "gnd_id": _gnd_id_to_add,
                                     "furtherIds": _furtherIds_to_add,
+                                    "origin": "wd",
                                 }
                             )
                         wikidata_output_dict[key] = entity_list_in_query_wikidata_result
@@ -261,6 +271,7 @@ class Identifier:
                                     "wikidata_id": subkey.get("id", ""),
                                     "gnd_id": _gnd_id_to_add,
                                     "furtherIds": _furtherIds_to_add,
+                                    "origin": "wd",
                                 }
                             )
                         output_dict[key] = entity_list_in_query_wikidata_result
@@ -292,6 +303,7 @@ class Identifier:
                                 "wikidata_id": subkey.get("id", ""),
                                 "gnd_id": _gnd_id_to_add,
                                 "furtherIds": _furtherIds_to_add,
+                                "origin": "wd",
                             }
                         )
                     output_dict[key] = entity_list_in_query_wikidata_result
@@ -352,7 +364,8 @@ class Identifier:
             for entity in self.current_suggest_result_data[key]:
                 wikidataId = entity.get("wikidata_id", "No wikidata id delivered")
                 descr = entity.get("description", "No description delivered")
-                print(f"----- {descr} -- {wikidataId}")
+                origin = entity.get("origin", "No origin delivered")
+                print(f"----- {descr} -- {wikidataId} -- {origin}")
 
 
 if __name__ == "__main__":

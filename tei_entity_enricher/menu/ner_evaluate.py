@@ -39,6 +39,9 @@ class NEREvaluator(MenuBase):
     def _params(self) -> NEREvaluateParams:
         return get_params()
 
+    def get_eval_process(self):
+        return get_evaluate_process_manager(workdir=os.path.join(os.getcwd(), "ner_trainer"))
+
     def build_eval_dict_list_tablestring(self, eval_dict_list):
         tablestring = f"Test set of Groundtruth | {c_ef1} \n -----|-------"
         for eval_dict in eval_dict_list:
@@ -65,7 +68,7 @@ class NEREvaluator(MenuBase):
             model_ntd_name=tagspath[:-4].replace('_',' ')
             tnm=self.tng.tngdict[tng_name][self.tng.tng_attr_tnm]
             ntd_name=tnm[self.tnm.tnm_attr_ntd]["name"]
-            if tagspath[:-4]!=ntd_name.replace(' ','_'):
+            if tagspath[:-4]!=ntd_name.replace(' ','_') and not (model_ntd_name=='ner germeval wp' and tng_name=="Germeval"):
                 st.warning(f"Warning: The selected model '{os.path.basename(self._params.model)}' was trained for the Entity Definition '{model_ntd_name}', whereas the test set of the selected Groundtruth '{tng_name}' was builded for the Entity Definition '{ntd_name}'")
         else:
             self._check_list.append(f"Couldn't find train parameters of the selected model {os.path.basename(self._params.model)}.")
@@ -110,7 +113,8 @@ class NEREvaluator(MenuBase):
     def select_model_dir(self):
         label = "NER Model for Evaluation"
         target_dir = os.path.join(self._wd, "models_ner")
-        if self._params.scan_models(target_dir) != 0:
+        template_dir = os.path.join(self._wd, "templates", "models_ner")
+        if self._params.scan_models(target_dir,template_dir) != 0:
             self._params.possible_models = {f"no {label} found": None}
             self._check_list.append(f"no {label} found")
         self._params.choose_model_widget(label)

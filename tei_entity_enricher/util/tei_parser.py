@@ -425,7 +425,7 @@ def split_into_sentences(tagged_text_line_list):
     sentence_list = []
     for text_part in tagged_text_line_list:
         for word in text_part:
-            if word[2] == 2:
+            if word[2] == 2: # and len(cur_sentence)>100:
                 if len(cur_sentence) > 0:
                     sentence_list.append(cur_sentence)
                 cur_sentence = [word]

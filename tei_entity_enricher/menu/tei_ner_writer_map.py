@@ -303,6 +303,15 @@ class TEINERPredWriteMap:
             tnw_mapping_dict[self.tnw_attr_entity_dict] = st.session_state.tnw_entity_dict.copy()
 
             def save_mapping(mapping, mode):
+                #clear possible old mappings to old entity definitions
+                allowed_entity_list=mapping[self.tnw_attr_ntd][self.ntd.ntd_attr_entitylist]
+                keys_to_delete=[]
+                for key in mapping[self.tnw_attr_entity_dict].keys():
+                    if key not in allowed_entity_list:
+                        keys_to_delete.append(key)
+                for key in keys_to_delete:
+                    del mapping[self.tnw_attr_entity_dict][key]
+
                 mapping[self.tnw_attr_template] = False
                 with open(
                     os.path.join(

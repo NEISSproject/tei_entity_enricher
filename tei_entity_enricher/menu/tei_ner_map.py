@@ -292,6 +292,15 @@ class TEINERMap:
             tnm_mapping_dict[self.tnm_attr_entity_dict] = st.session_state.tnm_entity_dict.copy()
 
             def save_mapping(mapping, mode):
+                #clear possible old mappings to old entity definitions
+                allowed_entity_list=mapping[self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                keys_to_delete=[]
+                for key in mapping[self.tnm_attr_entity_dict].keys():
+                    if key not in allowed_entity_list:
+                        keys_to_delete.append(key)
+                for key in keys_to_delete:
+                    del mapping[self.tnm_attr_entity_dict][key]
+
                 mapping[self.tnm_attr_template] = False
                 with open(
                     os.path.join(

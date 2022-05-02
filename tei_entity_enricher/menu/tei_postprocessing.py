@@ -239,7 +239,10 @@ class TEINERPostprocessing:
                         "The current state of the entity library was successfully saved.",
                     ]
                 else:
-                    st.session_state.pp_el_misc_message = [MessageType.error, "Could not save current state of entity library."]
+                    st.session_state.pp_el_misc_message = [
+                        MessageType.error,
+                        "Could not save current state of entity library.",
+                    ]
 
     def export_button_trigger(self):
         st.session_state.pp_last_pressed_button = "export"
@@ -257,9 +260,15 @@ class TEINERPostprocessing:
             if fw_return_value == True:
                 st.session_state.pp_el_misc_message = [MessageType.success, "Entity Library successfully exported."]
             elif fw_return_value == False:
-                st.session_state.pp_el_misc_message = [MessageType.error, "Entity Library export failed: File already exists."]
+                st.session_state.pp_el_misc_message = [
+                    MessageType.error,
+                    "Entity Library export failed: File already exists.",
+                ]
             elif fw_return_value == "folder_not_found":
-                st.session_state.pp_el_misc_message = [MessageType.error, "Entity Library export failed: Folder does not exist."]
+                st.session_state.pp_el_misc_message = [
+                    MessageType.error,
+                    "Entity Library export failed: Folder does not exist.",
+                ]
 
         with self.el_filepath_container:
             if "pp_last_pressed_button" in st.session_state and st.session_state.pp_last_pressed_button == "export":
@@ -301,12 +310,12 @@ class TEINERPostprocessing:
                 if self.pp_el_library_object.data_file is not None:
                     with self.el_add_missing_ids_menu_placeholder.container():
                         progress_bar = st.progress(0)
-                        st.checkbox(
-                            label="Replace all furtherIds information with new query results",
-                            value=False,
-                            help="When activated, all existing furtherIds information will be overwritten. When deactivated, information will be added only to empty furtherIds fields.",
-                            key="pp_replace_all_fi_information",
-                        )
+                        # st.checkbox(
+                        #     label="Replace all furtherIds information with new query results",
+                        #     value=False,
+                        #     help="When activated, all existing furtherIds information will be overwritten. When deactivated, information will be added only to empty furtherIds fields.",
+                        #     key="pp_replace_all_fi_information",
+                        # )
                         st.checkbox(
                             label="Try to identify entities without any ids",
                             value=False,
@@ -356,7 +365,7 @@ class TEINERPostprocessing:
                                     _temp_result_entity_identification = self.pp_el_library_object.return_identification_suggestions_for_entity(
                                         input_entity=entity,
                                         try_to_identify_entities_without_id_values=st.session_state.pp_identify_ent_wo_ids,
-                                        replace_furtherIds_information=st.session_state.pp_replace_all_fi_information,
+                                        # replace_furtherIds_information=st.session_state.pp_replace_all_fi_information,
                                         wikidata_query_match_limit=str(wikidata_search_amount),
                                     )
                                     current_progress_state = progress_amount_list[index]
@@ -521,9 +530,13 @@ class TEINERPostprocessing:
                                 st.session_state.pp_el_add_from_file_message_list = []
                                 for message in result_messages:
                                     if "success" in message:
-                                        st.session_state.pp_el_add_from_file_message_list.append([MessageType.success, message])
+                                        st.session_state.pp_el_add_from_file_message_list.append(
+                                            [MessageType.success, message]
+                                        )
                                     else:
-                                        st.session_state.pp_el_add_from_file_message_list.append([MessageType.info, message])
+                                        st.session_state.pp_el_add_from_file_message_list.append(
+                                            [MessageType.info, message]
+                                        )
                         if "pp_ace_el_editor_content" in st.session_state:
                             st.session_state["pp_ace_el_editor_content"] = json.dumps(
                                 self.pp_el_library_object.data, indent=4
