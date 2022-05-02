@@ -95,6 +95,7 @@ class Identifier:
             for key in wikidata_result:
                 if wikidata_result[key][0] > 0:
                     result = True
+                    break
         return result
 
     def check_entity_library_result_has_data(self, entity_library_result: Dict[Tuple[str, str], List[dict]]) -> bool:
@@ -104,6 +105,7 @@ class Identifier:
             for key in entity_library_result:
                 if len(entity_library_result[key]) > 0:
                     result = True
+                    break
         return result
 
     # todo: funktionen schreiben: neuaufnahme von entitäten in die library, finale empfehlungen ausgeben
@@ -170,9 +172,9 @@ class Identifier:
                     loaded_library=query_entity_library,
                     query_by_type=entity_library_filter_for_correct_type,
                 )
-                copy_tuple_result_list=[]
+                copy_tuple_result_list = []
                 for item in tuple_result_list:
-                    copy_item=item.copy()
+                    copy_item = item.copy()
                     copy_item["origin"] = "el"
                     copy_tuple_result_list.append(copy_item)
                 query_entity_library_result[tuple] = copy_tuple_result_list
