@@ -430,6 +430,14 @@ class Cache:
                     # check if furtherIds is a dict
                     if type(entity[compulsory_keys[6]]) != dict:
                         return False
+                    # check if all furtherIds values are empty lists or lists with strings
+                    for furtherId_entry_key in entity[compulsory_keys[6]]:
+                        if type(entity[compulsory_keys[6]][furtherId_entry_key]) != list:
+                            return False
+                        if len(entity[compulsory_keys[6]][furtherId_entry_key]) > 0:
+                            for furtherId_entry_key_item in entity[compulsory_keys[6]][furtherId_entry_key]:
+                                if type(furtherId_entry_key_item) != str:
+                                    return False
                     # check if the first 5 keys have str values
                     for key in compulsory_keys[:-2]:
                         if type(entity[key]) != str:
