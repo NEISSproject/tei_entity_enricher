@@ -345,10 +345,25 @@ class NERTrainer(MenuBase):
                 os.path.join(module_path, "templates", "trainer", "template_wd", "trainer_params.json"),
                 self._wd,
             )
-        if not os.path.isdir(os.path.join(self._wd, "templates")):
+        if not os.path.isdir(os.path.join(self._wd, "templates", "data")):
             shutil.copytree(
-                os.path.join(module_path, "templates", "trainer", "template_wd", "templates"),
-                os.path.join(self._wd, "templates"),
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "data"),
+                os.path.join(self._wd, "templates", "data"),
+            )
+        if not os.path.isdir(os.path.join(self._wd, "templates", "list")):
+            shutil.copytree(
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "list"),
+                os.path.join(self._wd, "templates", "list"),
+            )
+        if not os.path.isdir(os.path.join(self._wd, "templates", "tags")):
+            shutil.copytree(
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "tags"),
+                os.path.join(self._wd, "templates", "tags"),
+            )
+        if not os.path.isdir(os.path.join(self._wd, "templates", "tokenizer")):
+            shutil.copytree(
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "tokenizer"),
+                os.path.join(self._wd, "templates", "tokenizer"),
             )
 
         return 0
