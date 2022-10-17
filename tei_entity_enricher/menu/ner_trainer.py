@@ -350,10 +350,10 @@ class NERTrainer(MenuBase):
                 os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "data"),
                 os.path.join(self._wd, "templates", "data"),
             )
-        if not os.path.isdir(os.path.join(self._wd, "templates", "list")):
+        if not os.path.isdir(os.path.join(self._wd, "templates", "lists")):
             shutil.copytree(
-                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "list"),
-                os.path.join(self._wd, "templates", "list"),
+                os.path.join(module_path, "templates", "trainer", "template_wd", "templates", "lists"),
+                os.path.join(self._wd, "templates", "lists"),
             )
         if not os.path.isdir(os.path.join(self._wd, "templates", "tags")):
             shutil.copytree(
