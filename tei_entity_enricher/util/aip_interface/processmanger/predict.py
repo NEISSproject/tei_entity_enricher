@@ -11,7 +11,7 @@ from tei_entity_enricher.util.aip_interface.prediction_params import NERPredicti
 from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 from tei_entity_enricher.util.spacy_lm import get_spacy_lm
 from tei_entity_enricher.util.tei_writer import TEI_Writer
-from tei_entity_enricher.util.helper import MessageType
+from tei_entity_enricher.util.helper import MessageType, is_accepted_TEI_filename
 import tei_entity_enricher.util.tei_parser as tp
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class PredictProcessManager(ProcessManagerBase):
                 tei_filelist = [
                     os.path.join(st.session_state.input_tei_folder, filepath)
                     for filepath in os.listdir(st.session_state.input_tei_folder)
-                    if filepath.endswith(".xml")
+                    if is_accepted_TEI_filename(filepath)
                 ]
             if len(tei_filelist) < 1:
                 message_placeholder.empty()
