@@ -175,6 +175,8 @@ class TEIFile:
 
     def _get_text_and_statistics(self, filename):
         textcontent = self._soup.find("text")
+        if textcontent is None:
+            raise ValueError(f'TEI-File "{filename}" does not contain a text tag!')
         text_list = []
         tagged_text_list = []
         statistics = {}
@@ -453,7 +455,7 @@ if __name__ == "__main__":
     #brief = TEIFile("../uwe_johnson_data/data_Dehmel/trainingsdaten_UTF8_ntee.xml", tr_config=tr,entity_dict=tnm["entity_dict"],with_position_tags=True,nlp=spacy.load('de_core_news_sm'))
     import spacy
     #brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/_tei_writer_test_ohne-ab-wrapper-element_MINIMALVERSION.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
-    brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/draco_test.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
+    brief = TEIFile("../uwe_johnson_data/Mareike_Fehler/draco_test2.xml", tr_config=tr,nlp=spacy.load('de_core_news_sm'))
     #raw_ner_data = split_into_sentences(brief.build_tagged_text_line_list())
     #print(raw_ner_data)
     print(brief.get_text())
