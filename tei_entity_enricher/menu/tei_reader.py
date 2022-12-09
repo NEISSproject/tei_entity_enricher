@@ -5,6 +5,7 @@ import os
 from tei_entity_enricher.util.helper import (
     get_listoutput,
     transform_arbitrary_text_to_latex,
+    is_accepted_TEI_filename,
 )
 from tei_entity_enricher.util.components import (
     editable_single_column_table,
@@ -361,10 +362,11 @@ class TEIReader:
                 help=f"Test {menu_TEI_reader_config} on the chosen Config and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tr_teifile):
-                    st.session_state.tr_last_test_dict = {
-                        "teifile": st.session_state.tr_teifile,
-                        "tr": config,
-                    }
+                    if is_accepted_TEI_filename(st.session_state.tr_teifile,True):
+                        st.session_state.tr_last_test_dict = {
+                            "teifile": st.session_state.tr_teifile,
+                            "tr": config,
+                        }
                 else:
                     st.error(f"The chosen path {st.session_state.tr_teifile} is not a file!")
                     st.session_state.tr_last_test_dict = {}

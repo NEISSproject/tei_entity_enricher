@@ -12,6 +12,7 @@ from tei_entity_enricher.util.helper import (
     menu_entity_definition,
     menu_TEI_reader_config,
     menu_TEI_write_mapping,
+    is_accepted_TEI_filename,
 )
 from tei_entity_enricher.util.components import (
     editable_multi_column_table,
@@ -578,11 +579,12 @@ class TEINERPredWriteMap:
                 help=f"Test {menu_TEI_write_mapping} on the chosen {menu_TEI_reader_config} and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tnw_test_TEI_file):
-                    st.session_state.tnw_last_test_dict = {
-                        "teifile": st.session_state.tnw_test_TEI_file,
-                        "tr": config.copy(),
-                        "tnw": mapping.copy(),
-                    }
+                    if is_accepted_TEI_filename(st.session_state.tnw_test_TEI_file,True):
+                        st.session_state.tnw_last_test_dict = {
+                            "teifile": st.session_state.tnw_test_TEI_file,
+                            "tr": config.copy(),
+                            "tnw": mapping.copy(),
+                        }
                 else:
                     st.error(f"The chosen path {st.session_state.tnw_test_TEI_file} is not a file!")
                     st.session_state.tnw_last_test_dict = {}

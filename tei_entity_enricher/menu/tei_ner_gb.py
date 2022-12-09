@@ -12,6 +12,10 @@ from tei_entity_enricher.util.helper import (
     menu_TEI_reader_config,
     menu_TEI_read_mapping,
     menu_groundtruth_builder,
+    print_st_message,
+    is_accepted_TEI_filename,
+    check_folder_for_TEI_Files,
+    MessageType,
 )
 import tei_entity_enricher.menu.tei_ner_map as tei_map
 import tei_entity_enricher.menu.tei_reader as tei_reader
@@ -55,10 +59,9 @@ class TEINERGroundtruthBuilder:
             self.show()
             self.check_rerun_messages()
 
-
     def check_rerun_messages(self):
         if "tng_rerun_save_message" in st.session_state and st.session_state.tng_rerun_save_message is not None:
-            st.session_state.tng_save_message=st.session_state.tng_rerun_save_message
+            st.session_state.tng_save_message = st.session_state.tng_rerun_save_message
             st.session_state.tng_rerun_save_message = None
             st.experimental_rerun()
 
@@ -113,7 +116,15 @@ class TEINERGroundtruthBuilder:
             val = False
             if self.tng_save_message is None:
                 st.error("Please define a name for the Groundtruth before building it!")
-        elif os.path.isdir(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))) and os.path.isfile(os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"), build_config[self.tng_attr_name].replace(" ", "_")+".json")):
+        elif os.path.isdir(
+            os.path.join(self.tng_Folder, build_config[self.tng_attr_name].replace(" ", "_"))
+        ) and os.path.isfile(
+            os.path.join(
+                self.tng_Folder,
+                build_config[self.tng_attr_name].replace(" ", "_"),
+                build_config[self.tng_attr_name].replace(" ", "_") + ".json",
+            )
+        ):
             val = False
             if self.tng_save_message is None:
                 st.error(
@@ -122,11 +133,19 @@ class TEINERGroundtruthBuilder:
         if folder_path is None or folder_path == "":
             val = False
             if self.tng_save_message is None:
-                st.error(f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!")
+                st.error(
+                    f"Please choose a folder containing the TEI-Files you want to use to build the groundtruth from!"
+                )
         elif not os.path.isdir(folder_path):
             val = False
             if self.tng_save_message is None:
                 st.error(f"The directory {folder_path} doesn't exist. Please choose valid directory!")
+        if val:
+            messageType, message = check_folder_for_TEI_Files(folder_path)
+            if messageType != MessageType.success:
+                print_st_message(messageType, message)
+                if messageType == MessageType.error:
+                    val = False
         return val
 
     def build_groundtruth(self, build_config, folder_path):
@@ -154,7 +173,7 @@ class TEINERGroundtruthBuilder:
         devfilelist = []
         testfilelist = []
         for fileindex in range(len(filelist)):
-            if filelist[fileindex].endswith(".xml"):
+            if is_accepted_TEI_filename(filelist[fileindex]):
                 progressoutput.success(f"Process file {filelist[fileindex]}...")
                 brief = tp.TEIFile(
                     os.path.join(folder_path, filelist[fileindex]),
@@ -393,7 +412,9 @@ class TEINERGroundtruthBuilder:
                 max_value=int(
                     100 - (st.session_state.tng_dev_percentage if "tng_dev_percentage" in st.session_state else 10)
                 ),
-                value=int(10 if "tng_test_percentage" not in st.session_state else st.session_state.tng_test_percentage),
+                value=int(
+                    10 if "tng_test_percentage" not in st.session_state else st.session_state.tng_test_percentage
+                ),
                 key="tng_test_percentage",
             )
         with col6:
