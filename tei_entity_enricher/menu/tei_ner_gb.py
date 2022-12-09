@@ -4,6 +4,7 @@ import os
 import random
 import math
 import shutil
+import traceback
 
 from tei_entity_enricher.util.helper import (
     module_path,
@@ -175,13 +176,19 @@ class TEINERGroundtruthBuilder:
         for fileindex in range(len(filelist)):
             if is_accepted_TEI_filename(filelist[fileindex]):
                 progressoutput.success(f"Process file {filelist[fileindex]}...")
-                brief = tp.TEIFile(
-                    os.path.join(folder_path, filelist[fileindex]),
-                    build_config[self.tng_attr_tr],
-                    entity_dict=build_config[self.tng_attr_tnm][self.tnm.tnm_attr_entity_dict],
-                    nlp=nlp,
-                    with_position_tags=True,
-                )
+                try:
+                    brief = tp.TEIFile(
+                        os.path.join(folder_path, filelist[fileindex]),
+                        build_config[self.tng_attr_tr],
+                        entity_dict=build_config[self.tng_attr_tnm][self.tnm.tnm_attr_entity_dict],
+                        nlp=nlp,
+                        with_position_tags=True,
+                    )
+                except Exception as ex:
+                    error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                    st.error(f'Groundtruth Building stopped: The Following error occurs, when trying to process TEI-File {filelist[fileindex]} : {error_stack}');
+                    return
+
                 raw_ner_data = tp.split_into_sentences(brief.build_tagged_text_line_list())
                 if not by_file:
                     all_data.extend(raw_ner_data)

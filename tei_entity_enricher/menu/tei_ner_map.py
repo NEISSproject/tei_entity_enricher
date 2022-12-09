@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+import traceback
 
 from tei_entity_enricher.util.helper import (
     module_path,
@@ -523,108 +524,112 @@ class TEINERMap:
                     st.session_state.tnm_last_test_dict = {}
 
             if "tnm_last_test_dict" in st.session_state and len(st.session_state.tnm_last_test_dict.keys()) > 0:
-                tei = tp.TEIFile(
-                    st.session_state.tnm_last_test_dict["teifile"],
-                    st.session_state.tnm_last_test_dict["tr"],
-                    entity_dict=st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_entity_dict],
-                )
-                col1, col2 = st.columns([0.2, 0.8])
-                statistics = tei.get_statistics()
-                st.session_state.tnm_test_entity_list = []
-                with col1:
-                    st.subheader("Tagged Entites:")
-                    for entity in sorted(
-                        st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                    ):
-                        if entity in statistics.keys():
-                            if st.checkbox(
-                                "Show Entity " + entity + " (" + str(statistics[entity][0]) + ")",
-                                True,
-                                key="tnm" + entity + "text",
-                            ):
-                                st.session_state.tnm_test_entity_list.append(entity)
-                    st.subheader("Display Options:")
-                    tnm_test_show_entity_name = st.checkbox(
-                        "Display Entity names", False, key="tnm_display_entity_names"
+                try:
+                    tei = tp.TEIFile(
+                        st.session_state.tnm_last_test_dict["teifile"],
+                        st.session_state.tnm_last_test_dict["tr"],
+                        entity_dict=st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_entity_dict],
                     )
-                    st.subheader("Legend:")
-                    index = 0
-                    for entity in sorted(
-                        st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
-                    ):
-                        if entity in statistics.keys():
-                            st.write(
-                                "$\\color{"
-                                + latex_color_list[index % len(latex_color_list)]
-                                + "}{\\Large\\bullet}$ "
-                                + entity
-                            )
-                        index += 1
-
-                with col2:
-                    st.subheader("Tagged Text Content:")
-                    st.write(
-                        self.mark_entities_in_text(
-                            tei.get_tagged_text(),
-                            st.session_state.tnm_test_entity_list,
-                            sorted(
-                                st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][
-                                    self.ntd.ntd_attr_entitylist
-                                ]
-                            ),
-                            show_entity_names=tnm_test_show_entity_name,
-                        )
-                    )
-                if config[self.tr.tr_config_attr_use_notes]:
-                    col1_note, col2_note = st.columns([0.2, 0.8])
-                    note_statistics = tei.get_note_statistics()
-                    st.session_state.tnm_test_note_entity_list = []
-                    with col1_note:
+                    col1, col2 = st.columns([0.2, 0.8])
+                    statistics = tei.get_statistics()
+                    st.session_state.tnm_test_entity_list = []
+                    with col1:
                         st.subheader("Tagged Entites:")
                         for entity in sorted(
                             st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
                         ):
-                            if entity in note_statistics.keys():
+                            if entity in statistics.keys():
                                 if st.checkbox(
-                                    "Show Entity " + entity + " (" + str(note_statistics[entity][0]) + ")",
+                                    "Show Entity " + entity + " (" + str(statistics[entity][0]) + ")",
                                     True,
-                                    key="tnm" + entity + "note",
+                                    key="tnm" + entity + "text",
                                 ):
-                                    st.session_state.tnm_test_note_entity_list.append(entity)
+                                    st.session_state.tnm_test_entity_list.append(entity)
                         st.subheader("Display Options:")
-                        tnm_test_note_show_entity_name = st.checkbox(
-                            "Display Entity names",
-                            False,
-                            key="tnm_display_entity_names_note",
+                        tnm_test_show_entity_name = st.checkbox(
+                            "Display Entity names", False, key="tnm_display_entity_names"
                         )
-                        st.subheader("Legend: ")
+                        st.subheader("Legend:")
                         index = 0
                         for entity in sorted(
                             st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
                         ):
-                            if entity in note_statistics.keys():
+                            if entity in statistics.keys():
                                 st.write(
                                     "$\\color{"
                                     + latex_color_list[index % len(latex_color_list)]
-                                    + "}{\\bullet}$ "
+                                    + "}{\\Large\\bullet}$ "
                                     + entity
                                 )
                             index += 1
 
-                    with col2_note:
-                        st.subheader("Tagged Note Content:")
+                    with col2:
+                        st.subheader("Tagged Text Content:")
                         st.write(
                             self.mark_entities_in_text(
-                                tei.get_tagged_notes(),
-                                st.session_state.tnm_test_note_entity_list,
+                                tei.get_tagged_text(),
+                                st.session_state.tnm_test_entity_list,
                                 sorted(
                                     st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][
                                         self.ntd.ntd_attr_entitylist
                                     ]
                                 ),
-                                show_entity_names=tnm_test_note_show_entity_name,
+                                show_entity_names=tnm_test_show_entity_name,
                             )
                         )
+                    if config[self.tr.tr_config_attr_use_notes]:
+                        col1_note, col2_note = st.columns([0.2, 0.8])
+                        note_statistics = tei.get_note_statistics()
+                        st.session_state.tnm_test_note_entity_list = []
+                        with col1_note:
+                            st.subheader("Tagged Entites:")
+                            for entity in sorted(
+                                st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                            ):
+                                if entity in note_statistics.keys():
+                                    if st.checkbox(
+                                        "Show Entity " + entity + " (" + str(note_statistics[entity][0]) + ")",
+                                        True,
+                                        key="tnm" + entity + "note",
+                                    ):
+                                        st.session_state.tnm_test_note_entity_list.append(entity)
+                            st.subheader("Display Options:")
+                            tnm_test_note_show_entity_name = st.checkbox(
+                                "Display Entity names",
+                                False,
+                                key="tnm_display_entity_names_note",
+                            )
+                            st.subheader("Legend: ")
+                            index = 0
+                            for entity in sorted(
+                                st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][self.ntd.ntd_attr_entitylist]
+                            ):
+                                if entity in note_statistics.keys():
+                                    st.write(
+                                        "$\\color{"
+                                        + latex_color_list[index % len(latex_color_list)]
+                                        + "}{\\bullet}$ "
+                                        + entity
+                                    )
+                                index += 1
+
+                        with col2_note:
+                            st.subheader("Tagged Note Content:")
+                            st.write(
+                                self.mark_entities_in_text(
+                                    tei.get_tagged_notes(),
+                                    st.session_state.tnm_test_note_entity_list,
+                                    sorted(
+                                        st.session_state.tnm_last_test_dict["tnm"][self.tnm_attr_ntd][
+                                            self.ntd.ntd_attr_entitylist
+                                        ]
+                                    ),
+                                    show_entity_names=tnm_test_note_show_entity_name,
+                                )
+                            )
+                except Exception as ex:
+                    error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                    st.error(f'The Following error occurs, when trying to process TEI-File {st.session_state.tnm_last_test_dict["teifile"]} : {error_stack}')
 
     def build_tnm_tablestring(self):
         tablestring = f"Name | {menu_entity_definition} | Template \n -----|-------|-------"

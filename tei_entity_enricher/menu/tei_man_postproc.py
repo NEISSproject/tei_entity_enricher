@@ -1,6 +1,7 @@
 import streamlit as st
 import xml.etree.ElementTree as ET
 import os
+import traceback
 from streamlit_ace import st_ace
 import tei_entity_enricher.menu.tei_reader as tei_reader
 import tei_entity_enricher.menu.tei_ner_writer_map as tnw_map
@@ -470,35 +471,39 @@ class TEIManPP:
                     for key in st.session_state:
                         if key.startswith("tmp_edit_del_tag"):
                             st.session_state[key] = False
-                    tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
-                    st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
-                    st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
-                    st.session_state.tmp_tr_from_last_search = selected_tr
-                    if "tmp_current_loop_element" in st.session_state:
-                        del st.session_state["tmp_current_loop_element"]
-                    if "tmp_loop_number_input" in st.session_state:
-                        del st.session_state["tmp_loop_number_input"]
-                    if len(st.session_state.tmp_matching_tag_list) > 0:
-                        self.tmp_reload_aggrids = True
-                        st.session_state.tmp_current_loop_element = 1
-                        if len(st.session_state.tmp_matching_tag_list) > 1:
-                            st.session_state.tmp_loop_number_input = 1
-                            st.session_state.tmp_loop_rerun_after_search = 1
-                        st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
-                        self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
-                        st.session_state.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
-                        if self.entity_library.data is None:
-                            st.session_state.tmp_further_ids_config={}
-                        else:
-                            st.session_state.tmp_further_ids_config=self.entity_library.load_furtherIds_config()
-                            st.session_state.tmp_link_choose_options.extend(list(st.session_state.tmp_further_ids_config.keys()))
-                        keys_to_delete=[]
-                        for key in st.session_state:
-                            if key.startswith("tmp_sel_link_"):
-                                keys_to_delete.append(key)
-                        for key in keys_to_delete:
-                            print("del", key)
-                            del st.session_state[key]
+                    try:
+                        tei = tei_writer.TEI_Writer(st.session_state.tmp_teifile, tr=selected_tr)
+                        st.session_state.tmp_current_search_text_tree = tei.get_text_tree()
+                        st.session_state.tmp_matching_tag_list = tei.get_list_of_tags_matching_tag_list(tag_list, sparqllist)
+                        st.session_state.tmp_tr_from_last_search = selected_tr
+                        if "tmp_current_loop_element" in st.session_state:
+                            del st.session_state["tmp_current_loop_element"]
+                        if "tmp_loop_number_input" in st.session_state:
+                            del st.session_state["tmp_loop_number_input"]
+                        if len(st.session_state.tmp_matching_tag_list) > 0:
+                            self.tmp_reload_aggrids = True
+                            st.session_state.tmp_current_loop_element = 1
+                            if len(st.session_state.tmp_matching_tag_list) > 1:
+                                st.session_state.tmp_loop_number_input = 1
+                                st.session_state.tmp_loop_rerun_after_search = 1
+                            st.session_state.tmp_teifile_save = st.session_state.tmp_teifile
+                            self.enrich_search_list(st.session_state.tmp_tr_from_last_search)
+                            st.session_state.tmp_link_choose_options = [self.tmp_link_choose_option_gnd, self.tmp_link_choose_option_wikidata]
+                            if self.entity_library.data is None:
+                                st.session_state.tmp_further_ids_config={}
+                            else:
+                                st.session_state.tmp_further_ids_config=self.entity_library.load_furtherIds_config()
+                                st.session_state.tmp_link_choose_options.extend(list(st.session_state.tmp_further_ids_config.keys()))
+                            keys_to_delete=[]
+                            for key in st.session_state:
+                                if key.startswith("tmp_sel_link_"):
+                                    keys_to_delete.append(key)
+                            for key in keys_to_delete:
+                                print("del", key)
+                                del st.session_state[key]
+                    except Exception as ex:
+                        error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                        st.error(f'The Following error occurs, when trying to process TEI-File {st.session_state.tmp_teifile} : {error_stack}')
 
 
                 else:

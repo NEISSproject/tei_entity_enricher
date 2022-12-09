@@ -103,16 +103,17 @@ class ProcessManagerBase:
             #     st.error(error_msg)
 
     def stop(self):
-        self.process.terminate()
-        return_code = None
-        try:
-            return_code = self.process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            if st.button("Kill"):
-                self.process.kill()
+        if self.process is not None:
+            self.process.terminate()
+            return_code = None
+            try:
                 return_code = self.process.wait(timeout=3)
-        if return_code is not None:
-            self.message("Process has stopped.", level=MessageType.info)
+            except subprocess.TimeoutExpired:
+                if st.button("Kill"):
+                    self.process.kill()
+                    return_code = self.process.wait(timeout=3)
+            if return_code is not None:
+                self.message("Process has stopped.", level=MessageType.info)
 
     def process_state(self, st_element=st):
         if "force_process_start" in st.session_state and st.session_state.force_process_start == True:
@@ -150,12 +151,13 @@ class ProcessManagerBase:
         return False
 
     def clear_process(self):
-        if self.process.poll() is not None:
-            self._log_content = ""
-            self._progress_content = ""
-            self.process = None
-        else:
-            self.message("Stop process before clearing it.", "warning")
+        if self.process is not None:
+            if self.process.poll() is not None:
+                self._log_content = ""
+                self._progress_content = ""
+                self.process = None
+            else:
+                self.message("Stop process before clearing it.", "warning")
 
     def has_process(self):
         return True if self.process is not None else False
