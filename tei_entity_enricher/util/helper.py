@@ -307,6 +307,13 @@ def check_folder_for_TEI_Files(folder_path):
 
 
 def is_accepted_TEI_filename(filename,with_st_message_output=False,with_message_return=False):
+    if os.path.isdir(filename):
+        message = f'The path {filename} is a directory. Please select a TEI-File ending on ".xml" or ".tei"'
+        if with_st_message_output:
+            print_st_message(MessageType.error,message)
+        if (with_message_return):
+            return False, message
+        return False
     if filename.endswith(".xml") or filename.endswith(".tei"):
         if (with_message_return):
             return True,None
