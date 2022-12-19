@@ -2,9 +2,11 @@ import streamlit as st
 import tei_entity_enricher.util.tei_parser as tp
 import json
 import os
+import traceback
 from tei_entity_enricher.util.helper import (
     get_listoutput,
     transform_arbitrary_text_to_latex,
+    is_accepted_TEI_filename,
 )
 from tei_entity_enricher.util.components import (
     editable_single_column_table,
@@ -361,23 +363,28 @@ class TEIReader:
                 help=f"Test {menu_TEI_reader_config} on the chosen Config and TEI-File.",
             ):
                 if os.path.isfile(st.session_state.tr_teifile):
-                    st.session_state.tr_last_test_dict = {
-                        "teifile": st.session_state.tr_teifile,
-                        "tr": config,
-                    }
+                    if is_accepted_TEI_filename(st.session_state.tr_teifile,True):
+                        st.session_state.tr_last_test_dict = {
+                            "teifile": st.session_state.tr_teifile,
+                            "tr": config,
+                        }
                 else:
                     st.error(f"The chosen path {st.session_state.tr_teifile} is not a file!")
                     st.session_state.tr_last_test_dict = {}
             if st.session_state.tr_last_test_dict and len(st.session_state.tr_last_test_dict.keys()) > 0:
-                tei = tp.TEIFile(
-                    st.session_state.tr_last_test_dict["teifile"],
-                    st.session_state.tr_last_test_dict["tr"],
-                )
-                st.subheader("Text Content:")
-                st.write(transform_arbitrary_text_to_latex(tei.get_text()))
-                if config[self.tr_config_attr_use_notes]:
-                    st.subheader("Note Content:")
-                    st.write(transform_arbitrary_text_to_latex(tei.get_notes()))
+                try:
+                    tei = tp.TEIFile(
+                        st.session_state.tr_last_test_dict["teifile"],
+                        st.session_state.tr_last_test_dict["tr"],
+                    )
+                    st.subheader("Text Content:")
+                    st.write(transform_arbitrary_text_to_latex(tei.get_text()))
+                    if config[self.tr_config_attr_use_notes]:
+                        st.subheader("Note Content:")
+                        st.write(transform_arbitrary_text_to_latex(tei.get_notes()))
+                except Exception as ex:
+                    error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                    st.error(f'The Following error occurs, when trying to process TEI-File {st.session_state.tr_last_test_dict["teifile"]} : {error_stack}')
 
     def build_config_tablestring(self):
         tablestring = (

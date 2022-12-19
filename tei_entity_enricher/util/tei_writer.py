@@ -9,6 +9,7 @@ _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 class TEI_Writer:
     def __init__(self, filename, openfile=None, tr=None, tnw=None, untagged_symbols=["O"], tags_from_iob_scheme=True):
         self._space_codes = ["&#x2008;", "&#xA0;"]
+        self._filename = filename
         self._untagged_symbols = untagged_symbols
         self._tags_from_iob_scheme = tags_from_iob_scheme
         if openfile is not None:
@@ -20,6 +21,8 @@ class TEI_Writer:
         begintextindex2 = tei.find("<text>")
         if begintextindex < 0:
             begintextindex = begintextindex2
+        if begintextindex < 0:
+            raise ValueError(f'Cannot find "text"-Tag in TEI-File "{self._filename}"')
         endtextindex = begintextindex + tei[begintextindex:].find(">")
         self._begin = tei[0 : endtextindex + 1]
         self._end = "</text>" + tei[tei.find("</text>") + 7 :]
@@ -90,7 +93,10 @@ class TEI_Writer:
             beginstopindex = cur_text.find(">")
             if beginstopindex < beginstartindex:
                 print("Error: CheckSyntax")
-                raise ValueError
+                errorexampletext=cur_text
+                if (len(cur_text)>100):
+                    errorexampletext=errorexampletext[:100]
+                raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
             tag_name = self._get_tag_name(cur_text[beginstartindex + 1 : beginstopindex])
             if tag_name == "!--":
                 beginstopindex = cur_text.find("-->") + 2
@@ -104,7 +110,10 @@ class TEI_Writer:
                     return tag_name, beginstartindex, beginstopindex, -1, -1, ""
                 else:
                     print("Error: CheckSyntax")
-                    raise ValueError
+                    errorexampletext=cur_text
+                    if (len(cur_text)>100):
+                        errorexampletext=errorexampletext[:100]
+                    raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
             endstopindex = endstartindex + len(tag_name) + 2
             return tag_name, beginstartindex, beginstopindex, endstartindex, endstopindex, swap_tag
 
@@ -166,7 +175,10 @@ class TEI_Writer:
             second_tag_start_begin_index = cur_text.find(second_tag_start + ">", first_tag_start_begin_index)
         if first_tag_start_begin_index < 0 or second_tag_start_begin_index < 0:
             print("Error: CheckSyntax")
-            raise ValueError
+            errorexampletext=cur_text
+            if (len(cur_text)>100):
+                errorexampletext=errorexampletext[:100]
+            raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
         first_tag_start_stop_index = cur_text.find(">", first_tag_start_begin_index)
         second_tag_start_stop_index = cur_text.find(">", second_tag_start_begin_index)
         # print(first_tag, second_tag, cur_text)
@@ -176,7 +188,10 @@ class TEI_Writer:
         second_tag_end_begin_index = cur_text.find(second_tag_end, first_tag_end_begin_index)
         if first_tag_end_begin_index < 0:
             print("Error: CheckSyntax")
-            raise ValueError
+            errorexampletext=cur_text
+            if (len(cur_text)>100):
+                errorexampletext=errorexampletext[:100]
+            raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
         if second_tag_end_begin_index < 0:
             return first_tag, "", -1, -1, -1, -1
         first_tag_end_stop_index = first_tag_end_begin_index + len(first_tag_end) - 1
@@ -196,7 +211,10 @@ class TEI_Writer:
             # print(new_text)
             if len(cur_text) != len(new_text):
                 print("Error: CheckSyntax")
-                raise ValueError
+                errorexampletext=cur_text
+                if (len(cur_text)>100):
+                    errorexampletext=errorexampletext[:100]
+                raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
             return (
                 first_tag,
                 new_text,
@@ -219,7 +237,10 @@ class TEI_Writer:
                 new_text = new_text + cur_text[second_tag_start_stop_index + 1 :]
             if len(cur_text) != len(new_text):
                 print("Error: CheckSyntax")
-                raise ValueError
+                errorexampletext=cur_text
+                if (len(cur_text)>100):
+                    errorexampletext=errorexampletext[:100]
+                raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
             return (
                 second_tag,
                 new_text,
@@ -240,7 +261,10 @@ class TEI_Writer:
             # print(new_text)
             if len(cur_text) != len(new_text):
                 print("Error: CheckSyntax")
-                raise ValueError
+                errorexampletext=cur_text
+                if (len(cur_text)>100):
+                    errorexampletext=errorexampletext[:100]
+                raise ValueError(f'Cannot read hierarchical structure of tei-file "{self._filename}": ...{errorexampletext}...')
             return (
                 first_tag,
                 new_text,
@@ -488,7 +512,10 @@ class TEI_Writer:
                         predicted_note_data[self._notecontentindex][self._notewordindex][0]
                     ):
                         print("Error: Predicted note data doesn't match TEI-File!")
-                        raise ValueError
+                        errorexampletext=textstring
+                        if (len(textstring)>100):
+                            errorexampletext=errorexampletext[:100]
+                        raise ValueError(f'Not able to insert all predictions to the notes of tei-file "{self._filename}": ...{errorexampletext}...')
                     if textstring[i] == "&":  # Special handling for html unicode characters
                         unicode_end_index = textstring[i:].find(";")
                         ignore_char_until = i + unicode_end_index + 1
@@ -502,7 +529,10 @@ class TEI_Writer:
                         self._cur_note_word = self._cur_note_word + textstring[i]
                     elif i > 0 and self._cur_pred_note_index > 0:
                         print("Error: Predicted note data doesn't match TEI-File!")
-                        raise ValueError
+                        errorexampletext=textstring
+                        if (len(textstring)>100):
+                            errorexampletext=errorexampletext[:100]
+                        raise ValueError(f'Not able to insert all predictions to the notes of tei-file "{self._filename}": ...{errorexampletext}...')
                     if self._cur_note_word == self._cur_pred_note_word:
                         if (
                             already_tagged == False
@@ -542,7 +572,10 @@ class TEI_Writer:
                         predicted_data[self._contentindex][self._wordindex][0]
                     ):
                         print("Error: Predicted data doesn't match TEI-File!")
-                        raise ValueError
+                        errorexampletext=textstring
+                        if (len(textstring)>100):
+                            errorexampletext=errorexampletext[:100]
+                        raise ValueError(f'Not able to insert all predictions in tei-file "{self._filename}": ...{errorexampletext}...')
 
                     if textstring[i] == "&":  # Special handling for html unicode characters
                         unicode_end_index = textstring[i:].find(";")
@@ -555,7 +588,10 @@ class TEI_Writer:
                         self._cur_word = self._cur_word + textstring[i]
                     elif i > 0 and self._cur_pred_index > 0:
                         print("Error: Predicted data doesn't match TEI-File!")
-                        raise ValueError
+                        errorexampletext=textstring
+                        if (len(textstring)>100):
+                            errorexampletext=errorexampletext[:100]
+                        raise ValueError(f'Not able to insert all predictions in tei-file "{self._filename}": ...{errorexampletext}...')
                     if self._cur_word == self._cur_pred_word:
                         if (
                             already_tagged == False
@@ -727,11 +763,11 @@ class TEI_Writer:
         self._write_contentlist(self._text_tree, predicted_data, False, predicted_note_data, False)
         if len(predicted_data) > self._contentindex:
             print("Error: Predicted Data does not match the text of the xml file")
-            raise ValueError
+            raise ValueError(f'Not able to insert all predictions in tei-file "{self._filename}"')
         if self._use_notes:
             if len(predicted_note_data) > self._notecontentindex:
                 print("Error: Predicted Note Data does not match the text of the notes of the xml file")
-                raise ValueError
+                raise ValueError(f'Not able to insert all predictions to notes in tei-file "{self._filename}"')
         self.sort_begins_and_ends_in_text_tree()
 
     def _is_tag_matching_tag_list(self, tag_content, tag_list):

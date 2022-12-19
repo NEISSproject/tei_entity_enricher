@@ -280,6 +280,52 @@ def print_st_message(type, message):
         st.error(f'Type "{type}" for Message "{message}" not known.')
 
 
+def check_folder_for_TEI_Files(folder_path):
+    filelist=os.listdir(folder_path)
+    not_accepted_filenames = []
+    found_TEI_file = False
+    for filename in filelist:
+        if is_accepted_TEI_filename(filename):
+            found_TEI_file = True
+        else:
+            not_accepted_filenames.append(filename)
+    if len(not_accepted_filenames) == 0:
+        if found_TEI_file:
+            return MessageType.success, None
+        return MessageType.error, "No files found!"
+    else:
+        if found_TEI_file:
+            return (
+                MessageType.warning,
+                f'Some of the elements in the given path "{folder_path}" are no TEI-Files (NTEE accepts only files ending on "xml" or "tei"). The following will be ignored: {not_accepted_filenames}',
+            )
+        else:
+            return (
+                MessageType.error,
+                f'No TEI-Files found in the path "{folder_path}" (NTEE accepts only files ending on "xml" or "tei"). Found only: {not_accepted_filenames}',
+            )
+
+
+def is_accepted_TEI_filename(filename,with_st_message_output=False,with_message_return=False):
+    if os.path.isdir(filename):
+        message = f'The path {filename} is a directory. Please select a TEI-File ending on ".xml" or ".tei"'
+        if with_st_message_output:
+            print_st_message(MessageType.error,message)
+        if (with_message_return):
+            return False, message
+        return False
+    if filename.endswith(".xml") or filename.endswith(".tei"):
+        if (with_message_return):
+            return True,None
+        return True
+    message=f'The file "{filename}" is not a TEI-File (NTEE accepts only files ending on "xml" or "tei")'
+    if with_st_message_output:
+        print_st_message(MessageType.error,message)
+    if (with_message_return):
+            return False,message
+    return False
+
+
 @st.cache(allow_output_mutation=True)
 def load_images():
     neiss_logo = Image.open(os.path.join(module_path, "images", "neiss_logo_nn_pentagon01b2.png"))

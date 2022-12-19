@@ -11,7 +11,7 @@ from tei_entity_enricher.util.aip_interface.prediction_params import NERPredicti
 from tei_entity_enricher.util.aip_interface.processmanger.base import ProcessManagerBase
 from tei_entity_enricher.util.spacy_lm import get_spacy_lm
 from tei_entity_enricher.util.tei_writer import TEI_Writer
-from tei_entity_enricher.util.helper import MessageType
+from tei_entity_enricher.util.helper import MessageType, is_accepted_TEI_filename
 import tei_entity_enricher.util.tei_parser as tp
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class PredictProcessManager(ProcessManagerBase):
                 tei_filelist = [
                     os.path.join(st.session_state.input_tei_folder, filepath)
                     for filepath in os.listdir(st.session_state.input_tei_folder)
-                    if filepath.endswith(".xml")
+                    if is_accepted_TEI_filename(filepath)
                 ]
             if len(tei_filelist) < 1:
                 message_placeholder.empty()
@@ -73,12 +73,16 @@ class PredictProcessManager(ProcessManagerBase):
             for fileindex in range(len(tei_filelist)):
                 progress_bar.progress(math.floor((fileindex + 1) / len(tei_filelist) * 100))
                 self.message(f"Preprocess file {tei_filelist[fileindex]}...", st_element=message_placeholder)
-                brief = tp.TEIFile(
-                    filename=tei_filelist[fileindex],
-                    tr_config=self._params.predict_tei_reader,
-                    nlp=nlp,
-                    with_position_tags=True,
-                )
+                try:
+                    brief = tp.TEIFile(
+                        filename=tei_filelist[fileindex],
+                        tr_config=self._params.predict_tei_reader,
+                        nlp=nlp,
+                        with_position_tags=True,
+                    )
+                except Exception as ex:
+                    error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                    return f'The Following error occurs, when trying to process TEI-File {tei_filelist[fileindex]} : {error_stack}'
                 raw_ner_data = tp.split_into_sentences(brief.build_tagged_text_line_list())
                 old_length = len(all_data)
                 all_data.extend(raw_ner_data)
@@ -134,7 +138,7 @@ class PredictProcessManager(ProcessManagerBase):
                     brief.write_predicted_ner_tags(predicted_data, predicted_note_data)
                     brief.write_back_to_file(os.path.join(self._params.prediction_out_dir, teifilename))
                 except Exception as ex:
-                    ret_message="".join(traceback.TracebackException.from_exception(ex).format())
+                    ret_message=f'{repr(ex)}' + '\n' + "".join(traceback.TracebackException.from_exception(ex).format())
                     failed_prediction_files.append([teifilename,ret_message.replace("\n","\n\n")])
             message_placeholder.empty()
             progress_bar_placeholder.empty()

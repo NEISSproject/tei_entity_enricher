@@ -26,6 +26,9 @@ from tei_entity_enricher.util.helper import (
     menu_TEI_reader_config,
     menu_TEI_write_mapping,
     menu_NER_prediction,
+    check_folder_for_TEI_Files,
+    is_accepted_TEI_filename,
+    MessageType
 )
 from tei_entity_enricher.util.spacy_lm import lang_dict
 
@@ -53,6 +56,7 @@ class NERPrediction(MenuBase):
             st.session_state.predict_lang = "German"
 
         self._check_list = []
+        self._check_warn_list = []
 
         if self.show_menu:
             self.workdir()
@@ -86,6 +90,9 @@ class NERPrediction(MenuBase):
         if self._check_list:
             st.error(f"Pre-configuration failed. Please correct: {', '.join(self._check_list)}!")
             return -1
+
+        if self._check_warn_list:
+            st.warning(f"Your current configuration has the following warnings: {', '.join(self._check_warn_list)}")
 
         predict_process_manager = get_predict_process_manager(workdir=self._wd)
         return_code = predict_process_manager.st_manager()
@@ -183,6 +190,9 @@ class NERPrediction(MenuBase):
         )
         if prediction_tei_file_state != state_ok:
             self._check_list.append("TEI-File to predict")
+        check_result, message = is_accepted_TEI_filename(input_tei_file,False,True)
+        if not check_result:
+            self._check_list.append(message)
 
     def select_tei_folder(self):
         input_tei_folder, prediction_tei_dir_state = small_dir_selector(
@@ -193,6 +203,11 @@ class NERPrediction(MenuBase):
         )
         if prediction_tei_dir_state != state_ok:
             self._check_list.append("Folder containing the TEI-Files to predict")
+        message_type, message = check_folder_for_TEI_Files(input_tei_folder)
+        if message_type==MessageType.error:
+            self._check_list.append(message)
+        elif message_type==MessageType.warning:
+            self._check_warn_list.append(message)
 
     def workdir(self):
         if module_path.lower() != os.path.join(os.getcwd(), "tei_entity_enricher", "tei_entity_enricher").lower():
