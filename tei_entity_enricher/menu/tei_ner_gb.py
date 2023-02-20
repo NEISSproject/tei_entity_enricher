@@ -185,8 +185,15 @@ class TEINERGroundtruthBuilder:
                         with_position_tags=True,
                     )
                 except Exception as ex:
-                    error_stack=' \n \n' + f'{repr(ex)}' + '\n \n' + "\n".join(traceback.TracebackException.from_exception(ex).format())
-                    st.error(f'Groundtruth Building stopped: The Following error occurs, when trying to process TEI-File {filelist[fileindex]} : {error_stack}');
+                    error_stack = (
+                        " \n \n"
+                        + f"{repr(ex)}"
+                        + "\n \n"
+                        + "\n".join(traceback.TracebackException.from_exception(ex).format())
+                    )
+                    st.error(
+                        f"Groundtruth Building stopped: The Following error occurs, when trying to process TEI-File {filelist[fileindex]} : {error_stack}"
+                    )
                     return
 
                 raw_ner_data = tp.split_into_sentences(brief.build_tagged_text_line_list())
@@ -305,7 +312,7 @@ class TEINERGroundtruthBuilder:
             "w+",
         ) as htrain:
             htrain.writelines(trainfilelist)
-        progressoutput.success(f"Groundtruth {build_config[self.tng_attr_name]} succesfully builded.")
+        progressoutput.success(f"Groundtruth {build_config[self.tng_attr_name]} succesfully built.")
         st.write(f"Statistics for {build_config[self.tng_attr_name]}")
         self.show_statistics_to_saved_groundtruth(
             save_folder,

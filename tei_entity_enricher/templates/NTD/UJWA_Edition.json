@@ -1,0 +1,9 @@
+{
+  "entitylist": ["date", "pers", "city", "ground", "water", "org"],
+  "name": "UJWA Edition",
+  "template": true,
+  "ls_cat": {
+    "pers": "person",
+    "org": "organisation"
+  }
+}

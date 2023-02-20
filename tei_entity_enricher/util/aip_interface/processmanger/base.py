@@ -128,18 +128,14 @@ class ProcessManagerBase:
                     self.messageType, self.after_finish_message = self.do_after_finish_process()
                     self.current_process_finished = True
                     if self.messageType is not None:
-                        self.message(
-                            self.after_finish_message, self.messageType, st
-                        )
+                        self.message(self.after_finish_message, self.messageType, st)
                     else:
-                        self.message("finished successful :-)", level=MessageType.success, st_element=st_element)
+                        self.message("successfully finished :-)", level=MessageType.success, st_element=st_element)
                 else:
                     if self.messageType is not None:
-                        self.message(
-                            self.after_finish_message, self.messageType, st
-                        )
+                        self.message(self.after_finish_message, self.messageType, st)
                     else:
-                        self.message("finished successful :-)", level=MessageType.success, st_element=st_element)
+                        self.message("successfully finished :-)", level=MessageType.success, st_element=st_element)
             else:
                 self.message(f"process finished with error code: {self.process.poll()}", MessageType.error, st_element)
         else:

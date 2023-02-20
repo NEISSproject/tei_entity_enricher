@@ -53,30 +53,37 @@ class NEREvaluator(MenuBase):
         if self._params.model:
             eval_dict_list = extract_evaluations_to_model_path(self._params.model)
             if len(eval_dict_list) > 0:
-                eval_expander = st.expander(label=f"Existing evaluations of {os.path.basename(self._params.model)}:",expanded=True)
+                eval_expander = st.expander(
+                    label=f"Existing evaluations of {os.path.basename(self._params.model)}:", expanded=True
+                )
                 with eval_expander:
                     st.markdown(self.build_eval_dict_list_tablestring(eval_dict_list))
                     st.markdown(" ")  # only for layouting reasons (placeholder)
             else:
                 st.info(f"No evaluations for the model {os.path.basename(self._params.model)} found.")
 
-    def validate_evaluation_config(self,tng_name):
-        if os.path.isfile(os.path.join(self._params.model,'trainer_params.json')):
-            with open(os.path.join(self._params.model,'trainer_params.json')) as f:
-                trainer_params=json.load(f)
-            tagspath=os.path.basename(trainer_params["scenario"]["data"]["tags"])
-            model_ntd_name=tagspath[:-4].replace('_',' ')
-            tnm=self.tng.tngdict[tng_name][self.tng.tng_attr_tnm]
-            ntd_name=tnm[self.tnm.tnm_attr_ntd]["name"]
-            if tagspath[:-4]!=ntd_name.replace(' ','_') and not (model_ntd_name=='ner germeval wp' and tng_name=="Germeval"):
-                st.warning(f"Warning: The selected model '{os.path.basename(self._params.model)}' was trained for the Entity Definition '{model_ntd_name}', whereas the test set of the selected Groundtruth '{tng_name}' was builded for the Entity Definition '{ntd_name}'")
+    def validate_evaluation_config(self, tng_name):
+        if os.path.isfile(os.path.join(self._params.model, "trainer_params.json")):
+            with open(os.path.join(self._params.model, "trainer_params.json")) as f:
+                trainer_params = json.load(f)
+            tagspath = os.path.basename(trainer_params["scenario"]["data"]["tags"])
+            model_ntd_name = tagspath[:-4].replace("_", " ")
+            tnm = self.tng.tngdict[tng_name][self.tng.tng_attr_tnm]
+            ntd_name = tnm[self.tnm.tnm_attr_ntd]["name"]
+            if tagspath[:-4] != ntd_name.replace(" ", "_") and not (
+                model_ntd_name == "ner germeval wp" and tng_name == "Germeval"
+            ):
+                st.warning(
+                    f"Warning: The selected model '{os.path.basename(self._params.model)}' was trained for the Entity Definition '{model_ntd_name}', whereas the test set of the selected Groundtruth '{tng_name}' was built for the Entity Definition '{ntd_name}'"
+                )
         else:
-            self._check_list.append(f"Couldn't find train parameters of the selected model {os.path.basename(self._params.model)}.")
-
+            self._check_list.append(
+                f"Couldn't find train parameters of the selected model {os.path.basename(self._params.model)}."
+            )
 
     def show_evaluation_module(self):
         if self._params.model:
-            if len(self.tng.tngdict.keys())==0:
+            if len(self.tng.tngdict.keys()) == 0:
                 self._check_list.append(f"no Groundtruth found")
             else:
                 st.selectbox(
@@ -114,7 +121,7 @@ class NEREvaluator(MenuBase):
         label = "NER Model for Evaluation"
         target_dir = os.path.join(self._wd, "models_ner")
         template_dir = os.path.join(self._wd, "templates", "models_ner")
-        if self._params.scan_models(target_dir,template_dir) != 0:
+        if self._params.scan_models(target_dir, template_dir) != 0:
             self._params.possible_models = {f"no {label} found": None}
             self._check_list.append(f"no {label} found")
         self._params.choose_model_widget(label)

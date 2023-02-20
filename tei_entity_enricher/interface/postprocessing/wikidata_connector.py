@@ -68,7 +68,7 @@ class WikidataConnector:
                 ],
                 "place": [
                     ["Q515", "Q27096213"],
-                    "Q515 = city, Q27096213 = geographic entity, note: at the moment this category includes the categories 'city', 'ground' and 'water'",
+                    "Q515 = city, Q27096213 = geographic entity",
                     True,
                 ],
             }
