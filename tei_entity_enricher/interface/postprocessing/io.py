@@ -7,7 +7,6 @@ from typing import Union, List, Tuple
 from streamlit.uploaded_file_manager import UploadedFile
 from tei_entity_enricher.util.exceptions import MissingDefinition, BadFormat, FileNotFound
 
-
 class FileReader:
     def __init__(
         self,
@@ -44,6 +43,7 @@ class FileReader:
             ".tsv": "loadfile_tsv",
             ".txt": "loadfile_beacon",
         }
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0'}
 
     def loadfile_json(self) -> Union[dict, str]:
         """method to load json files, locally or out of the web, from filepath or from passed file,
@@ -75,7 +75,7 @@ class FileReader:
                 except json.decoder.JSONDecodeError:
                     raise BadFormat(self.filepath, "FileReader", "loadfile_json()")
             elif self.origin == "web":
-                response = requests.get(self.filepath)
+                response = requests.get(self.filepath, headers=self.headers)
                 if response.status_code == 404:
                     response.close()
                     raise FileNotFound(self.filepath, "FileReader", "loadfile_json()")
@@ -109,7 +109,7 @@ class FileReader:
             except FileNotFoundError:
                 raise FileNotFound(self.filepath, "FileReader", "loadfile_beacon()")
         elif self.origin == "web":
-            response = requests.get(self.filepath)
+            response = requests.get(self.filepath, headers=self.headers)
             if response.status_code == 404:
                 response.close()
                 raise FileNotFound(self.filepath, "FileReader", "loadfile_beacon()")
@@ -230,7 +230,7 @@ class FileReader:
         elif self.origin == "web":
             if transform_for_entity_library_import == True:
                 result = []
-                response = requests.get(self.filepath)
+                response = requests.get(self.filepath, headers=self.headers)
                 if response.status_code == 404:
                     response.close()
                     raise FileNotFound(self.filepath, "FileReader", "loadfile_csv()")
