@@ -520,7 +520,7 @@ class TEINERPredWriteMap:
 
                 newtext = newtext.replace(
                     "<" + entity + ">",
-                    "<**s>$\\text{\\textcolor{" + latex_color_list[colorindex] + "}{",
+                    "<**s>$\\text{\\textcolor{" + latex_color_list[colorindex % len(latex_color_list)] + "}{",
                 )
                 if show_entity_names:
                     newtext = newtext.replace("</" + entity + ">", " (" + entity + ")}}$<**e>")
